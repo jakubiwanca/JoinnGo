@@ -1,15 +1,13 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
-    container_name: postgres_db
+    container_name: JoinnGoDb
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: JoinnGoDb
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -17,12 +15,13 @@ services:
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
       - "8080:80"
-    depends_on:
-      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin  # zapis konfiguracji pgAdmin
 
 volumes:
   postgres_data:
+  pgadmin_data:

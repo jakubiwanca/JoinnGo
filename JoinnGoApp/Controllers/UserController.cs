@@ -38,7 +38,7 @@ public class UserController : ControllerBase
         {
             Email = dto.Email,
             PasswordHash = HashPassword(dto.Password),
-            Role = "User" // Domyślna rola przy rejestracji to "User"
+            Role = "User" // Domyślna rola
         };
 
         _context.Users.Add(user);
