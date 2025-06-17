@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { register, login, getProfile } from "./api/auth";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
+import Home from "./pages/Home";
+import AdminPanel from "./pages/AdminPanel";
+
+import { getProfile } from "./api/auth";
+import "./App.css";
+
 function App() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [token, setToken] = useState(localStorage.getItem("jwtToken") || "");
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState("");
 
-  // Dekoduj token i wyciągnij rolę:
   const decoded = token ? jwtDecode(token) : null;
   const role = decoded?.role || "User";
 
@@ -26,28 +35,6 @@ function App() {
     }
   }, [token]);
 
-  const handleRegister = async () => {
-    setError("");
-    try {
-      const message = await register(email, password);
-      alert(message);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleLogin = async () => {
-    setError("");
-    try {
-      const data = await login(email, password);
-      setToken(data.token);
-      localStorage.setItem("jwtToken", data.token);
-      setError("");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   const handleLogout = () => {
     setToken("");
     setProfile(null);
@@ -55,51 +42,47 @@ function App() {
     setError("");
   };
 
+  const HomeWrapper = (props) => {
+    const navigate = useNavigate();
+
+    return <Home {...props} navigate={navigate} />;
+  };
+
   return (
-    <div style={{ maxWidth: 400, margin: "auto", padding: 20 }}>
-      {!token ? (
-        <>
-          <h2>Zarejestruj się lub zaloguj</h2>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ width: "100%", marginBottom: 10 }}
-          />
-          <input
-            type="password"
-            placeholder="Hasło"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: "100%", marginBottom: 10 }}
-          />
-          <button onClick={handleRegister} style={{ marginRight: 10 }}>
-            Zarejestruj
-          </button>
-          <button onClick={handleLogin}>Zaloguj</button>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-        </>
-      ) : (
-        <>
-          <h2>Witaj, {profile ? profile.email : "Ładowanie..."}</h2>
-          {profile && (
-            <pre
-              style={{
-                background: "#eee",
-                padding: 10,
-                borderRadius: 4,
-                overflowX: "auto",
-              }}
-            >
-              {JSON.stringify(profile, null, 2)}
-            </pre>
-          )}
-          <button onClick={handleLogout}>Wyloguj</button>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-        </>
-      )}
-    </div>
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <HomeWrapper
+              token={token}
+              setToken={setToken}
+              profile={profile}
+              role={role}
+              setProfile={setProfile}
+              error={error}
+              setError={setError}
+              onLogout={handleLogout}
+            />
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            role === "Admin" && token ? (
+              <AdminPanel
+                token={token}
+                currentUserId={profile?.id}
+                onLogout={handleLogout}
+              />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

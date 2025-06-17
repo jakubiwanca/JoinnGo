@@ -16,7 +16,6 @@ using Microsoft.AspNetCore.Authorization;
 public class UserController : ControllerBase
 {
 
-    //siema
     private readonly MyDbContext _context;
     private readonly IConfiguration _configuration;
 
@@ -79,7 +78,7 @@ public class UserController : ControllerBase
             {
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)  // Rola dodana do tokenu JWT!
+                new Claim(ClaimTypes.Role, user.Role)  // Rola dodana do tokenu JWT
             }),
             Expires = DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpiresInMinutes"])),
             Issuer = jwtSettings["Issuer"],
@@ -124,6 +123,8 @@ public class UserController : ControllerBase
     [HttpGet("all")]
     public async Task<IActionResult> GetAllUsers()
     {
+        Console.WriteLine("Wejście do GetAllUsers");
+
         var users = await _context.Users.ToListAsync();
         return Ok(users);
     }
@@ -144,6 +145,23 @@ public class UserController : ControllerBase
 
         return Ok($"User {user.Email} role changed to {user.Role}");
     }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+
+        return Ok($"User {user.Email} deleted");
+    }
+
 }
 
 public class SetRoleDto
