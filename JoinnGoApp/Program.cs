@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +30,8 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        RoleClaimType = "role"
     };
 });
 
@@ -37,15 +39,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy => policy
-            .AllowAnyOrigin()
+            .WithOrigins("http://localhost:3000")
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials());
 });
 
-
-
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "JoinnGoApp API", Version = "v1" });
@@ -76,10 +76,37 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var db = services.GetRequiredService<MyDbContext>();
+        db.Database.EnsureCreated();
+
+        if (!db.Users.Any(u => u.Email == "admin@example.com"))
+        {
+            var admin = new User
+            {
+                Email = "admin@example.com",
+                Role = "Admin"
+            };
+            var hasher = new PasswordHasher<User>();
+            admin.PasswordHash = hasher.HashPassword(admin, "Admin123!");
+            db.Users.Add(admin);
+            db.SaveChanges();
+            Console.WriteLine("Seed: admin@example.com utworzony (hasło: Admin123!)");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Błąd podczas seedowania bazy: " + ex);
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -89,7 +116,6 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "JoinnGoApp API v1");
     });
 }
-
 
 app.UseCors("AllowReactApp");
 

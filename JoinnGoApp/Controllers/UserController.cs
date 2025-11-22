@@ -10,35 +10,38 @@ using System.Threading.Tasks;
 using JoinnGoApp.Data;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 [ApiController]
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-
     private readonly MyDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly PasswordHasher<User> _passwordHasher;
 
     public UserController(MyDbContext context, IConfiguration configuration)
     {
         _context = context;
         _configuration = configuration;
+        _passwordHasher = new PasswordHasher<User>();
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
-        {
             return BadRequest("Email already exists");
-        }
 
         var user = new User
         {
             Email = dto.Email,
-            PasswordHash = HashPassword(dto.Password),
-            Role = "User" // Domyślna rola
+            Role = "User"
         };
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -49,21 +52,35 @@ public class UserController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == dto.Email);
-        if (user == null)
+        if (user == null) return Unauthorized("Invalid email or password");
+
+        var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+        if (verify == PasswordVerificationResult.Success || verify == PasswordVerificationResult.SuccessRehashNeeded)
         {
-            return Unauthorized("Invalid email or password");
+            if (verify == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
+                await _context.SaveChangesAsync();
+            }
+
+            var token = GenerateJwtToken(user);
+            return Ok(new { token });
         }
 
-        var hash = HashPassword(dto.Password);
-        if (user.PasswordHash != hash)
+        var sha = HashSha256(dto.Password);
+        if (sha == user.PasswordHash)
         {
-            return Unauthorized("Invalid email or password");
+            user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
+            await _context.SaveChangesAsync();
+
+            var token = GenerateJwtToken(user);
+            return Ok(new { token });
         }
 
-        var token = GenerateJwtToken(user);
-
-        return Ok(new { token });
+        return Unauthorized("Invalid email or password");
     }
 
     private string GenerateJwtToken(User user)
@@ -72,14 +89,17 @@ public class UserController : ControllerBase
         var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);
 
         var tokenHandler = new JwtSecurityTokenHandler();
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim("role", user.Role ?? "User"),
+            new Claim("role", user.Role)
+        };
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)  // Rola dodana do tokenu JWT
-            }),
+            Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpiresInMinutes"])),
             Issuer = jwtSettings["Issuer"],
             Audience = jwtSettings["Audience"],
@@ -87,11 +107,10 @@ public class UserController : ControllerBase
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
-
         return tokenHandler.WriteToken(token);
     }
 
-    private string HashPassword(string password)
+    private string HashSha256(string password)
     {
         using var sha256 = SHA256.Create();
         var bytes = Encoding.UTF8.GetBytes(password);
@@ -107,15 +126,13 @@ public class UserController : ControllerBase
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (email == null || userId == null)
-        {
             return Unauthorized("Nie można odczytać danych użytkownika z tokena.");
-        }
 
         return Ok(new
         {
             Id = userId,
             Email = email,
-            Role = User.FindFirst(ClaimTypes.Role)?.Value
+            Role = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value
         });
     }
 
@@ -124,25 +141,21 @@ public class UserController : ControllerBase
     public async Task<IActionResult> GetAllUsers()
     {
         Console.WriteLine("Wejście do GetAllUsers");
-
-        var users = await _context.Users.ToListAsync();
+        var users = await _context.Users
+            .Select(u => new { u.Id, u.Email, u.Role })
+            .ToListAsync();
         return Ok(users);
     }
 
-    // Endpoint do zmiany roli użytkownika, dostępny tylko dla admina
     [Authorize(Roles = "Admin")]
     [HttpPost("setrole")]
     public async Task<IActionResult> SetUserRole([FromBody] SetRoleDto dto)
     {
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == dto.Email);
-        if (user == null)
-        {
-            return NotFound("User not found");
-        }
+        if (user == null) return NotFound("User not found");
 
         user.Role = dto.Role;
         await _context.SaveChangesAsync();
-
         return Ok($"User {user.Email} role changed to {user.Role}");
     }
 
@@ -151,17 +164,12 @@ public class UserController : ControllerBase
     public async Task<IActionResult> DeleteUser(int id)
     {
         var user = await _context.Users.FindAsync(id);
-        if (user == null)
-        {
-            return NotFound("User not found");
-        }
+        if (user == null) return NotFound("User not found");
 
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
-
         return Ok($"User {user.Email} deleted");
     }
-
 }
 
 public class SetRoleDto

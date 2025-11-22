@@ -1,34 +1,31 @@
-export async function getAllUsers(token) {
-  console.log("Wysyłany token:", token);
+const USERS_URL = 'http://localhost:5038/api/User'
 
-  const res = await fetch("http://localhost:5038/api/user/all", {
+export async function getAllUsers(token) {
+  const res = await fetch(`${USERS_URL}/all`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  });
-
-  const text = await res.text();
-  console.log("Odpowiedź z backendu:", res.status, text);
+  })
 
   if (!res.ok) {
-    throw new Error("Nie udało się pobrać listy użytkowników");
+    const text = await res.text()
+    console.error('getAllUsers failed', res.status, text)
+    throw new Error(text || 'Nie udało się pobrać listy użytkowników')
   }
-
-  return JSON.parse(text);
+  return res.json()
 }
 
 export async function deleteUser(id, token) {
-  const res = await fetch(`http://localhost:5038/api/user/${id}`, {
-    method: "DELETE",
+  const res = await fetch(`${USERS_URL}/${id}`, {
+    method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  });
+  })
 
   if (!res.ok) {
-    throw new Error("Nie udało się usunąć użytkownika");
+    const text = await res.text()
+    throw new Error(text || 'Nie udało się usunąć użytkownika')
   }
-
-  return res.text();
+  return res.text()
 }
-

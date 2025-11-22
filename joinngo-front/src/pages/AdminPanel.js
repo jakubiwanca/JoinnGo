@@ -10,7 +10,10 @@ function AdminPanel({ token, currentUserId, onLogout }) {
     if (token) {
       getAllUsers(token)
         .then(setUsers)
-        .catch(() => setError("Błąd podczas ładowania użytkowników"));
+        .catch((err) => {
+          console.error("getAllUsers error:", err);
+          setError(err.message || "Błąd podczas ładowania użytkowników");
+        });
     }
   }, [token]);
 
@@ -19,9 +22,10 @@ function AdminPanel({ token, currentUserId, onLogout }) {
 
     try {
       await deleteUser(id, token);
-      setUsers(users.filter((u) => u.id !== id));
-    } catch {
-      setError("Nie udało się usunąć użytkownika");
+      setUsers(users.filter((u) => String(u.id) !== String(id)));
+    } catch (err) {
+      console.error("deleteUser error:", err);
+      setError(err.message || "Nie udało się usunąć użytkownika");
     }
   };
 
@@ -41,18 +45,26 @@ function AdminPanel({ token, currentUserId, onLogout }) {
 
       {error && <p className="error">{error}</p>}
 
-      <ul>
-        {users.map((u) => (
-          <li key={u.id}>
-            <strong>{u.email}</strong> ({u.role})
-            {u.id !== currentUserId && (
-              <button onClick={() => handleDelete(u.id)} className="delete-btn">
-                Usuń
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
+      {users.length === 0 ? (
+        <p>Brak użytkowników lub ładowanie...</p>
+      ) : (
+        <ul>
+          {users.map((u) => (
+            <li key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 6 }}>
+              <div>
+                <strong>{u.email}</strong> ({u.role})
+              </div>
+              <div>
+                {String(u.id) !== String(currentUserId) && (
+                  <button onClick={() => handleDelete(u.id)} className="delete-btn">
+                    Usuń
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

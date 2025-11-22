@@ -1,41 +1,39 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { register, login } from "../api/auth";
+import React, { useState } from 'react'
+import { register, login } from '../api/auth'
+import { jwtDecode } from 'jwt-decode'
 
-function Home({
-  token,
-  setToken,
-  profile,
-  role,
-  setProfile,
-  error,
-  setError,
-  onLogout,
-  navigate,
-}) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+function Home({ token, setToken, profile, role, setProfile, error, setError, onLogout, navigate }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   const handleRegister = async () => {
-    setError("");
+    setError('')
     try {
-      const message = await register(email, password);
-      alert(message);
+      const message = await register(email, password)
+      alert(message)
     } catch (err) {
-      setError(err.message);
+      setError(err.message || String(err))
     }
-  };
+  }
 
   const handleLogin = async () => {
-    setError("");
+    setError('')
     try {
-      const data = await login(email, password);
-      setToken(data.token);
-      localStorage.setItem("jwtToken", data.token);
+      const data = await login(email, password)
+      setToken(data.token)
+      localStorage.setItem('jwtToken', data.token)
+
+      try {
+        const decoded = jwtDecode(data.token)
+        const tokenRole = decoded?.role || decoded?.['role'] || 'User'
+        if (tokenRole === 'Admin') {
+          navigate('/admin')
+        }
+      } catch {}
     } catch (err) {
-      setError(err.message);
+      setError(err.message || String(err))
     }
-  };
+  }
 
   if (!token) {
     return (
@@ -63,20 +61,16 @@ function Home({
         </button>
         {error && <p className="error">{error}</p>}
       </div>
-    );
+    )
   }
 
   return (
     <div className="container">
       <header className="header">
-        <h2>Witaj, {profile ? profile.email : "..."}</h2>
+        <h2>Witaj, {profile ? profile.email : '...'}</h2>
         <div className="header-buttons">
-          {role === "Admin" && (
-            <button
-              className="header-btn"
-              onClick={() => navigate("/admin")}
-              type="button"
-            >
+          {role === 'Admin' && (
+            <button className="header-btn" onClick={() => navigate('/admin')} type="button">
               Panel Admina
             </button>
           )}
@@ -86,7 +80,7 @@ function Home({
         </div>
       </header>
     </div>
-  );
+  )
 }
 
-export default Home;
+export default Home

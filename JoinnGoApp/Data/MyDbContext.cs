@@ -25,6 +25,12 @@ namespace JoinnGoApp.Data
                 .HasOne(ep => ep.Event)
                 .WithMany(e => e.EventParticipants)
                 .HasForeignKey(ep => ep.EventId);
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.Creator)
+                .WithMany()
+                .HasForeignKey(e => e.CreatorId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

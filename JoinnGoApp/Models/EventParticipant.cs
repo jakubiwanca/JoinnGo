@@ -1,3 +1,10 @@
+public enum ParticipantStatus
+{
+    Interested,
+    Confirmed,
+    Cancelled
+}
+
 public class EventParticipant
 {
     public int Id { get; set; }
@@ -7,4 +14,5 @@ public class EventParticipant
 
     public int EventId { get; set; }
     public Event Event { get; set; }
+    public ParticipantStatus Status { get; set; } = ParticipantStatus.Confirmed;
 }
