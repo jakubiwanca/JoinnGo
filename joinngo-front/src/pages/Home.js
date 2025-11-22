@@ -1,86 +1,78 @@
-import React, { useState } from 'react'
-import { register, login } from '../api/auth'
-import { jwtDecode } from 'jwt-decode'
+import React, { useEffect, useState } from 'react';
+import apiClient from '../api/axiosClient';
+import { jwtDecode } from 'jwt-decode';
 
-function Home({ token, setToken, profile, role, setProfile, error, setError, onLogout, navigate }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+function Home({ token, onLogout, navigate, role }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
 
-  const handleRegister = async () => {
-    setError('')
-    try {
-      const message = await register(email, password)
-      alert(message)
-    } catch (err) {
-      setError(err.message || String(err))
-    }
-  }
-
-  const handleLogin = async () => {
-    setError('')
-    try {
-      const data = await login(email, password)
-      setToken(data.token)
-      localStorage.setItem('jwtToken', data.token)
-
+  useEffect(() => {
+    if (token) {
       try {
-        const decoded = jwtDecode(data.token)
-        const tokenRole = decoded?.role || decoded?.['role'] || 'User'
-        if (tokenRole === 'Admin') {
-          navigate('/admin')
-        }
-      } catch {}
-    } catch (err) {
-      setError(err.message || String(err))
+        const decoded = jwtDecode(token);
+        setCurrentUserEmail(decoded.email || decoded.unique_name || 'Użytkownik');
+      } catch (e) {}
     }
-  }
+  }, [token]);
 
-  if (!token) {
-    return (
-      <div className="container">
-        <h2>Zaloguj się lub zarejestruj</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="input"
-        />
-        <input
-          type="password"
-          placeholder="Hasło"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="input"
-        />
-        <button onClick={handleLogin} className="btn">
-          Zaloguj
-        </button>
-        <button onClick={handleRegister} className="btn">
-          Zarejestruj
-        </button>
-        {error && <p className="error">{error}</p>}
-      </div>
-    )
-  }
+  // wydarzenia
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await apiClient.get('/Event');
+        setEvents(response.data);
+      } catch (err) {
+        console.error("Błąd pobierania wydarzeń:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const handleJoin = async (eventId) => {
+    try {
+        const response = await apiClient.post(`/Event/${eventId}/join`);
+        alert(response.data);
+    } catch (err) {
+        alert(err.response?.data || 'Błąd podczas dołączania');
+    }
+  };
 
   return (
     <div className="container">
-      <header className="header">
-        <h2>Witaj, {profile ? profile.email : '...'}</h2>
+      <header className="header" style={{marginBottom: '20px', display: 'flex', justifyContent: 'space-between'}}>
+        <h2>Witaj, {currentUserEmail}</h2>
         <div className="header-buttons">
           {role === 'Admin' && (
-            <button className="header-btn" onClick={() => navigate('/admin')} type="button">
-              Panel Admina
-            </button>
+            <button className="header-btn" onClick={() => navigate('/admin')}>Panel Admina</button>
           )}
-          <button className="logout-btn" onClick={onLogout} type="button">
-            Wyloguj się
-          </button>
+          <button className="logout-btn" onClick={onLogout}>Wyloguj się</button>
         </div>
       </header>
+
+      <h3>Dostępne Wydarzenia</h3>
+      
+      {loading ? <p>Ładowanie...</p> : (
+        <div className="events-list" style={{ display: 'grid', gap: '15px' }}>
+          {events.map(event => (
+            <div key={event.id} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '8px' }}>
+              <h4>{event.title} {event.isPrivate && <span>🔒</span>}</h4>
+              <p>{event.description}</p>
+              <small>📍 {event.location} | 📅 {new Date(event.date).toLocaleString()}</small>
+              <div style={{marginTop: '10px'}}>
+                <button className="btn" onClick={() => handleJoin(event.id)}>
+                    {event.isPrivate ? 'Poproś o dołączenie' : 'Dołącz'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;
