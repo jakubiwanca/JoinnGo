@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import CreateEventModal from './components/CreateEventModal';
 
 import Home from './pages/Home';
 import LoginPage from './pages/LoginPage'; // <-- Nowy import

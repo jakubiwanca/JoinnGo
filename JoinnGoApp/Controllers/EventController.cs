@@ -79,12 +79,89 @@ public class EventController : ControllerBase
             
         return Ok("Dołączono do wydarzenia!");
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteEvent(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var eventItem = await _context.Events.FindAsync(id);
+        if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
+
+        if (eventItem.CreatorId != userId)
+        {
+            return Forbid("Nie masz uprawnień do usunięcia tego wydarzenia.");
+        }
+
+        _context.Events.Remove(eventItem);
+        await _context.SaveChangesAsync();
+
+        return Ok("Wydarzenie zostało usunięte.");
+    }
+
+    [HttpGet("{eventId}/participants")]
+    public async Task<IActionResult> GetParticipants(int eventId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var eventItem = await _context.Events.FindAsync(eventId);
+        if (eventItem == null) return NotFound();
+
+        if (eventItem.CreatorId != userId) 
+            return Forbid();
+
+        var participants = await _context.EventParticipants
+            .Where(ep => ep.EventId == eventId)
+            .Include(ep => ep.User)
+            .Select(ep => new 
+            {
+                ep.UserId,
+                Email = ep.User.Email,
+                Status = ep.Status.ToString()
+            })
+            .ToListAsync();
+
+        return Ok(participants);
+    }
+
+    [HttpPut("{eventId}/participants/{participantId}/status")]
+    public async Task<IActionResult> UpdateParticipantStatus(int eventId, int participantId, [FromBody] string newStatus)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var eventItem = await _context.Events.FindAsync(eventId);
+        if (eventItem == null || eventItem.CreatorId != userId) 
+            return Forbid("Nie jesteś organizatorem tego wydarzenia.");
+
+        var participant = await _context.EventParticipants
+            .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == participantId);
+
+        if (participant == null) return NotFound("Uczestnik nie znaleziony.");
+
+        if (Enum.TryParse<ParticipantStatus>(newStatus, true, out var statusEnum))
+        {
+            participant.Status = statusEnum;
+            await _context.SaveChangesAsync();
+            return Ok($"Status zmieniony na {newStatus}");
+        }
+
+        return BadRequest("Niepoprawny status.");
+    }
     
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetEvents()
     {
-        var events = await _context.Events.ToListAsync();
+        var events = await _context.Events
+            .Include(e => e.Creator) 
+            .ToListAsync();
+            
         return Ok(events);
     }
 }
