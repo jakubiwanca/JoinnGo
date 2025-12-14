@@ -39,6 +39,8 @@ public class EventController : ControllerBase
         };
 
         _context.Events.Add(newEvent);
+        _context.EventParticipants.Add(adminParticipant); 
+        
         await _context.SaveChangesAsync();
 
         return Ok(newEvent);
@@ -80,6 +82,25 @@ public class EventController : ControllerBase
         return Ok("Dołączono do wydarzenia!");
     }
 
+    [HttpDelete("{eventId}/leave")]
+    public async Task<IActionResult> LeaveEvent(int eventId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var participant = await _context.EventParticipants
+            .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == userId);
+
+        if (participant == null) 
+            return NotFound("Nie bierzesz udziału w tym wydarzeniu.");
+
+        _context.EventParticipants.Remove(participant);
+        await _context.SaveChangesAsync();
+
+        return Ok("Opuszczono wydarzenie.");
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEvent(int id)
     {
@@ -87,13 +108,19 @@ public class EventController : ControllerBase
         if (userIdClaim == null) return Unauthorized();
         var userId = int.Parse(userIdClaim.Value);
 
+        var roleClaim = User.FindFirst(ClaimTypes.Role) ?? User.FindFirst("role");
+        var isAdmin = roleClaim?.Value == "Admin";
+
         var eventItem = await _context.Events.FindAsync(id);
         if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
 
-        if (eventItem.CreatorId != userId)
+        if (eventItem.CreatorId != userId && !isAdmin)
         {
             return Forbid("Nie masz uprawnień do usunięcia tego wydarzenia.");
         }
+
+        var participants = _context.EventParticipants.Where(ep => ep.EventId == id);
+        _context.EventParticipants.RemoveRange(participants);
 
         _context.Events.Remove(eventItem);
         await _context.SaveChangesAsync();
@@ -159,7 +186,20 @@ public class EventController : ControllerBase
     public async Task<IActionResult> GetEvents()
     {
         var events = await _context.Events
-            .Include(e => e.Creator) 
+            .Include(e => e.Creator)
+            .Include(e => e.EventParticipants)
+            .Select(e => new 
+            {
+                e.Id,
+                e.Title,
+                e.Description,
+                e.Date,
+                e.Location,
+                e.IsPrivate,
+                e.CreatorId,
+                Creator = new { e.Creator.Email }, 
+                Participants = e.EventParticipants.Select(ep => new { ep.UserId, ep.Status }).ToList()
+            })
             .ToListAsync();
             
         return Ok(events);

@@ -93,6 +93,7 @@ public class UserController : ControllerBase
         {
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Role, user.Role),
             new Claim("role", user.Role ?? "User"),
             new Claim("role", user.Role)
         };

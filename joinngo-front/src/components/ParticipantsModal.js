@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '../api/axiosClient';
 
-function ParticipantsModal({ eventId, onClose }) {
+function ParticipantsModal({ eventId, onClose, onStatusChange }) {
     const [participants, setParticipants] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -33,6 +33,8 @@ function ParticipantsModal({ eventId, onClose }) {
                 if (p.userId === userId) return { ...p, status: 'Confirmed' };
                 return p;
             }));
+
+            if (onStatusChange) onStatusChange();
 
         } catch (err) {
             console.error(err);
