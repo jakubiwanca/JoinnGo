@@ -21,13 +21,15 @@ public class EventController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null) return Unauthorized();
+        var eventDate = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc);
         var userId = int.Parse(userIdClaim.Value);
         var newEvent = new Event
         {
             Title = dto.Title,
             Description = dto.Description,
-            Date = dto.Date,
+            Date = eventDate,
             Location = dto.Location,
+            City = dto.City,
             IsPrivate = dto.IsPrivate,
             CreatorId = userId
         };
@@ -189,11 +191,43 @@ public class EventController : ControllerBase
     
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetEvents()
+    public async Task<IActionResult> GetEvents(
+        [FromQuery] string? search, 
+        [FromQuery] string? location, 
+        [FromQuery] DateTime? date)
     {
-        var events = await _context.Events
+        var query = _context.Events
             .Include(e => e.Creator)
             .Include(e => e.EventParticipants)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            search = search.ToLower();
+            query = query.Where(e => e.Title.ToLower().Contains(search) || 
+                                     e.Description.ToLower().Contains(search));
+        }
+
+        if (!string.IsNullOrEmpty(location))
+        {
+            location = location.ToLower();
+            query = query.Where(e => e.Location.ToLower().Contains(location));
+        }
+
+        if (date.HasValue)
+        {
+            var rawDate = date.Value.Date;
+            
+            var searchDateUtc = DateTime.SpecifyKind(rawDate, DateTimeKind.Utc);
+            
+            var nextDayUtc = searchDateUtc.AddDays(1);
+
+            query = query.Where(e => e.Date >= searchDateUtc && e.Date < nextDayUtc);
+        }
+
+        query = query.OrderBy(e => e.Date);
+
+        var events = await query
             .Select(e => new 
             {
                 e.Id,
@@ -201,6 +235,7 @@ public class EventController : ControllerBase
                 e.Description,
                 e.Date,
                 e.Location,
+                e.City,
                 e.IsPrivate,
                 e.CreatorId,
                 Creator = new { e.Creator.Email }, 
@@ -218,5 +253,6 @@ public class CreateEventDto
     public string Description { get; set; }
     public DateTime Date { get; set; }
     public string Location { get; set; }
+    public string City { get; set; }
     public bool IsPrivate { get; set; }
 }
