@@ -108,15 +108,21 @@ public class EventController : ControllerBase
         if (userIdClaim == null) return Unauthorized();
         var userId = int.Parse(userIdClaim.Value);
 
-        var roleClaim = User.FindFirst(ClaimTypes.Role) ?? User.FindFirst("role");
-        var isAdmin = roleClaim?.Value == "Admin";
+        bool isAdmin = User.IsInRole("Admin");
+
+        if (!isAdmin)
+        {
+            isAdmin = User.Claims.Any(c => 
+                (c.Type == ClaimTypes.Role || c.Type == "role") && 
+                c.Value == "Admin");
+        }
 
         var eventItem = await _context.Events.FindAsync(id);
         if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
 
         if (eventItem.CreatorId != userId && !isAdmin)
         {
-            return Forbid("Nie masz uprawnień do usunięcia tego wydarzenia.");
+            return Forbid("Nie masz uprawnień do usunięcia tego wydarzenia (Backend: Nie wykryto roli Admin).");
         }
 
         var participants = _context.EventParticipants.Where(ep => ep.EventId == id);

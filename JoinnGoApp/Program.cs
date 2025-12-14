@@ -92,7 +92,9 @@ using (var scope = app.Services.CreateScope())
         var db = services.GetRequiredService<MyDbContext>();
         db.Database.EnsureCreated();
 
-        if (!db.Users.Any(u => u.Email == "admin@example.com"))
+        var adminUser = db.Users.FirstOrDefault(u => u.Email == "admin@example.com");
+
+        if (adminUser == null)
         {
             var admin = new User
             {
@@ -102,9 +104,15 @@ using (var scope = app.Services.CreateScope())
             var hasher = new PasswordHasher<User>();
             admin.PasswordHash = hasher.HashPassword(admin, "Admin123!");
             db.Users.Add(admin);
-            db.SaveChanges();
-            Console.WriteLine("Seed: admin@example.com utworzony (hasło: Admin123!)");
+            Console.WriteLine("Seed: Utworzono konto admin@example.com");
         }
+        else if (adminUser.Role != "Admin")
+        {
+            adminUser.Role = "Admin";
+            Console.WriteLine("Seed: Naprawiono rolę dla admin@example.com na Admin");
+        }
+
+        db.SaveChanges();
     }
     catch (Exception ex)
     {
