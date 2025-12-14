@@ -3,12 +3,17 @@ import apiClient from '../api/axiosClient'
 import { jwtDecode } from 'jwt-decode'
 import CreateEventModal from '../components/CreateEventModal'
 import ParticipantsModal from '../components/ParticipantsModal'
+import { POLISH_CITIES } from '../constants/cities';
+import { EVENT_CATEGORIES } from '../constants/categories';
 
 function Home({ token, onLogout, navigate, role }) {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentUserEmail, setCurrentUserEmail] = useState('')
   const [currentUserId, setCurrentUserId] = useState(null)
+
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [managingEventId, setManagingEventId] = useState(null)
@@ -17,6 +22,7 @@ function Home({ token, onLogout, navigate, role }) {
     search: '',
     location: '',
     date: '',
+    category: ''
   })
 
   useEffect(() => {
@@ -46,20 +52,47 @@ function Home({ token, onLogout, navigate, role }) {
       if (filters.search) params.append('search', filters.search)
       if (filters.location) params.append('location', filters.location)
       if (filters.date) params.append('date', filters.date)
+      if (filters.category !== '') params.append('category', filters.category)
+      
+      params.append('page', page)
+      params.append('pageSize', 10)
 
       const response = await apiClient.get(`/Event?${params.toString()}`)
 
-      setEvents(response.data)
+      if (response.data && response.data.data) {
+          setEvents(response.data.data)
+          setTotalPages(response.data.totalPages)
+      } else {
+          setEvents(Array.isArray(response.data) ? response.data : [])
+      }
+
     } catch (err) {
       console.error(err)
+      setEvents([]) 
     } finally {
       setLoading(false)
     }
-  }, [filters])
+  }, [filters, page])
 
   useEffect(() => {
     fetchEvents()
   }, [fetchEvents])
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+    setPage(1); 
+  };
+
+  const handleSearchClick = () => {
+      setPage(1);
+      fetchEvents();
+  }
+
+  const clearFilters = () => {
+      setFilters({ search: '', location: '', date: '', category: '' });
+      setPage(1);
+  };
 
   const handleJoin = async (eventId) => {
     try {
@@ -70,15 +103,6 @@ function Home({ token, onLogout, navigate, role }) {
       alert(err.response?.data || 'Błąd')
     }
   }
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-  };
-
-  const clearFilters = () => {
-      setFilters({ search: '', location: '', date: '' });
-  };
 
   const handleDelete = async (eventId) => {
     if (!window.confirm('Czy na pewno chcesz usunąć to wydarzenie?')) return
@@ -145,6 +169,7 @@ function Home({ token, onLogout, navigate, role }) {
           flexWrap: 'wrap',
           alignItems: 'end'
       }}>
+        {/* Szukaj */}
         <div style={{ flex: 1, minWidth: '200px' }}>
             <label style={{display: 'block', fontSize: '0.8em', marginBottom: '5px'}}>Szukaj (nazwa/opis):</label>
             <input 
@@ -157,9 +182,27 @@ function Home({ token, onLogout, navigate, role }) {
             />
         </div>
 
+        {/* Kategoria */}
+        <div style={{ flex: 1, minWidth: '150px' }}>
+            <label style={{display: 'block', fontSize: '0.8em', marginBottom: '5px'}}>Kategoria:</label>
+            <select 
+                name="category" 
+                value={filters.category} 
+                onChange={handleFilterChange}
+                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+                <option value="">Wszystkie</option>
+                {EVENT_CATEGORIES.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+            </select>
+        </div>
+
+        {/* Miasto */}
         <div style={{ flex: 1, minWidth: '150px' }}>
             <label style={{display: 'block', fontSize: '0.8em', marginBottom: '5px'}}>Miasto:</label>
             <input 
+                list="cities-datalist"
                 type="text" 
                 name="location" 
                 placeholder="np. Warszawa" 
@@ -167,9 +210,13 @@ function Home({ token, onLogout, navigate, role }) {
                 onChange={handleFilterChange}
                 style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
             />
+            <datalist id="cities-datalist">
+                {POLISH_CITIES.map(city => <option key={city} value={city} />)}
+            </datalist>
         </div>
 
-        <div style={{ flex: 1, minWidth: '150px' }}>
+        {/* Data */}
+        <div style={{ flex: 1, minWidth: '130px' }}>
             <label style={{display: 'block', fontSize: '0.8em', marginBottom: '5px'}}>Data:</label>
             <input 
                 type="date" 
@@ -182,13 +229,13 @@ function Home({ token, onLogout, navigate, role }) {
 
         <button 
             className="btn-primary" 
-            onClick={fetchEvents}
+            onClick={handleSearchClick}
             style={{ height: '38px', minWidth: '80px' }}
         >
             Szukaj 🔍
         </button>
         
-        {(filters.search || filters.location || filters.date) && (
+        {(filters.search || filters.location || filters.date || filters.category) && (
              <button 
                 onClick={clearFilters}
                 style={{ height: '38px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0 10px' }}
@@ -202,13 +249,13 @@ function Home({ token, onLogout, navigate, role }) {
       {loading ? (
         <p>Ładowanie...</p>
       ) : (
+        <>
         <div className="events-list" style={{ display: 'grid', gap: '15px' }}>
-          {events.length === 0 && <p>Brak wydarzeń. Bądź pierwszy i stwórz coś!</p>}
+          {events.length === 0 && <p>Brak wydarzeń spełniających kryteria.</p>}
 
           {events.map((event) => {
             const isMyEvent = currentUserId === event.creatorId
             const isAdmin = role === 'Admin'
-
             const canDelete = isMyEvent || isAdmin
 
             const myParticipation = event.participants?.find((p) => p.userId === currentUserId)
@@ -223,48 +270,57 @@ function Home({ token, onLogout, navigate, role }) {
                   padding: '15px',
                   borderRadius: '8px',
                   background: '#fff',
+                  position: 'relative'
                 }}
               >
+                <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#e9ecef', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75em', fontWeight: 'bold', color: '#495057' }}>
+                   {event.category || 'Inne'}
+                </div>
+
                 <div
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
+                    marginRight: '60px'
                   }}
                 >
-                  <h4>
+                  <h4 style={{ margin: '0 0 5px 0' }}>
                     {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}
                   </h4>
-
-                  {canDelete && (
-                    <button
-                      onClick={() => handleDelete(event.id)}
-                      style={{
-                        color: 'white',
-                        background: '#dc3545',
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '5px 10px',
-                        cursor: 'pointer',
-                        fontSize: '0.8em',
-                        marginLeft: '10px',
-                      }}
-                    >
-                      {isAdmin && !isMyEvent ? 'Usuń (Admin)' : 'Usuń'}
-                    </button>
-                  )}
                 </div>
 
-                <p>{event.description}</p>
-                <small>
+                <p style={{marginTop: '5px', color: '#333'}}>{event.description}</p>
+                <small style={{display: 'block', marginBottom: '10px', color: '#666'}}>
                   📍 {event.location} | 📅 {new Date(event.date).toLocaleString()}
                 </small>
 
-                <div style={{ marginTop: '5px', fontSize: '0.85em', color: '#555' }}>
-                  Uczestników: {event.participants?.length || 0}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                    <div style={{ fontSize: '0.85em', color: '#555' }}>
+                        Uczestników: {event.participants?.length || 0}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                        {canDelete && (
+                            <button
+                            onClick={() => handleDelete(event.id)}
+                            style={{
+                                color: 'white',
+                                background: '#dc3545',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '5px 10px',
+                                cursor: 'pointer',
+                                fontSize: '0.8em',
+                            }}
+                            >
+                            {isAdmin && !isMyEvent ? 'Usuń (Admin)' : 'Usuń'}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                <div style={{ marginTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ marginTop: '15px', borderTop: '1px solid #eee', paddingTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   {!isMyEvent && (
                     <>
                       {!isJoined && (
@@ -300,17 +356,40 @@ function Home({ token, onLogout, navigate, role }) {
             )
           })}
         </div>
+        
+        {/* --- PAGINACJA --- */}
+        {totalPages > 1 && (
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center' }}>
+                <button 
+                    disabled={page <= 1} 
+                    onClick={() => setPage(p => p - 1)}
+                    style={{ padding: '8px 12px', cursor: 'pointer', opacity: page <= 1 ? 0.5 : 1 }}
+                >
+                    &laquo; Poprzednia
+                </button>
+                <span>Strona {page} z {totalPages}</span>
+                <button 
+                    disabled={page >= totalPages} 
+                    onClick={() => setPage(p => p + 1)}
+                    style={{ padding: '8px 12px', cursor: 'pointer', opacity: page >= totalPages ? 0.5 : 1 }}
+                >
+                    Następna &raquo;
+                </button>
+            </div>
+        )}
+        </>
       )}
 
-      {/* Modal tworzenia */}
       {isCreateModalOpen && (
         <CreateEventModal
           onClose={() => setIsCreateModalOpen(false)}
-          onEventCreated={fetchEvents}
+          onEventCreated={() => {
+              setPage(1); 
+              fetchEvents();
+          }}
         />
       )}
 
-      {/* Modal - lista uczestników */}
       {managingEventId && (
         <ParticipantsModal
           eventId={managingEventId}

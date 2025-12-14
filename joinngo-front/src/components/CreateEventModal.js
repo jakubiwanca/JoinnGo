@@ -1,29 +1,7 @@
 import React, { useState } from 'react';
 import apiClient from '../api/axiosClient';
-
-const POLISH_CITIES = [
-  "Augustów", "Bełchatów", "Będzin", "Biała Podlaska", "Białystok", "Bielawa", "Bielsko-Biała", 
-  "Bolesławiec", "Brodnica", "Bydgoszcz", "Bytom", "Chełm", "Chojnice", "Chorzów", "Ciechanów", 
-  "Cieszyn", "Czeladź", "Czechowice-Dziedzice", "Częstochowa", "Dąbrowa Górnicza", "Dębica", 
-  "Dzierżoniów", "Elbląg", "Ełk", "Gdańsk", "Gdynia", "Giżycko", "Gliwice", "Głogów", "Gniezno", 
-  "Gorzów Wielkopolski", "Grodzisk Mazowiecki", "Grudziądz", "Iława", "Inowrocław", "Jarosław", 
-  "Jasło", "Jastrzębie-Zdrój", "Jaworzno", "Jelenia Góra", "Kalisz", "Katowice", "Kielce", 
-  "Kluczbork", "Kłodzko", "Knurów", "Kołobrzeg", "Konin", "Koszalin", "Kraków", "Kraśnik", 
-  "Krosno", "Kutno", "Kwidzyn", "Legionowo", "Legnica", "Leszno", "Lębork", "Lubin", "Lublin", 
-  "Luboń", "Łomża", "Łódź", "Łuków", "Malbork", "Marki", "Mielec", "Mikołów", "Mińsk Mazowiecki", 
-  "Mysłowice", "Nowa Sól", "Nowy Sącz", "Nowy Targ", "Nysa", "Olsztyn", "Oława", "Opole", 
-  "Ostrołęka", "Ostrowiec Świętokrzyski", "Ostrów Wielkopolski", "Oświęcim", "Otwock", 
-  "Pabianice", "Piaseczno", "Piekary Śląskie", "Piła", "Piotrków Trybunalski", "Płock", "Police", 
-  "Poznań", "Pruszków", "Przemyśl", "Puławy", "Racibórz", "Radom", "Radomsko", "Reda", 
-  "Ruda Śląska", "Rumia", "Rybnik", "Rzeszów", "Sanok", "Siedlce", "Siemianowice Śląskie", 
-  "Sieradz", "Skarżysko-Kamienna", "Skierniewice", "Słupsk", "Sopot", "Sosnowiec", "Stalowa Wola", 
-  "Starachowice", "Stargard", "Starogard Gdański", "Suwałki", "Szczecin", "Szczecinek", "Świdnica", 
-  "Świebodzice", "Świętochłowice", "Świnoujście", "Tarnobrzeg", "Tarnów", "Tczew", 
-  "Tomaszów Mazowiecki", "Toruń", "Tychy", "Wałbrzych", "Warszawa", "Wejherowo", "Włocławek", 
-  "Wodzisław Śląski", "Wołomin", "Wrocław", "Września", "Zabrze", "Zakopane", "Zamość", 
-  "Zawiercie", "Ząbki", "Zduńska Wola", "Zgierz", "Zgorzelec", "Zielona Góra", "Żagań", 
-  "Żory", "Żywiec", "Żyrardów"
-];
+import { POLISH_CITIES } from '../constants/cities';
+import { EVENT_CATEGORIES } from '../constants/categories';
 
 function CreateEventModal({ onClose, onEventCreated }) {
     const [formData, setFormData] = useState({
@@ -32,16 +10,22 @@ function CreateEventModal({ onClose, onEventCreated }) {
         date: '',
         location: '',
         city: '',
-        isPrivate: false
+        isPrivate: false,
+        category: 0
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        
+        let newValue = value;
+        if (type === 'checkbox') newValue = checked;
+        if (name === 'category') newValue = parseInt(value, 10);
+
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: newValue
         }));
     };
 
@@ -53,7 +37,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
         try {
             const payload = {
                 ...formData,
-                date: new Date(formData.date).toISOString() 
+                date: new Date(formData.date).toISOString()
             };
 
             await apiClient.post('/Event', payload);
@@ -88,6 +72,21 @@ function CreateEventModal({ onClose, onEventCreated }) {
                             placeholder="Np. Mecz piłki nożnej"
                             style={{width: '100%', padding: '8px', marginBottom: '10px'}}
                         />
+                    </div>
+                    
+                    {/* --- WYBÓR KATEGORII --- */}
+                    <div className="form-group">
+                        <label>Kategoria:</label>
+                        <select 
+                            name="category" 
+                            value={formData.category} 
+                            onChange={handleChange}
+                            style={{width: '100%', padding: '8px', marginBottom: '10px'}}
+                        >
+                            {EVENT_CATEGORIES.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="form-group">

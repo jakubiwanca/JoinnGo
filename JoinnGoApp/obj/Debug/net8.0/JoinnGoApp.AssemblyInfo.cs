@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("JoinnGoApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+de76c7d0872dccf1c416fda953c65ee285708eb4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bd1c3cda0590c15ea522d87437904d79f889ec4a")]
 [assembly: System.Reflection.AssemblyProductAttribute("JoinnGoApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("JoinnGoApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

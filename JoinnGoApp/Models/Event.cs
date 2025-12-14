@@ -1,3 +1,5 @@
+using JoinnGoApp.Models;
+
 public class Event
 {
     public int Id { get; set; }
@@ -7,6 +9,7 @@ public class Event
     public string Location { get; set; }
     public string City { get; set; }
     public bool IsPrivate { get; set; }
+    public EventCategory Category { get; set; }
     public int CreatorId { get; set; }
     public User Creator { get; set; }
 

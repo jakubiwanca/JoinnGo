@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using JoinnGoApp.Data;
+using JoinnGoApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
@@ -23,6 +24,7 @@ public class EventController : ControllerBase
         if (userIdClaim == null) return Unauthorized();
         var eventDate = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc);
         var userId = int.Parse(userIdClaim.Value);
+        
         var newEvent = new Event
         {
             Title = dto.Title,
@@ -31,8 +33,10 @@ public class EventController : ControllerBase
             Location = dto.Location,
             City = dto.City,
             IsPrivate = dto.IsPrivate,
+            Category = dto.Category,
             CreatorId = userId
         };
+
         var adminParticipant = new EventParticipant
         {
             User = _context.Users.Local.FirstOrDefault(u => u.Id == userId) ?? await _context.Users.FindAsync(userId),
@@ -41,20 +45,19 @@ public class EventController : ControllerBase
         };
 
         _context.Events.Add(newEvent);
-        _context.EventParticipants.Add(adminParticipant); 
-        
+        _context.EventParticipants.Add(adminParticipant);
+
         await _context.SaveChangesAsync();
 
         return Ok(newEvent);
     }
 
-    // dolacz do wydarzenia
     [HttpPost("{eventId}/join")]
     public async Task<IActionResult> JoinEvent(int eventId)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null) return Unauthorized();
-        
+
         var userId = int.Parse(userIdClaim.Value);
 
         var eventItem = await _context.Events.FindAsync(eventId);
@@ -80,7 +83,7 @@ public class EventController : ControllerBase
 
         if (status == ParticipantStatus.Interested)
             return Ok("Wysłano prośbę o dołączenie.");
-            
+
         return Ok("Dołączono do wydarzenia!");
     }
 
@@ -94,7 +97,7 @@ public class EventController : ControllerBase
         var participant = await _context.EventParticipants
             .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == userId);
 
-        if (participant == null) 
+        if (participant == null)
             return NotFound("Nie bierzesz udziału w tym wydarzeniu.");
 
         _context.EventParticipants.Remove(participant);
@@ -114,8 +117,8 @@ public class EventController : ControllerBase
 
         if (!isAdmin)
         {
-            isAdmin = User.Claims.Any(c => 
-                (c.Type == ClaimTypes.Role || c.Type == "role") && 
+            isAdmin = User.Claims.Any(c =>
+                (c.Type == ClaimTypes.Role || c.Type == "role") &&
                 c.Value == "Admin");
         }
 
@@ -146,13 +149,13 @@ public class EventController : ControllerBase
         var eventItem = await _context.Events.FindAsync(eventId);
         if (eventItem == null) return NotFound();
 
-        if (eventItem.CreatorId != userId) 
+        if (eventItem.CreatorId != userId)
             return Forbid();
 
         var participants = await _context.EventParticipants
             .Where(ep => ep.EventId == eventId)
             .Include(ep => ep.User)
-            .Select(ep => new 
+            .Select(ep => new
             {
                 ep.UserId,
                 Email = ep.User.Email,
@@ -171,7 +174,7 @@ public class EventController : ControllerBase
         var userId = int.Parse(userIdClaim.Value);
 
         var eventItem = await _context.Events.FindAsync(eventId);
-        if (eventItem == null || eventItem.CreatorId != userId) 
+        if (eventItem == null || eventItem.CreatorId != userId)
             return Forbid("Nie jesteś organizatorem tego wydarzenia.");
 
         var participant = await _context.EventParticipants
@@ -188,13 +191,16 @@ public class EventController : ControllerBase
 
         return BadRequest("Niepoprawny status.");
     }
-    
+
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetEvents(
-        [FromQuery] string? search, 
-        [FromQuery] string? location, 
-        [FromQuery] DateTime? date)
+        [FromQuery] string? search,
+        [FromQuery] string? location,
+        [FromQuery] DateTime? date,
+        [FromQuery] EventCategory? category,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
         var query = _context.Events
             .Include(e => e.Creator)
@@ -204,7 +210,7 @@ public class EventController : ControllerBase
         if (!string.IsNullOrEmpty(search))
         {
             search = search.ToLower();
-            query = query.Where(e => e.Title.ToLower().Contains(search) || 
+            query = query.Where(e => e.Title.ToLower().Contains(search) ||
                                      e.Description.ToLower().Contains(search));
         }
 
@@ -213,22 +219,28 @@ public class EventController : ControllerBase
             location = location.ToLower();
             query = query.Where(e => e.Location.ToLower().Contains(location));
         }
+        
+        if (category.HasValue)
+        {
+            query = query.Where(e => e.Category == category.Value);
+        }
 
         if (date.HasValue)
         {
             var rawDate = date.Value.Date;
-            
             var searchDateUtc = DateTime.SpecifyKind(rawDate, DateTimeKind.Utc);
-            
             var nextDayUtc = searchDateUtc.AddDays(1);
-
             query = query.Where(e => e.Date >= searchDateUtc && e.Date < nextDayUtc);
         }
+
+        var totalItems = await query.CountAsync();
 
         query = query.OrderBy(e => e.Date);
 
         var events = await query
-            .Select(e => new 
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => new
             {
                 e.Id,
                 e.Title,
@@ -237,13 +249,21 @@ public class EventController : ControllerBase
                 e.Location,
                 e.City,
                 e.IsPrivate,
+                Category = e.Category.ToString(),
                 e.CreatorId,
-                Creator = new { e.Creator.Email }, 
+                Creator = new { e.Creator.Email },
                 Participants = e.EventParticipants.Select(ep => new { ep.UserId, ep.Status }).ToList()
             })
             .ToListAsync();
-            
-        return Ok(events);
+
+        return Ok(new
+        {
+            Data = events,
+            TotalItems = totalItems,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)System.Math.Ceiling(totalItems / (double)pageSize)
+        });
     }
 }
 
@@ -255,4 +275,5 @@ public class CreateEventDto
     public string Location { get; set; }
     public string City { get; set; }
     public bool IsPrivate { get; set; }
+    public EventCategory Category { get; set; }
 }
