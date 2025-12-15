@@ -87,6 +87,36 @@ public class EventController : ControllerBase
         return Ok("Dołączono do wydarzenia!");
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateEvent(int id, [FromBody] UpdateEventDto dto)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var eventItem = await _context.Events.FindAsync(id);
+        if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
+
+        bool isAdmin = User.IsInRole("Admin");
+        
+        if (eventItem.CreatorId != userId && !isAdmin)
+        {
+            return Forbid("Nie masz uprawnień do edycji tego wydarzenia.");
+        }
+
+        eventItem.Title = dto.Title;
+        eventItem.Description = dto.Description;
+        eventItem.Date = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc);
+        eventItem.Location = dto.Location;
+        eventItem.City = dto.City;
+        eventItem.IsPrivate = dto.IsPrivate;
+        eventItem.Category = dto.Category;
+
+        await _context.SaveChangesAsync();
+
+        return Ok("Wydarzenie zaktualizowane pomyślnie.");
+    }
+
     [HttpDelete("{eventId}/leave")]
     public async Task<IActionResult> LeaveEvent(int eventId)
     {
@@ -276,7 +306,8 @@ public class EventController : ControllerBase
         if (!string.IsNullOrEmpty(location))
         {
             location = location.ToLower();
-            query = query.Where(e => e.Location.ToLower().Contains(location));
+            query = query.Where(e => e.Location.ToLower().Contains(location) || 
+                                     e.City.ToLower().Contains(location));
         }
         
         if (category.HasValue)
@@ -327,6 +358,17 @@ public class EventController : ControllerBase
 }
 
 public class CreateEventDto
+{
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public DateTime Date { get; set; }
+    public string Location { get; set; }
+    public string City { get; set; }
+    public bool IsPrivate { get; set; }
+    public EventCategory Category { get; set; }
+}
+
+public class UpdateEventDto
 {
     public string Title { get; set; }
     public string Description { get; set; }

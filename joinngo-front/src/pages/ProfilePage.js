@@ -1,29 +1,42 @@
 import React, { useEffect, useState } from 'react'
 import apiClient from '../api/axiosClient'
-import { Link } from 'react-router-dom'
+import EditEventModal from '../components/EditEventModal'
 
 function ProfilePage({ currentUserEmail, navigate }) {
   const [createdEvents, setCreatedEvents] = useState([])
   const [joinedEvents, setJoinedEvents] = useState([])
   const [loading, setLoading] = useState(true)
+  
+  const [editingEvent, setEditingEvent] = useState(null)
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [createdRes, joinedRes] = await Promise.all([
+        apiClient.get('/Event/my-created'),
+        apiClient.get('/Event/my-joined'),
+      ])
+      setCreatedEvents(createdRes.data)
+      setJoinedEvents(joinedRes.data)
+    } catch (err) {
+      console.error('Błąd pobierania profilu', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [createdRes, joinedRes] = await Promise.all([
-          apiClient.get('/Event/my-created'),
-          apiClient.get('/Event/my-joined'),
-        ])
-        setCreatedEvents(createdRes.data)
-        setJoinedEvents(joinedRes.data)
-      } catch (err) {
-        console.error('Błąd pobierania profilu', err)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchData()
   }, [])
+
+  const handleEditClick = (event) => {
+    setEditingEvent(event)
+  }
+
+  const handleEditSuccess = () => {
+    setEditingEvent(null)
+    fetchData()
+  }
 
   const renderEventList = (events, isJoinedList = false) => {
     if (events.length === 0) {
@@ -44,18 +57,37 @@ function ProfilePage({ currentUserEmail, navigate }) {
             className="event-card"
             style={{ borderLeft: isJoinedList ? '4px solid #10b981' : '4px solid #4f46e5' }}
           >
-            <div className="card-header">
-              <h4 style={{ fontSize: '1.1rem', margin: '0 0 5px 0' }}>{event.title}</h4>
-              <span
-                style={{
-                  fontSize: '0.8rem',
-                  background: '#f3f4f6',
-                  padding: '2px 8px',
-                  borderRadius: '10px',
+            <div 
+                className="card-header" 
+                style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'flex-start' 
                 }}
-              >
-                {event.category}
-              </span>
+            >
+              <div>
+                  <h4 style={{ fontSize: '1.1rem', margin: '0 0 5px 0' }}>{event.title}</h4>
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      background: '#f3f4f6',
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    {event.category}
+                  </span>
+              </div>
+
+              {!isJoinedList && (
+                <button
+                  className="btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+                  onClick={() => handleEditClick(event)}
+                >
+                  ✏️ Edytuj
+                </button>
+              )}
             </div>
 
             <div className="card-meta">
@@ -145,6 +177,15 @@ function ProfilePage({ currentUserEmail, navigate }) {
           </div>
         )}
       </div>
+
+      {/* Modal Edycji */}
+      {editingEvent && (
+        <EditEventModal
+          eventToEdit={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onEventUpdated={handleEditSuccess}
+        />
+      )}
     </div>
   )
 }
