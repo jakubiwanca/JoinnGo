@@ -1,56 +1,81 @@
 import React, { useState } from 'react';
-import { register, login } from '../api/auth';
-import { useNavigate } from 'react-router-dom';
+import apiClient from '../api/axiosClient';
+import { login } from '../api/auth';
 
-function LoginPage({ setToken }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+function LoginPage({ onLogin }) {
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
-  const handleRegister = async () => {
-    setError('');
-    try {
-      const message = await register(email, password);
-      alert(message);
-    } catch (err) {
-      setError(err.message || String(err));
-    }
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError('');
     try {
-      const data = await login(email, password);
-      localStorage.setItem('jwtToken', data.token);
-      setToken(data.token);
-      
-      navigate('/');
+      if (isLoginMode) {
+        const data = await login(formData.email, formData.password);
+        onLogin(data.token, data.role);
+      } else {
+        await apiClient.post('/User/register', {
+          email: formData.email,
+          password: formData.password
+        });
+        alert('Rejestracja udana! Możesz się teraz zalogować.');
+        setIsLoginMode(true);
+      }
     } catch (err) {
-      setError(err.message || String(err));
+      console.error(err);
+      setError('Wystąpił błąd. Sprawdź dane lub spróbuj ponownie.');
     }
   };
 
   return (
-    <div className="container">
-      <h2>Zaloguj się lub zarejestruj</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="input"
-      />
-      <input
-        type="password"
-        placeholder="Hasło"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="input"
-      />
-      <button onClick={handleLogin} className="btn">Zaloguj</button>
-      <button onClick={handleRegister} className="btn">Zarejestruj</button>
-      {error && <p className="error">{error}</p>}
+    <div className="auth-page">
+      <div className="auth-card">
+        <h2>{isLoginMode ? 'Witaj ponownie 👋' : "Dołącz do Join'nGo 🚀"}</h2>
+        
+        {error && <div style={{color: 'red', marginBottom: '15px', fontSize: '0.9rem'}}>{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <input
+              name="email"
+              type="email"
+              placeholder="Adres email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <input
+              name="password"
+              type="password"
+              placeholder="Hasło"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          
+          <button className="btn-primary" type="submit" style={{width: '100%'}}>
+            {isLoginMode ? 'Zaloguj się' : 'Zarejestruj się'}
+          </button>
+        </form>
+
+        <div className="toggle-text">
+          {isLoginMode ? 'Nie masz jeszcze konta?' : 'Masz już konto?'}
+          <span 
+            className="toggle-link" 
+            onClick={() => setIsLoginMode(!isLoginMode)}
+          >
+            {isLoginMode ? 'Zarejestruj się' : 'Zaloguj się'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

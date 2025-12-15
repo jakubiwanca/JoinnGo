@@ -1,55 +1,63 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { jwtDecode } from 'jwt-decode'
-import CreateEventModal from './components/CreateEventModal'
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
-import Home from './pages/Home'
-import LoginPage from './pages/LoginPage'
-import AdminPanel from './pages/AdminPanel'
-import './App.css'
+import Home from './pages/Home';
+import LoginPage from './pages/LoginPage';
+import AdminPanel from './pages/AdminPanel';
+import './App.css';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('jwtToken') || '')
+  const [token, setToken] = useState(localStorage.getItem('jwtToken') || '');
+  
+  let role = 'User';
+  let currentUserId = null;
 
-  let role = 'User'
-  let currentUserId = null
   if (token) {
     try {
-      const decoded = jwtDecode(token)
+        const decoded = jwtDecode(token);
+        role = decoded.role || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 'User';
+        
+        const nameId = decoded.nameid || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+        if (nameId) {
+            currentUserId = parseInt(nameId, 10);
+        }
 
-      role =
-        decoded.role ||
-        decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
-        'User'
-
-      const userIdClaim =
-        decoded.nameid ||
-        decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
-
-      if (userIdClaim) {
-        currentUserId = userIdClaim
-      }
     } catch (e) {
-      localStorage.removeItem('jwtToken')
-      setToken('')
+        localStorage.removeItem('jwtToken');
+        setToken('');
     }
   }
 
+  const handleLogin = (newToken) => {
+    localStorage.setItem('jwtToken', newToken);
+    setToken(newToken);
+  };
+
   const handleLogout = () => {
-    setToken('')
-    localStorage.removeItem('jwtToken')
-  }
+    localStorage.removeItem('jwtToken');
+    setToken('');
+  };
 
   const HomeWrapper = () => {
-    const navigate = useNavigate()
-    return <Home token={token} role={role} onLogout={handleLogout} navigate={navigate} />
-  }
+    const navigate = useNavigate();
+    return <Home token={token} role={role} onLogout={handleLogout} navigate={navigate} />;
+  };
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={token ? <HomeWrapper /> : <LoginPage setToken={setToken} />} />
-
+        <Route 
+            path="/" 
+            element={
+              token ? (
+                <HomeWrapper />
+              ) : (
+                <LoginPage onLogin={handleLogin} /> 
+              )
+            } 
+        />
+        
         <Route
           path="/admin"
           element={
@@ -60,11 +68,11 @@ function App() {
             )
           }
         />
-
+        
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

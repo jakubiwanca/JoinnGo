@@ -30,14 +30,8 @@ function Home({ token, onLogout, navigate, role }) {
       try {
         const decoded = jwtDecode(token)
         setCurrentUserEmail(decoded.email || decoded.unique_name || 'Użytkownik')
-
-        const userIdFromToken =
-          decoded.nameid ||
-          decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
-
-        if (userIdFromToken) {
-          setCurrentUserId(parseInt(userIdFromToken, 10))
-        }
+        const userIdFromToken = decoded.nameid || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+        if (userIdFromToken) setCurrentUserId(parseInt(userIdFromToken, 10))
       } catch (e) {
         console.error('Błąd dekodowania tokena', e)
       }
@@ -47,7 +41,6 @@ function Home({ token, onLogout, navigate, role }) {
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true)
-
       const params = new URLSearchParams()
       if (filters.search) params.append('search', filters.search)
       if (filters.location) params.append('location', filters.location)
@@ -55,7 +48,7 @@ function Home({ token, onLogout, navigate, role }) {
       if (filters.category !== '') params.append('category', filters.category)
       
       params.append('page', page)
-      params.append('pageSize', 10)
+      params.append('pageSize', 9)
 
       const response = await apiClient.get(`/Event?${params.toString()}`)
 
@@ -65,7 +58,6 @@ function Home({ token, onLogout, navigate, role }) {
       } else {
           setEvents(Array.isArray(response.data) ? response.data : [])
       }
-
     } catch (err) {
       console.error(err)
       setEvents([]) 
@@ -83,11 +75,6 @@ function Home({ token, onLogout, navigate, role }) {
     setFilters(prev => ({ ...prev, [name]: value }));
     setPage(1); 
   };
-
-  const handleSearchClick = () => {
-      setPage(1);
-      fetchEvents();
-  }
 
   const clearFilters = () => {
       setFilters({ search: '', location: '', date: '', category: '' });
@@ -126,259 +113,175 @@ function Home({ token, onLogout, navigate, role }) {
   }
 
   return (
-    <div className="container">
-      <header
-        className="header"
-        style={{
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
+    <div>
+      {/* HEADER */}
+      <header className="app-header">
         <div>
-          <h2>Witaj, {currentUserEmail}</h2>
+          <h2>Join'nGo</h2>
+          <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>Zalogowany jako: <b>{currentUserEmail}</b></span>
         </div>
-        <div className="header-buttons" style={{ display: 'flex', gap: '10px' }}>
+        <div className="header-actions">
           <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
-            + Stwórz wydarzenie
+            + Nowe Wydarzenie
           </button>
-
           {role === 'Admin' && (
-            <button className="header-btn" onClick={() => navigate('/admin')}>
+            <button className="btn-secondary" onClick={() => navigate('/admin')}>
               Panel Admina
             </button>
           )}
-
-          <button className="logout-btn" onClick={onLogout}>
-            Wyloguj się
-          </button>
+          <button className="logout-btn" onClick={onLogout}>Wyloguj</button>
         </div>
       </header>
 
-      <h3>Dostępne Wydarzenia</h3>
-
-      {/* --- PASEK FILTRÓW --- */}
-      <div style={{ 
-          marginBottom: '20px', 
-          padding: '15px', 
-          background: '#f8f9fa', 
-          borderRadius: '8px',
-          display: 'flex',
-          gap: '10px',
-          flexWrap: 'wrap',
-          alignItems: 'end'
-      }}>
-        {/* Szukaj */}
-        <div style={{ flex: 1, minWidth: '200px' }}>
-            <label style={{display: 'block', fontSize: '0.8em', marginBottom: '5px'}}>Szukaj (nazwa/opis):</label>
-            <input 
-                type="text" 
-                name="search" 
-                placeholder="np. Piłka nożna..." 
-                value={filters.search}
-                onChange={handleFilterChange}
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
-        </div>
-
-        {/* Kategoria */}
-        <div style={{ flex: 1, minWidth: '150px' }}>
-            <label style={{display: 'block', fontSize: '0.8em', marginBottom: '5px'}}>Kategoria:</label>
-            <select 
-                name="category" 
-                value={filters.category} 
-                onChange={handleFilterChange}
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-            >
-                <option value="">Wszystkie</option>
-                {EVENT_CATEGORIES.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-            </select>
-        </div>
-
-        {/* Miasto */}
-        <div style={{ flex: 1, minWidth: '150px' }}>
-            <label style={{display: 'block', fontSize: '0.8em', marginBottom: '5px'}}>Miasto:</label>
-            <input 
-                list="cities-datalist"
-                type="text" 
-                name="location" 
-                placeholder="np. Warszawa" 
-                value={filters.location}
-                onChange={handleFilterChange}
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
-            <datalist id="cities-datalist">
-                {POLISH_CITIES.map(city => <option key={city} value={city} />)}
-            </datalist>
-        </div>
-
-        {/* Data */}
-        <div style={{ flex: 1, minWidth: '130px' }}>
-            <label style={{display: 'block', fontSize: '0.8em', marginBottom: '5px'}}>Data:</label>
-            <input 
-                type="date" 
-                name="date" 
-                value={filters.date}
-                onChange={handleFilterChange}
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
-        </div>
-
-        <button 
-            className="btn-primary" 
-            onClick={handleSearchClick}
-            style={{ height: '38px', minWidth: '80px' }}
-        >
-            Szukaj 🔍
-        </button>
+      <div className="main-container">
         
-        {(filters.search || filters.location || filters.date || filters.category) && (
-             <button 
-                onClick={clearFilters}
-                style={{ height: '38px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0 10px' }}
-             >
-                Wyczyść ✕
-            </button>
-        )}
-      </div>
-      {/* --------------------- */}
+        {/* FILTERS */}
+        <div className="filters-bar">
+          <div className="filter-item">
+              <label>Szukaj</label>
+              <input 
+                  type="text" 
+                  name="search" 
+                  placeholder="Nazwa wydarzenia..." 
+                  value={filters.search}
+                  onChange={handleFilterChange}
+              />
+          </div>
 
-      {loading ? (
-        <p>Ładowanie...</p>
-      ) : (
-        <>
-        <div className="events-list" style={{ display: 'grid', gap: '15px' }}>
-          {events.length === 0 && <p>Brak wydarzeń spełniających kryteria.</p>}
+          <div className="filter-item" style={{flex: 0.5}}>
+              <label>Kategoria</label>
+              <select name="category" value={filters.category} onChange={handleFilterChange}>
+                  <option value="">Wszystkie</option>
+                  {EVENT_CATEGORIES.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+              </select>
+          </div>
 
-          {events.map((event) => {
-            const isMyEvent = currentUserId === event.creatorId
-            const isAdmin = role === 'Admin'
-            const canDelete = isMyEvent || isAdmin
+          <div className="filter-item" style={{flex: 0.7}}>
+              <label>Miasto</label>
+              <input 
+                  list="cities-datalist"
+                  type="text" 
+                  name="location" 
+                  placeholder="Wpisz miasto..." 
+                  value={filters.location}
+                  onChange={handleFilterChange}
+              />
+              <datalist id="cities-datalist">
+                  {POLISH_CITIES.map(city => <option key={city} value={city} />)}
+              </datalist>
+          </div>
 
-            const myParticipation = event.participants?.find((p) => p.userId === currentUserId)
-            const isJoined = !!myParticipation
-            const isConfirmed = myParticipation?.status === 1 
+          <div className="filter-item" style={{flex: 0.5}}>
+              <label>Data</label>
+              <input 
+                  type="date" 
+                  name="date" 
+                  value={filters.date}
+                  onChange={handleFilterChange}
+              />
+          </div>
 
-            return (
-              <div
-                key={event.id}
-                style={{
-                  border: '1px solid #ddd',
-                  padding: '15px',
-                  borderRadius: '8px',
-                  background: '#fff',
-                  position: 'relative'
-                }}
-              >
-                <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#e9ecef', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75em', fontWeight: 'bold', color: '#495057' }}>
-                   {event.category || 'Inne'}
-                </div>
+          {(filters.search || filters.location || filters.date || filters.category) && (
+               <button className="btn-secondary" onClick={clearFilters} style={{height: '42px'}}>
+                  Wyczyść filtry
+              </button>
+          )}
+        </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginRight: '60px'
-                  }}
-                >
-                  <h4 style={{ margin: '0 0 5px 0' }}>
-                    {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}
-                  </h4>
-                </div>
+        {/* EVENTS GRID */}
+        {loading ? (
+          <p style={{textAlign: 'center', color: '#666'}}>Ładowanie wydarzeń...</p>
+        ) : (
+          <>
+          <div className="events-grid">
+            {events.length === 0 && <p>Brak wydarzeń spełniających kryteria.</p>}
 
-                <p style={{marginTop: '5px', color: '#333'}}>{event.description}</p>
-                <small style={{display: 'block', marginBottom: '10px', color: '#666'}}>
-                  📍 {event.location} | 📅 {new Date(event.date).toLocaleString()}
-                </small>
+            {events.map((event) => {
+              const isMyEvent = currentUserId === event.creatorId
+              const isAdmin = role === 'Admin'
+              const canDelete = isMyEvent || isAdmin
+              const myParticipation = event.participants?.find((p) => p.userId === currentUserId)
+              const isJoined = !!myParticipation
+              const isConfirmed = myParticipation?.status === 1 
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                    <div style={{ fontSize: '0.85em', color: '#555' }}>
-                        Uczestników: {event.participants?.length || 0}
-                    </div>
+              return (
+                <div key={event.id} className="event-card">
+                  <div className="category-badge">
+                     {event.category || 'Inne'}
+                  </div>
 
-                    <div style={{ display: 'flex', gap: '5px' }}>
+                  <div className="card-header">
+                    <h4>
+                      {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}
+                    </h4>
+                  </div>
+
+                  <div className="card-meta">
+                    <span>📍 {event.city}, {event.location}</span>
+                    <span>📅 {new Date(event.date).toLocaleString()}</span>
+                  </div>
+
+                  <p className="card-desc">{event.description}</p>
+
+                  <div className="card-footer">
+                      <div className="participants-info">
+                          👥 {event.participants?.length || 0} osób
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
                         {canDelete && (
-                            <button
-                            onClick={() => handleDelete(event.id)}
-                            style={{
-                                color: 'white',
-                                background: '#dc3545',
-                                border: 'none',
-                                borderRadius: '4px',
-                                padding: '5px 10px',
-                                cursor: 'pointer',
-                                fontSize: '0.8em',
-                            }}
-                            >
-                            {isAdmin && !isMyEvent ? 'Usuń (Admin)' : 'Usuń'}
+                            <button className="btn-danger" onClick={() => handleDelete(event.id)}>
+                              Usuń
                             </button>
                         )}
-                    </div>
+
+                        {!isMyEvent ? (
+                          !isJoined ? (
+                            <button className="btn-primary" style={{padding: '6px 12px', fontSize: '0.9rem'}} onClick={() => handleJoin(event.id)}>
+                              {event.isPrivate ? 'Poproś' : 'Dołącz'}
+                            </button>
+                          ) : (
+                            <button className="btn-secondary" style={{padding: '6px 12px', fontSize: '0.9rem'}} onClick={() => handleLeave(event.id)}>
+                              {isConfirmed ? 'Opuść' : 'Anuluj'}
+                            </button>
+                          )
+                        ) : (
+                          <button className="btn-secondary" style={{padding: '6px 12px', fontSize: '0.9rem'}} onClick={() => setManagingEventId(event.id)}>
+                            Zarządzaj
+                          </button>
+                        )}
+                      </div>
+                  </div>
                 </div>
-
-                <div style={{ marginTop: '15px', borderTop: '1px solid #eee', paddingTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {!isMyEvent && (
-                    <>
-                      {!isJoined && (
-                        <button className="btn" onClick={() => handleJoin(event.id)}>
-                          {event.isPrivate ? 'Poproś o dołączenie' : 'Dołącz'}
-                        </button>
-                      )}
-
-                      {isJoined && (
-                        <button
-                          className="btn-secondary"
-                          style={{ background: '#ffc107', color: '#000', border: 'none' }}
-                          onClick={() => handleLeave(event.id)}
-                        >
-                          {isConfirmed ? 'Opuść wydarzenie' : 'Anuluj prośbę'}
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {isMyEvent && (
-                    <button
+              )
+            })}
+          </div>
+          
+          {/* PAGINATION */}
+          {totalPages > 1 && (
+              <div className="pagination">
+                  <button 
                       className="btn-secondary"
-                      style={{ fontSize: '0.9em' }}
-                      onClick={() => setManagingEventId(event.id)}
-                    >
-                      👥 Zarządzaj ({event.participants?.filter((p) => p.status === 0).length || 0}{' '}
-                      oczekuje)
-                    </button>
-                  )}
-                </div>
+                      disabled={page <= 1} 
+                      onClick={() => setPage(p => p - 1)}
+                  >
+                      &laquo; Poprzednia
+                  </button>
+                  <span>Strona {page} z {totalPages}</span>
+                  <button 
+                      className="btn-secondary"
+                      disabled={page >= totalPages} 
+                      onClick={() => setPage(p => p + 1)}
+                  >
+                      Następna &raquo;
+                  </button>
               </div>
-            )
-          })}
-        </div>
-        
-        {/* --- PAGINACJA --- */}
-        {totalPages > 1 && (
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center' }}>
-                <button 
-                    disabled={page <= 1} 
-                    onClick={() => setPage(p => p - 1)}
-                    style={{ padding: '8px 12px', cursor: 'pointer', opacity: page <= 1 ? 0.5 : 1 }}
-                >
-                    &laquo; Poprzednia
-                </button>
-                <span>Strona {page} z {totalPages}</span>
-                <button 
-                    disabled={page >= totalPages} 
-                    onClick={() => setPage(p => p + 1)}
-                    style={{ padding: '8px 12px', cursor: 'pointer', opacity: page >= totalPages ? 0.5 : 1 }}
-                >
-                    Następna &raquo;
-                </button>
-            </div>
+          )}
+          </>
         )}
-        </>
-      )}
+      </div>
 
       {isCreateModalOpen && (
         <CreateEventModal

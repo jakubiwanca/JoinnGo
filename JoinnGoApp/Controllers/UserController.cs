@@ -162,6 +162,16 @@ public class UserController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
+        var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (currentUserIdClaim == null) return Unauthorized();
+        
+        int currentUserId = int.Parse(currentUserIdClaim.Value);
+
+        if (id == currentUserId)
+        {
+            return BadRequest("Nie możesz usunąć własnego konta administratora.");
+        }
+
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound("User not found");
 
