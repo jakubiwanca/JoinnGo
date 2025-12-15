@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import LoginPage from './pages/LoginPage'
 import AdminPanel from './pages/AdminPanel'
 import { getProfile, logout } from './api/auth'
+import ProfilePage from './pages/ProfilePage'
 import './App.css'
 
 function App() {
@@ -55,6 +56,11 @@ function App() {
     )
   }
 
+  const ProfileWrapper = () => {
+    const navigate = useNavigate()
+    return <ProfilePage currentUserEmail={user?.email} navigate={navigate} />
+  }
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
@@ -79,6 +85,8 @@ function App() {
             )
           }
         />
+
+        <Route path="/profile" element={user ? <ProfileWrapper /> : <Navigate to="/" />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

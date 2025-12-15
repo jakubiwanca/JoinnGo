@@ -192,6 +192,65 @@ public class EventController : ControllerBase
         return BadRequest("Niepoprawny status.");
     }
 
+    [HttpGet("my-created")]
+    public async Task<IActionResult> GetMyCreatedEvents()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var events = await _context.Events
+            .Where(e => e.CreatorId == userId)
+            .OrderByDescending(e => e.Date)
+            .Select(e => new
+            {
+                e.Id,
+                e.Title,
+                e.Description,
+                e.Date,
+                e.Location,
+                e.City,
+                e.IsPrivate,
+                Category = e.Category.ToString(),
+                ParticipantsCount = e.EventParticipants.Count
+            })
+            .ToListAsync();
+
+        return Ok(events);
+    }
+
+    [HttpGet("my-joined")]
+    public async Task<IActionResult> GetMyJoinedEvents()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var events = await _context.Events
+            .Where(e => e.CreatorId != userId && e.EventParticipants.Any(ep => ep.UserId == userId))
+            .OrderByDescending(e => e.Date)
+            .Select(e => new
+            {
+                e.Id,
+                e.Title,
+                e.Description,
+                e.Date,
+                e.Location,
+                e.City,
+                e.IsPrivate,
+                Category = e.Category.ToString(),
+                CreatorId = e.CreatorId,
+                CreatorEmail = e.Creator.Email,
+                MyStatus = e.EventParticipants
+                    .Where(ep => ep.UserId == userId)
+                    .Select(ep => ep.Status.ToString())
+                    .FirstOrDefault()
+            })
+            .ToListAsync();
+
+        return Ok(events);
+    }
+
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetEvents(
