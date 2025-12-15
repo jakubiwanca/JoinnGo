@@ -2,26 +2,24 @@ import React, { useEffect, useState } from 'react'
 import { getAllUsers, deleteUser } from '../api/users'
 import { Link } from 'react-router-dom'
 
-function AdminPanel({ token, currentUserId, onLogout }) {
+function AdminPanel({currentUserId, onLogout }) {
   const [users, setUsers] = useState([])
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (token) {
-      getAllUsers(token)
-        .then(setUsers)
-        .catch((err) => {
-          console.error('getAllUsers error:', err)
-          setError(err.message || 'Błąd podczas ładowania użytkowników')
-        })
-    }
-  }, [token])
+    getAllUsers()
+      .then(setUsers)
+      .catch((err) => {
+        console.error("getAllUsers error:", err);
+        setError(err.message || "Błąd podczas ładowania użytkowników");
+      });
+  }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Czy na pewno chcesz usunąć tego użytkownika?')) return
 
     try {
-      await deleteUser(id, token)
+      await deleteUser(id)
       setUsers(users.filter((u) => String(u.id) !== String(id)))
     } catch (err) {
       console.error('deleteUser error:', err)

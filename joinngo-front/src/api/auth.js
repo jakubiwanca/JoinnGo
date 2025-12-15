@@ -1,36 +1,21 @@
-const API_URL = 'http://localhost:5038/api/User'
+import apiClient from './axiosClient';
 
-async function handleResponse(res) {
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(text || 'Request failed')
-  }
-  const contentType = res.headers.get('content-type') || ''
-  if (contentType.includes('application/json')) return res.json()
-  return res.text()
+export async function login(email, password) {
+  const response = await apiClient.post('/User/login', { email, password });
+  return response.data;
 }
 
 export async function register(email, password) {
-  const response = await fetch(`${API_URL}/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  })
-  return handleResponse(response)
+  const response = await apiClient.post('/User/register', { email, password });
+  return response.data;
 }
 
-export async function login(email, password) {
-  const response = await fetch(`${API_URL}/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  })
-  return handleResponse(response)
+export async function getProfile() {
+  const response = await apiClient.get('/User/profile');
+  return response.data;
 }
 
-export async function getProfile(token) {
-  const response = await fetch(`${API_URL}/profile`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return handleResponse(response)
+export async function logout() {
+  const response = await apiClient.post('/User/logout');
+  return response.data;
 }

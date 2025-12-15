@@ -1,78 +1,89 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import React, { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 
-import Home from './pages/Home';
-import LoginPage from './pages/LoginPage';
-import AdminPanel from './pages/AdminPanel';
-import './App.css';
+import Home from './pages/Home'
+import LoginPage from './pages/LoginPage'
+import AdminPanel from './pages/AdminPanel'
+import { getProfile, logout } from './api/auth'
+import './App.css'
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('jwtToken') || '');
-  
-  let role = 'User';
-  let currentUserId = null;
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  if (token) {
+  useEffect(() => {
+    checkSession()
+  }, [])
+
+  const checkSession = async () => {
     try {
-        const decoded = jwtDecode(token);
-        role = decoded.role || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 'User';
-        
-        const nameId = decoded.nameid || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-        if (nameId) {
-            currentUserId = parseInt(nameId, 10);
-        }
-
-    } catch (e) {
-        localStorage.removeItem('jwtToken');
-        setToken('');
+      const userData = await getProfile()
+      setUser(userData)
+    } catch (err) {
+      setUser(null)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleLogin = (newToken) => {
-    localStorage.setItem('jwtToken', newToken);
-    setToken(newToken);
-  };
+  const handleLogin = async () => {
+    setLoading(true)
+    await checkSession()
+  }
 
-  const handleLogout = () => {
-    localStorage.removeItem('jwtToken');
-    setToken('');
-  };
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (e) {
+      console.error('Błąd wylogowania', e)
+    } finally {
+      setUser(null)
+    }
+  }
 
   const HomeWrapper = () => {
-    const navigate = useNavigate();
-    return <Home token={token} role={role} onLogout={handleLogout} navigate={navigate} />;
-  };
+    const navigate = useNavigate()
+    return (
+      <Home
+        currentUserId={user ? parseInt(user.id, 10) : null}
+        currentUserEmail={user ? user.email : ''}
+        token={null}
+        role={user?.role || 'User'}
+        onLogout={handleLogout}
+        navigate={navigate}
+      />
+    )
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
+        Ładowanie aplikacji...
+      </div>
+    )
+  }
 
   return (
     <Router>
       <Routes>
-        <Route 
-            path="/" 
-            element={
-              token ? (
-                <HomeWrapper />
-              ) : (
-                <LoginPage onLogin={handleLogin} /> 
-              )
-            } 
-        />
-        
+        <Route path="/" element={user ? <HomeWrapper /> : <LoginPage onLogin={handleLogin} />} />
+
+        {/* Routing dla Admina */}
         <Route
           path="/admin"
           element={
-            role === 'Admin' && token ? (
-              <AdminPanel token={token} currentUserId={currentUserId} onLogout={handleLogout} />
+            user && user.role === 'Admin' ? (
+              <AdminPanel token={null} currentUserId={parseInt(user.id)} onLogout={handleLogout} />
             ) : (
               <Navigate to="/" />
             )
           }
         />
-        
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
-  );
+  )
 }
 
-export default App;
+export default App

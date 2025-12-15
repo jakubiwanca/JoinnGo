@@ -1,21 +1,11 @@
 import apiClient from './axiosClient';
 
-const ENDPOINT = '/User';
-
-export const getAllUsers = async (token) => {
-  const config = {
-      headers: { Authorization: `Bearer ${token}` }
-  };
-  
-  const response = await apiClient.get(`${ENDPOINT}/all`, config);
+export async function getAllUsers() {
+  const response = await apiClient.get('/User/all');
   return response.data;
-};
+}
 
-export const deleteUser = async (id, token) => {
-  const config = {
-      headers: { Authorization: `Bearer ${token}` }
-  };
-
-  const response = await apiClient.delete(`${ENDPOINT}/${id}`, config);
+export async function deleteUser(id) {
+  const response = await apiClient.delete(`/User/${id}`);
   return response.data;
-};
+}

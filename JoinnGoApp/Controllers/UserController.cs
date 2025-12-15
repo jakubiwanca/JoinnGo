@@ -58,29 +58,54 @@ public class UserController : ControllerBase
         if (user == null) return Unauthorized("Invalid email or password");
 
         var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+        bool isPasswordValid = false;
+
         if (verify == PasswordVerificationResult.Success || verify == PasswordVerificationResult.SuccessRehashNeeded)
         {
+            isPasswordValid = true;
             if (verify == PasswordVerificationResult.SuccessRehashNeeded)
             {
                 user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
                 await _context.SaveChangesAsync();
             }
-
-            var token = GenerateJwtToken(user);
-            return Ok(new { token });
         }
-
-        var sha = HashSha256(dto.Password);
-        if (sha == user.PasswordHash)
+        else 
         {
-            user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
-            await _context.SaveChangesAsync();
-
-            var token = GenerateJwtToken(user);
-            return Ok(new { token });
+            var sha = HashSha256(dto.Password);
+            if (sha == user.PasswordHash)
+            {
+                isPasswordValid = true;
+                user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
+                await _context.SaveChangesAsync();
+            }
         }
 
-        return Unauthorized("Invalid email or password");
+        if (!isPasswordValid)
+        {
+            return Unauthorized("Invalid email or password");
+        }
+
+        var token = GenerateJwtToken(user);
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddMinutes(60)
+        };
+
+        Response.Cookies.Append("jwt", token, cookieOptions);
+
+        return Ok(new { message = "Login successful", role = user.Role });
+    }
+
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        // Usuwamy ciasteczko przy wylogowaniu
+        Response.Cookies.Delete("jwt");
+        return Ok(new { message = "Logged out" });
     }
 
     private string GenerateJwtToken(User user)
@@ -139,7 +164,6 @@ public class UserController : ControllerBase
     [HttpGet("all")]
     public async Task<IActionResult> GetAllUsers()
     {
-        Console.WriteLine("Wejście do GetAllUsers");
         var users = await _context.Users
             .Select(u => new { u.Id, u.Email, u.Role })
             .ToListAsync();
@@ -162,15 +186,17 @@ public class UserController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
+        // --- ZABEZPIECZENIE: Admin nie może usunąć samego siebie ---
         var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (currentUserIdClaim == null) return Unauthorized();
-        
+
         int currentUserId = int.Parse(currentUserIdClaim.Value);
 
         if (id == currentUserId)
         {
             return BadRequest("Nie możesz usunąć własnego konta administratora.");
         }
+        // -----------------------------------------------------------
 
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound("User not found");

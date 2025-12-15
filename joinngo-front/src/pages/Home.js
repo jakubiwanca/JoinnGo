@@ -1,16 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import apiClient from '../api/axiosClient'
-import { jwtDecode } from 'jwt-decode'
 import CreateEventModal from '../components/CreateEventModal'
 import ParticipantsModal from '../components/ParticipantsModal'
 import { POLISH_CITIES } from '../constants/cities';
 import { EVENT_CATEGORIES } from '../constants/categories';
 
-function Home({ token, onLogout, navigate, role }) {
+function Home({onLogout, navigate, role, currentUserId, currentUserEmail }) {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [currentUserEmail, setCurrentUserEmail] = useState('')
-  const [currentUserId, setCurrentUserId] = useState(null)
 
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -24,19 +21,6 @@ function Home({ token, onLogout, navigate, role }) {
     date: '',
     category: ''
   })
-
-  useEffect(() => {
-    if (token) {
-      try {
-        const decoded = jwtDecode(token)
-        setCurrentUserEmail(decoded.email || decoded.unique_name || 'Użytkownik')
-        const userIdFromToken = decoded.nameid || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
-        if (userIdFromToken) setCurrentUserId(parseInt(userIdFromToken, 10))
-      } catch (e) {
-        console.error('Błąd dekodowania tokena', e)
-      }
-    }
-  }, [token])
 
   const fetchEvents = useCallback(async () => {
     try {
