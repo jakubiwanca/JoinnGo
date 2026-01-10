@@ -5,26 +5,28 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
   const [participants, setParticipants] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchParticipants = async () => {
-      try {
-        const response = await apiClient.get(`/Event/${eventId}/participants`)
-        setParticipants(response.data)
-      } catch (err) {
-        console.error('Błąd pobierania uczestników:', err)
-        alert('Nie udało się pobrać listy uczestników.')
-        onClose()
-      } finally {
-        setLoading(false)
-      }
+  const fetchParticipants = async () => {
+    try {
+      const response = await apiClient.get(`event/${eventId}/participants`)
+      setParticipants(response.data)
+    } catch (err) {
+      console.error('Błąd pobierania uczestników:', err)
+      alert('Nie udało się pobrać listy uczestników.')
+      onClose()
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchParticipants()
-  }, [eventId, onClose])
+  }, [eventId])
 
   const handleAccept = async (userId) => {
     try {
-      await apiClient.put(`/Event/${eventId}/participants/${userId}/status`, 'Confirmed')
+      await apiClient.put(`event/${eventId}/participants/${userId}/status`, 'Confirmed', {
+        headers: { 'Content-Type': 'application/json' }
+      })
 
       setParticipants((prev) =>
         prev.map((p) => {
@@ -37,6 +39,24 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
     } catch (err) {
       console.error(err)
       alert('Błąd podczas akceptacji.')
+    }
+  }
+
+  const handleRemove = async (userId) => {
+    if (!window.confirm('Czy na pewno chcesz usunąć tego uczestnika z wydarzenia?')) return
+
+    try {
+      console.log(`Attempting to remove user ${userId} from event ${eventId}. Request URL: event/${eventId}/participants/${userId}`);
+      await apiClient.delete(`event/${eventId}/participants/${userId}`)
+      
+      setParticipants((prev) => prev.filter((p) => p.userId !== userId))
+      
+      alert('Uczestnik został usunięty.')
+      
+      if (onStatusChange) onStatusChange()
+    } catch (err) {
+      console.error('Błąd podczas usuwania:', err)
+      alert(err.response?.data || 'Błąd podczas usuwania uczestnika.')
     }
   }
 
@@ -88,17 +108,27 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
                   <small>Status: {getStatusLabel(p.status)}</small>
                 </div>
 
-                {p.status === 'Interested' && (
-                  <button
-                    className="btn-primary"
-                    style={{ padding: '5px 10px', fontSize: '0.8em', background: '#28a745' }}
-                    onClick={() => handleAccept(p.userId)}
-                  >
-                    Zatwierdź
-                  </button>
-                )}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {p.status === 'Interested' && (
+                    <button
+                      className="btn-primary"
+                      style={{ padding: '5px 10px', fontSize: '0.8em', background: '#28a745', border: 'none', borderRadius: '4px', color: 'white' }}
+                      onClick={() => handleAccept(p.userId)}
+                    >
+                      Zatwierdź
+                    </button>
+                  )}
 
-                {p.status === 'Confirmed' && <span style={{ color: 'green' }}>✅</span>}
+                  {p.status === 'Confirmed' && <span style={{ color: 'green', fontSize: '1.2em' }}>✅</span>}
+
+                  <button
+                    className="btn-danger"
+                    style={{ padding: '5px 10px', fontSize: '0.8em', borderRadius: '4px' }}
+                    onClick={() => handleRemove(p.userId)}
+                  >
+                    Usuń
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -114,6 +144,8 @@ function getStatusLabel(status) {
       return 'Oczekuje ⏳'
     case 'Confirmed':
       return 'Potwierdzony ✅'
+    case 'Rejected':
+      return 'Odrzucony ❌'
     default:
       return status
   }

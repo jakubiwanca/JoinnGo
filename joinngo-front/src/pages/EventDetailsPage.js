@@ -123,6 +123,10 @@ const EventDetailsPage = ({ currentUserId }) => {
       </button>
     )
   } else {
+    const buttonText = event.isPrivate 
+      ? 'Poproś o dołączenie' 
+      : 'Dołącz do wydarzenia';
+
     actionButton = (
       <button
         className="btn-primary"
@@ -130,7 +134,7 @@ const EventDetailsPage = ({ currentUserId }) => {
         onClick={handleJoin}
         style={{ padding: '10px 25px' }}
       >
-        {actionLoading ? 'Łączenie...' : isFull ? 'Brak miejsc' : 'Dołącz do wydarzenia'}
+        {actionLoading ? 'Przetwarzanie...' : isFull ? 'Brak miejsc' : buttonText}
       </button>
     )
   }

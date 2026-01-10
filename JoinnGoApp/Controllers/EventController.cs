@@ -222,6 +222,34 @@ public class EventController : ControllerBase
         return BadRequest("Niepoprawny status.");
     }
 
+    [HttpDelete("{eventId}/participants/{participantId}")]
+public async Task<IActionResult> RemoveParticipant(int eventId, int participantId)
+{
+    var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+    if (userIdClaim == null) return Unauthorized();
+    var currentUserId = int.Parse(userIdClaim.Value);
+
+    var eventItem = await _context.Events.FindAsync(eventId);
+    if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
+
+    bool isAdmin = User.IsInRole("Admin");
+    if (eventItem.CreatorId != currentUserId && !isAdmin)
+    {
+        return Forbid("Nie masz uprawnień do usuwania uczestników z tego wydarzenia.");
+    }
+
+    var participant = await _context.EventParticipants
+        .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == participantId);
+
+    if (participant == null)
+        return NotFound("Uczestnik nie został znaleziony na liście.");
+
+    _context.EventParticipants.Remove(participant);
+    await _context.SaveChangesAsync();
+
+    return Ok("Uczestnik został usunięty.");
+}
+
     [HttpGet("{id}")]
     public async Task<ActionResult<Event>> GetEvent(int id)
     {
