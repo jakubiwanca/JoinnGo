@@ -7,7 +7,7 @@ import AdminPanel from './pages/AdminPanel'
 import { getProfile, logout } from './api/auth'
 import ProfilePage from './pages/ProfilePage'
 import './App.css'
-import EventDetailPage from './pages/EventDetailsPage';
+import EventDetailsPage from './pages/EventDetailsPage';
 
 function App() {
   const [user, setUser] = useState(null)
@@ -79,7 +79,7 @@ function App() {
           path="/admin"
           element={
             user && user.role === 'Admin' ? (
-              <AdminPanel token={null} currentUserId={parseInt(user.id)} onLogout={handleLogout} />
+              <AdminPanel token={null} currentUserId={parseInt(user.id, 10)} onLogout={handleLogout} />
             ) : (
               <Navigate to="/" />
             )
@@ -88,7 +88,10 @@ function App() {
 
         <Route path="/profile" element={user ? <ProfileWrapper /> : <Navigate to="/" />} />
 
-        <Route path="/event/:id" element={<EventDetailPage />} />
+        <Route 
+          path="/event/:id" 
+          element={<EventDetailsPage currentUserId={user ? parseInt(user.id, 10) : null} />} 
+        />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
