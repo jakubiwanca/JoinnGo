@@ -8,7 +8,7 @@ function AdminPanel({ currentUserId, onLogout }) {
 
   useEffect(() => {
     getAllUsers()
-      .then(setUsers)
+      .then(users => setUsers(users.filter(u => u.email)))
       .catch((err) => {
         console.error('getAllUsers error:', err)
         setError(err.message || 'Błąd podczas ładowania użytkowników')

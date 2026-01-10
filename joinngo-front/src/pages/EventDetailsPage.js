@@ -16,8 +16,8 @@ const EventDetailsPage = ({ currentUserId }) => {
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
 
   const isUserParticipant = useCallback((theEvent) => {
-    if (!theEvent || !theEvent.eventParticipants) return false;
-    return theEvent.eventParticipants.some(p => p.userId === currentUserId);
+    if (!theEvent || !theEvent.participants) return false;
+    return theEvent.participants.some(p => p.userId === currentUserId);
   }, [currentUserId]);
 
   const fetchComments = useCallback(async () => {
@@ -111,7 +111,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     )
   if (!event) return null
 
-  const participantsList = event.eventParticipants || []
+  const participantsList = event.participants || []
   const isOrganizer = currentUserId === event.creatorId
   const isJoined = isUserParticipant(event);
   const isFull = event.maxParticipants > 0 && participantsList.length >= event.maxParticipants
@@ -199,9 +199,9 @@ const EventDetailsPage = ({ currentUserId }) => {
           <span>
             📅 <b>Data:</b> {new Date(event.date).toLocaleString()}
           </span>
-          <span>
+          {event.creator && <span>
             👤 <b>Organizator:</b> {event.creator?.email || event.creatorId}
-          </span>
+          </span>}
         </div>
 
         <div className="card-body">

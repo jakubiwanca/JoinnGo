@@ -223,47 +223,82 @@ public class EventController : ControllerBase
     }
 
     [HttpDelete("{eventId}/participants/{participantId}")]
-public async Task<IActionResult> RemoveParticipant(int eventId, int participantId)
-{
-    var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-    if (userIdClaim == null) return Unauthorized();
-    var currentUserId = int.Parse(userIdClaim.Value);
-
-    var eventItem = await _context.Events.FindAsync(eventId);
-    if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
-
-    bool isAdmin = User.IsInRole("Admin");
-    if (eventItem.CreatorId != currentUserId && !isAdmin)
+    public async Task<IActionResult> RemoveParticipant(int eventId, int participantId)
     {
-        return Forbid("Nie masz uprawnień do usuwania uczestników z tego wydarzenia.");
-    }
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var currentUserId = int.Parse(userIdClaim.Value);
 
-    var participant = await _context.EventParticipants
-        .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == participantId);
+        var eventItem = await _context.Events.FindAsync(eventId);
+        if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
 
-    if (participant == null)
-        return NotFound("Uczestnik nie został znaleziony na liście.");
-
-    _context.EventParticipants.Remove(participant);
-    await _context.SaveChangesAsync();
-
-    return Ok("Uczestnik został usunięty.");
-}
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Event>> GetEvent(int id)
-    {
-        var eventItem = await _context.Events
-            .Include(e => e.EventParticipants)
-            .Include(e => e.Creator)
-            .FirstOrDefaultAsync(e => e.Id == id);
-
-        if (eventItem == null)
+        bool isAdmin = User.IsInRole("Admin");
+        if (eventItem.CreatorId != currentUserId && !isAdmin)
         {
-            return NotFound("Nie znaleziono wydarzenia.");
+            return Forbid("Nie masz uprawnień do usuwania uczestników z tego wydarzenia.");
         }
 
-        return eventItem;
+        var participant = await _context.EventParticipants
+            .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == participantId);
+
+        if (participant == null)
+            return NotFound("Uczestnik nie został znaleziony na liście.");
+
+        _context.EventParticipants.Remove(participant);
+        await _context.SaveChangesAsync();
+
+        return Ok("Uczestnik został usunięty.");
+    }
+
+
+    [HttpGet("{eventId}/is-participant")]
+    public async Task<IActionResult> IsUserParticipant(int eventId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var participant = await _context.EventParticipants
+            .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == userId);
+
+        if (participant == null)
+        {
+            return Ok(new { isParticipant = false, status = "" });
+        }
+
+        return Ok(new { isParticipant = true, status = participant.Status.ToString() });
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetEvent(int id)
+    {
+        var eventItem = await _context.Events
+            .Include(e => e.Creator)
+            .Include(e => e.EventParticipants)
+                .ThenInclude(ep => ep.User)
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
+
+        return Ok(new
+        {
+            eventItem.Id,
+            eventItem.Title,
+            eventItem.Description,
+            eventItem.Date,
+            eventItem.Location,
+            eventItem.City,
+            eventItem.IsPrivate,
+            Category = eventItem.Category.ToString(),
+            eventItem.CreatorId,
+            Creator = eventItem.Creator != null ? new { eventItem.Creator.Email } : null,
+            Participants = eventItem.EventParticipants.Select(ep => new
+            {
+                ep.UserId,
+                Email = ep.User?.Email,
+                Status = ep.Status
+            }).ToList()
+        });
     }
 
     [HttpGet("my-created")]
@@ -302,6 +337,7 @@ public async Task<IActionResult> RemoveParticipant(int eventId, int participantI
 
         var events = await _context.Events
             .Where(e => e.CreatorId != userId && e.EventParticipants.Any(ep => ep.UserId == userId))
+            .Include(e => e.Creator)
             .OrderByDescending(e => e.Date)
             .Select(e => new
             {
@@ -314,7 +350,7 @@ public async Task<IActionResult> RemoveParticipant(int eventId, int participantI
                 e.IsPrivate,
                 Category = e.Category.ToString(),
                 CreatorId = e.CreatorId,
-                CreatorEmail = e.Creator.Email,
+                CreatorEmail = e.Creator != null ? e.Creator.Email : null,
                 MyStatus = e.EventParticipants
                     .Where(ep => ep.UserId == userId)
                     .Select(ep => ep.Status.ToString())
@@ -385,7 +421,7 @@ public async Task<IActionResult> RemoveParticipant(int eventId, int participantI
                 e.IsPrivate,
                 Category = e.Category.ToString(),
                 e.CreatorId,
-                Creator = new { e.Creator.Email },
+                Creator = e.Creator != null ? new { e.Creator.Email } : null,
                 Participants = e.EventParticipants.Select(ep => new { ep.UserId, ep.Status }).ToList()
             })
             .ToListAsync();
@@ -399,8 +435,6 @@ public async Task<IActionResult> RemoveParticipant(int eventId, int participantI
             TotalPages = (int)System.Math.Ceiling(totalItems / (double)pageSize)
         });
     }
-
-    // --- Comments Endpoints ---
 
     [HttpGet("{eventId}/comments")]
     public async Task<IActionResult> GetComments(int eventId)
