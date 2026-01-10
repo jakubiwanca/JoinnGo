@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using JoinnGoApp.Models;
 
 public class Event
@@ -14,4 +16,5 @@ public class Event
     public User Creator { get; set; }
 
     public List<EventParticipant> EventParticipants { get; set; } = new List<EventParticipant>();
+    public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }

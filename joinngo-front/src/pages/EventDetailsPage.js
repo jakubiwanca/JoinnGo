@@ -1,38 +1,61 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import ParticipantsModal from '../components/ParticipantsModal';
+import Comments from '../components/Comments';
 
 const EventDetailsPage = ({ currentUserId }) => {
   const { id } = useParams()
   const navigate = useNavigate()
 
   const [event, setEvent] = useState(null)
+  const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
 
-  const fetchEvent = async () => {
+  const isUserParticipant = useCallback((theEvent) => {
+    if (!theEvent || !theEvent.eventParticipants) return false;
+    return theEvent.eventParticipants.some(p => p.userId === currentUserId);
+  }, [currentUserId]);
+
+  const fetchComments = useCallback(async () => {
     try {
-      const response = await apiClient.get(`/Event/${id}`)
-      setEvent(response.data)
-      setLoading(false)
+      const response = await apiClient.get(`event/${id}/comments`);
+      setComments(response.data);
+    } catch (err) {
+      // It's okay if this fails (e.g., user not a participant), don't show an error
+      console.error('Could not fetch comments:', err);
+      setComments([]); // Ensure comments are cleared if user loses access
+    }
+  }, [id]);
+
+  const fetchEvent = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(`event/${id}`)
+      const fetchedEvent = response.data;
+      setEvent(fetchedEvent);
+      if (isUserParticipant(fetchedEvent)) {
+        fetchComments();
+      }
     } catch (err) {
       console.error(err)
       setError('Nie udało się pobrać szczegółów wydarzenia.')
+    } finally {
       setLoading(false)
     }
-  }
+  }, [id, fetchComments, isUserParticipant]);
 
   useEffect(() => {
     fetchEvent()
-  }, [id])
+  }, [fetchEvent])
 
   const handleJoin = async () => {
     setActionLoading(true)
     try {
-      const response = await apiClient.post(`/Event/${id}/join`)
+      const response = await apiClient.post(`event/${id}/join`)
       alert(response.data)
       fetchEvent()
     } catch (err) {
@@ -46,7 +69,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     if (!window.confirm('Czy na pewno chcesz zrezygnować z udziału?')) return
     setActionLoading(true)
     try {
-      const response = await apiClient.delete(`/Event/${id}/leave`)
+      const response = await apiClient.delete(`event/${id}/leave`)
       alert(response.data)
       fetchEvent()
     } catch (err) {
@@ -60,7 +83,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     if (!window.confirm('Czy na pewno chcesz TRWALE usunąć to wydarzenie?')) return
     setActionLoading(true)
     try {
-      await apiClient.delete(`/Event/${id}`)
+      await apiClient.delete(`event/${id}`)
       alert('Wydarzenie zostało usunięte.')
       navigate('/')
     } catch (err) {
@@ -69,6 +92,10 @@ const EventDetailsPage = ({ currentUserId }) => {
       setActionLoading(false)
     }
   }
+
+  const handleCommentPosted = (newComment) => {
+    setComments(prevComments => [...prevComments, newComment]);
+  };
 
   if (loading)
     return (
@@ -86,7 +113,7 @@ const EventDetailsPage = ({ currentUserId }) => {
 
   const participantsList = event.eventParticipants || []
   const isOrganizer = currentUserId === event.creatorId
-  const isJoined = participantsList.some((p) => p.userId === currentUserId)
+  const isJoined = isUserParticipant(event);
   const isFull = event.maxParticipants > 0 && participantsList.length >= event.maxParticipants
 
   let actionButton
@@ -198,6 +225,16 @@ const EventDetailsPage = ({ currentUserId }) => {
 
           <div style={{ display: 'flex', gap: '10px' }}>{actionButton}</div>
         </div>
+        
+        {isJoined && (
+            <Comments 
+                eventId={id}
+                comments={comments}
+                onCommentPosted={handleCommentPosted}
+                currentUserId={currentUserId}
+            />
+        )}
+
       </div>
       {isParticipantsModalOpen && (
                 <ParticipantsModal

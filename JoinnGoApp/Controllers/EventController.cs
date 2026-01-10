@@ -399,6 +399,77 @@ public async Task<IActionResult> RemoveParticipant(int eventId, int participantI
             TotalPages = (int)System.Math.Ceiling(totalItems / (double)pageSize)
         });
     }
+
+    // --- Comments Endpoints ---
+
+    [HttpGet("{eventId}/comments")]
+    public async Task<IActionResult> GetComments(int eventId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var isParticipant = await _context.EventParticipants
+            .AnyAsync(ep => ep.EventId == eventId && ep.UserId == userId);
+
+        if (!isParticipant)
+        {
+            return Forbid("Tylko uczestnicy mogą przeglądać komentarze.");
+        }
+
+        var comments = await _context.Comments
+            .Where(c => c.EventId == eventId)
+            .Include(c => c.User)
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => new
+            {
+                c.Id,
+                c.Content,
+                c.CreatedAt,
+                c.UserId,
+                UserEmail = c.User != null ? c.User.Email : "Użytkownik usunięty"
+            })
+            .ToListAsync();
+
+        return Ok(comments);
+    }
+
+    [HttpPost("{eventId}/comments")]
+    public async Task<IActionResult> PostComment(int eventId, [FromBody] CommentDto dto)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var participant = await _context.EventParticipants
+            .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == userId);
+
+        if (participant == null || participant.Status != ParticipantStatus.Confirmed)
+        {
+            return Forbid("Tylko potwierdzeni uczestnicy mogą dodawać komentarze.");
+        }
+
+        var comment = new Comment
+        {
+            Content = dto.Content,
+            EventId = eventId,
+            UserId = userId
+        };
+
+        _context.Comments.Add(comment);
+        await _context.SaveChangesAsync();
+
+        var commentToReturn = new
+        {
+            comment.Id,
+            comment.Content,
+            comment.CreatedAt,
+            comment.UserId,
+            UserEmail = (await _context.Users.FindAsync(userId))?.Email
+        };
+
+        return CreatedAtAction(nameof(GetComments), new { eventId = eventId }, commentToReturn);
+    }
 }
 
 public class CreateEventDto
@@ -421,4 +492,9 @@ public class UpdateEventDto
     public string City { get; set; }
     public bool IsPrivate { get; set; }
     public EventCategory Category { get; set; }
+}
+
+public class CommentDto
+{
+    public string Content { get; set; }
 }
