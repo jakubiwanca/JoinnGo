@@ -103,7 +103,6 @@ public class UserController : ControllerBase
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        // Usuwamy ciasteczko przy wylogowaniu
         Response.Cookies.Delete("jwt");
         return Ok(new { message = "Logged out" });
     }
@@ -186,7 +185,6 @@ public class UserController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        // --- ZABEZPIECZENIE: Admin nie może usunąć samego siebie ---
         var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (currentUserIdClaim == null) return Unauthorized();
 
@@ -196,7 +194,6 @@ public class UserController : ControllerBase
         {
             return BadRequest("Nie możesz usunąć własnego konta administratora.");
         }
-        // -----------------------------------------------------------
 
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound("User not found");

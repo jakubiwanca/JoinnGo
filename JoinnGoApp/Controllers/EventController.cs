@@ -24,7 +24,7 @@ public class EventController : ControllerBase
         if (userIdClaim == null) return Unauthorized();
         var eventDate = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc);
         var userId = int.Parse(userIdClaim.Value);
-        
+
         var newEvent = new Event
         {
             Title = dto.Title,
@@ -98,7 +98,7 @@ public class EventController : ControllerBase
         if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
 
         bool isAdmin = User.IsInRole("Admin");
-        
+
         if (eventItem.CreatorId != userId && !isAdmin)
         {
             return Forbid("Nie masz uprawnień do edycji tego wydarzenia.");
@@ -157,7 +157,7 @@ public class EventController : ControllerBase
 
         if (eventItem.CreatorId != userId && !isAdmin)
         {
-            return Forbid("Nie masz uprawnień do usunięcia tego wydarzenia (Backend: Nie wykryto roli Admin).");
+            return Forbid("Nie masz uprawnień do usunięcia tego wydarzenia.");
         }
 
         var participants = _context.EventParticipants.Where(ep => ep.EventId == id);
@@ -220,6 +220,22 @@ public class EventController : ControllerBase
         }
 
         return BadRequest("Niepoprawny status.");
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Event>> GetEvent(int id)
+    {
+        var eventItem = await _context.Events
+            .Include(e => e.EventParticipants)
+            .Include(e => e.Creator)
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (eventItem == null)
+        {
+            return NotFound("Nie znaleziono wydarzenia.");
+        }
+
+        return eventItem;
     }
 
     [HttpGet("my-created")]
@@ -306,10 +322,10 @@ public class EventController : ControllerBase
         if (!string.IsNullOrEmpty(location))
         {
             location = location.ToLower();
-            query = query.Where(e => e.Location.ToLower().Contains(location) || 
+            query = query.Where(e => e.Location.ToLower().Contains(location) ||
                                      e.City.ToLower().Contains(location));
         }
-        
+
         if (category.HasValue)
         {
             query = query.Where(e => e.Category == category.Value);

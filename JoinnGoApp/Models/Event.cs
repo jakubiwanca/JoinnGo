@@ -13,5 +13,5 @@ public class Event
     public int CreatorId { get; set; }
     public User Creator { get; set; }
 
-    public List<EventParticipant> EventParticipants { get; set; }
+    public List<EventParticipant> EventParticipants { get; set; } = new List<EventParticipant>();
 }

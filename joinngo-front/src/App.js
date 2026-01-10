@@ -7,6 +7,7 @@ import AdminPanel from './pages/AdminPanel'
 import { getProfile, logout } from './api/auth'
 import ProfilePage from './pages/ProfilePage'
 import './App.css'
+import EventDetailPage from './pages/EventDetailsPage';
 
 function App() {
   const [user, setUser] = useState(null)
@@ -74,7 +75,6 @@ function App() {
       <Routes>
         <Route path="/" element={user ? <HomeWrapper /> : <LoginPage onLogin={handleLogin} />} />
 
-        {/* Routing dla Admina */}
         <Route
           path="/admin"
           element={
@@ -87,6 +87,8 @@ function App() {
         />
 
         <Route path="/profile" element={user ? <ProfileWrapper /> : <Navigate to="/" />} />
+
+        <Route path="/event/:id" element={<EventDetailPage />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

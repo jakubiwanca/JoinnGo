@@ -7,6 +7,5 @@ public class User
     public string Role { get; set; } = "User";
 
 
-    // Relacje
     public List<EventParticipant> EventParticipants { get; set; } = new List<EventParticipant>();
 }

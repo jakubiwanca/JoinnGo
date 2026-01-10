@@ -4,6 +4,7 @@ import CreateEventModal from '../components/CreateEventModal'
 import ParticipantsModal from '../components/ParticipantsModal'
 import { POLISH_CITIES } from '../constants/cities'
 import { EVENT_CATEGORIES } from '../constants/categories'
+import { Link } from 'react-router-dom';
 
 function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
   const [events, setEvents] = useState([])
@@ -196,7 +197,14 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                 const isConfirmed = myParticipation?.status === 1
 
                 return (
-                  <div key={event.id} className="event-card">
+                  <div 
+                    key={event.id} 
+                    className="event-card"
+                    onClick={() => navigate(`/event/${event.id}`)}
+                    style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
                     <div className="category-badge">{event.category || 'Inne'}</div>
 
                     <div className="card-header">
@@ -221,7 +229,10 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
 
                       <div style={{ display: 'flex', gap: '8px' }}>
                         {canDelete && (
-                          <button className="btn-danger" onClick={() => handleDelete(event.id)}>
+                          <button 
+                            className="btn-danger" 
+                            onClick={(e) => { e.stopPropagation(); handleDelete(event.id); }}
+                          >
                             Usuń
                           </button>
                         )}
@@ -231,7 +242,7 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                             <button
                               className="btn-primary"
                               style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                              onClick={() => handleJoin(event.id)}
+                              onClick={(e) => { e.stopPropagation(); handleJoin(event.id); }}
                             >
                               {event.isPrivate ? 'Poproś' : 'Dołącz'}
                             </button>
@@ -239,7 +250,7 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                             <button
                               className="btn-secondary"
                               style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                              onClick={() => handleLeave(event.id)}
+                              onClick={(e) => { e.stopPropagation(); handleLeave(event.id); }}
                             >
                               {isConfirmed ? 'Opuść' : 'Anuluj'}
                             </button>
@@ -248,7 +259,7 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                           <button
                             className="btn-secondary"
                             style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                            onClick={() => setManagingEventId(event.id)}
+                            onClick={(e) => { e.stopPropagation(); setManagingEventId(event.id); }}
                           >
                             Zarządzaj
                           </button>

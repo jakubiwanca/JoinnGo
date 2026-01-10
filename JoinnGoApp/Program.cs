@@ -96,42 +96,6 @@ builder.Services.AddControllers()
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var db = services.GetRequiredService<MyDbContext>();
-        db.Database.EnsureCreated();
-
-        var adminUser = db.Users.FirstOrDefault(u => u.Email == "admin@example.com");
-
-        if (adminUser == null)
-        {
-            var admin = new User
-            {
-                Email = "admin@example.com",
-                Role = "Admin"
-            };
-            var hasher = new PasswordHasher<User>();
-            admin.PasswordHash = hasher.HashPassword(admin, "Admin123!");
-            db.Users.Add(admin);
-            Console.WriteLine("Seed: Utworzono konto admin@example.com");
-        }
-        else if (adminUser.Role != "Admin")
-        {
-            adminUser.Role = "Admin";
-            Console.WriteLine("Seed: Naprawiono rolę dla admin@example.com na Admin");
-        }
-
-        db.SaveChanges();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("Błąd podczas seedowania bazy: " + ex);
-    }
-}
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

@@ -6,13 +6,14 @@ public enum ParticipantStatus
 }
 
 public class EventParticipant
-{
-    public int Id { get; set; }
+    {
+        public int Id { get; set; }
 
-    public int UserId { get; set; }
-    public User User { get; set; }
+        public int UserId { get; set; }
+        public User? User { get; set; }
 
-    public int EventId { get; set; }
-    public Event Event { get; set; }
-    public ParticipantStatus Status { get; set; } = ParticipantStatus.Confirmed;
-}
+        public int EventId { get; set; }
+        public Event? Event { get; set; }
+
+        public ParticipantStatus Status { get; set; }
+    }

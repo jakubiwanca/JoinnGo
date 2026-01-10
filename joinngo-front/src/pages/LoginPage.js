@@ -1,43 +1,45 @@
-import React, { useState } from 'react';
-import apiClient from '../api/axiosClient';
-import { login } from '../api/auth';
+import React, { useState } from 'react'
+import apiClient from '../api/axiosClient'
+import { login } from '../api/auth'
 
 function LoginPage({ onLogin }) {
-  const [isLoginMode, setIsLoginMode] = useState(true);
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [isLoginMode, setIsLoginMode] = useState(true)
+  const [formData, setFormData] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError('')
     try {
       if (isLoginMode) {
-        const data = await login(formData.email, formData.password);
-        onLogin(data.token, data.role);
+        const data = await login(formData.email, formData.password)
+        onLogin(data.token, data.role)
       } else {
         await apiClient.post('/User/register', {
           email: formData.email,
-          password: formData.password
-        });
-        alert('Rejestracja udana! Możesz się teraz zalogować.');
-        setIsLoginMode(true);
+          password: formData.password,
+        })
+        alert('Rejestracja udana! Możesz się teraz zalogować.')
+        setIsLoginMode(true)
       }
     } catch (err) {
-      console.error(err);
-      setError('Wystąpił błąd. Sprawdź dane lub spróbuj ponownie.');
+      console.error(err)
+      setError('Wystąpił błąd. Sprawdź dane lub spróbuj ponownie.')
     }
-  };
+  }
 
   return (
     <div className="auth-page">
       <div className="auth-card">
         <h2>{isLoginMode ? 'Witaj ponownie 👋' : "Dołącz do Join'nGo 🚀"}</h2>
-        
-        {error && <div style={{color: 'red', marginBottom: '15px', fontSize: '0.9rem'}}>{error}</div>}
+
+        {error && (
+          <div style={{ color: 'red', marginBottom: '15px', fontSize: '0.9rem' }}>{error}</div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -60,24 +62,21 @@ function LoginPage({ onLogin }) {
               required
             />
           </div>
-          
-          <button className="btn-primary" type="submit" style={{width: '100%'}}>
+
+          <button className="btn-primary" type="submit" style={{ width: '100%' }}>
             {isLoginMode ? 'Zaloguj się' : 'Zarejestruj się'}
           </button>
         </form>
 
         <div className="toggle-text">
           {isLoginMode ? 'Nie masz jeszcze konta?' : 'Masz już konto?'}
-          <span 
-            className="toggle-link" 
-            onClick={() => setIsLoginMode(!isLoginMode)}
-          >
+          <span className="toggle-link" onClick={() => setIsLoginMode(!isLoginMode)}>
             {isLoginMode ? 'Zarejestruj się' : 'Zaloguj się'}
           </span>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default LoginPage;
+export default LoginPage

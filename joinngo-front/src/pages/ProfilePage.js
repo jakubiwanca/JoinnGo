@@ -6,7 +6,7 @@ function ProfilePage({ currentUserEmail, navigate }) {
   const [createdEvents, setCreatedEvents] = useState([])
   const [joinedEvents, setJoinedEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  
+
   const [editingEvent, setEditingEvent] = useState(null)
 
   const fetchData = async () => {
@@ -57,26 +57,26 @@ function ProfilePage({ currentUserEmail, navigate }) {
             className="event-card"
             style={{ borderLeft: isJoinedList ? '4px solid #10b981' : '4px solid #4f46e5' }}
           >
-            <div 
-                className="card-header" 
-                style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'flex-start' 
-                }}
+            <div
+              className="card-header"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+              }}
             >
               <div>
-                  <h4 style={{ fontSize: '1.1rem', margin: '0 0 5px 0' }}>{event.title}</h4>
-                  <span
-                    style={{
-                      fontSize: '0.8rem',
-                      background: '#f3f4f6',
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                    }}
-                  >
-                    {event.category}
-                  </span>
+                <h4 style={{ fontSize: '1.1rem', margin: '0 0 5px 0' }}>{event.title}</h4>
+                <span
+                  style={{
+                    fontSize: '0.8rem',
+                    background: '#f3f4f6',
+                    padding: '2px 8px',
+                    borderRadius: '10px',
+                  }}
+                >
+                  {event.category}
+                </span>
               </div>
 
               {!isJoinedList && (
