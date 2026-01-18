@@ -5,6 +5,7 @@ import ParticipantsModal from '../components/ParticipantsModal'
 import { POLISH_CITIES } from '../constants/cities'
 import { EVENT_CATEGORIES } from '../constants/categories'
 import { Link } from 'react-router-dom';
+import { formatPolishDateTime } from '../utils/dateFormat';
 
 function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
   const [events, setEvents] = useState([])
@@ -29,7 +30,21 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
       const params = new URLSearchParams()
       if (filters.search) params.append('search', filters.search)
       if (filters.location) params.append('location', filters.location)
-      if (filters.date) params.append('date', filters.date)
+      
+      let clientSideDateFilter = null
+      if (filters.date) {
+        const dateParts = filters.date.split('/').filter(part => part !== '')
+        if (dateParts.length === 3 && dateParts[2].length === 4) {
+          const day = dateParts[0].padStart(2, '0')
+          const month = dateParts[1].padStart(2, '0')
+          const year = dateParts[2]
+          const isoDate = `${year}-${month}-${day}`
+          params.append('date', isoDate)
+        } else if (dateParts.length > 0) {
+          clientSideDateFilter = dateParts
+        }
+      }
+      
       if (filters.category !== '') params.append('category', filters.category)
 
       params.append('page', page)
@@ -37,12 +52,32 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
 
       const response = await apiClient.get(`/Event?${params.toString()}`)
 
+      let events = []
       if (response.data && response.data.data) {
-        setEvents(response.data.data)
+        events = response.data.data
         setTotalPages(response.data.totalPages)
       } else {
-        setEvents(Array.isArray(response.data) ? response.data : [])
+        events = Array.isArray(response.data) ? response.data : []
       }
+
+      if (clientSideDateFilter) {
+        events = events.filter(event => {
+          const eventDate = new Date(event.date)
+          const eventDay = String(eventDate.getDate()).padStart(2, '0')
+          const eventMonth = String(eventDate.getMonth() + 1).padStart(2, '0')
+          
+          if (clientSideDateFilter.length === 1) {
+            return eventDay === clientSideDateFilter[0].padStart(2, '0')
+          }
+          if (clientSideDateFilter.length === 2) {
+            return eventDay === clientSideDateFilter[0].padStart(2, '0') &&
+                   eventMonth === clientSideDateFilter[1].padStart(2, '0')
+          }
+          return false
+        })
+      }
+
+      setEvents(events)
     } catch (err) {
       console.error(err)
       setEvents([])
@@ -170,14 +205,19 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
 
           <div className="filter-item" style={{ flex: 0.5 }}>
             <label>Data</label>
-            <input type="date" name="date" value={filters.date} onChange={handleFilterChange} />
+            <input 
+              type="text" 
+              name="date" 
+              value={filters.date} 
+              onChange={handleFilterChange}
+              placeholder="dd/mm/rrrr"
+              pattern="\d{2}/\d{2}/\d{4}"
+            />
           </div>
 
-          {(filters.search || filters.location || filters.date || filters.category) && (
-            <button className="btn-secondary" onClick={clearFilters} style={{ height: '42px' }}>
-              Wyczyść filtry
-            </button>
-          )}
+          <button className="btn-secondary" onClick={clearFilters} style={{ height: '42px' }}>
+            Wyczyść filtry
+          </button>
         </div>
 
         {/* EVENTS GRID */}
@@ -217,7 +257,7 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                       <span>
                         📍 {event.city}, {event.location}
                       </span>
-                      <span>📅 {new Date(event.date).toLocaleString()}</span>
+                      <span>📅 {formatPolishDateTime(event.date)}</span>
                     </div>
 
                     <p className="card-desc">{event.description}</p>

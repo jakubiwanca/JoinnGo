@@ -29,15 +29,41 @@ function CreateEventModal({ onClose, onEventCreated }) {
     }))
   }
 
+  const parsePolishDateToISO = (polishDate) => {
+    const parts = polishDate.split(' ')
+    if (parts.length !== 2) return null
+    
+    const dateParts = parts[0].split('/')
+    const timeParts = parts[1].split(':')
+    
+    if (dateParts.length !== 3 || timeParts.length !== 2) return null
+    
+    const day = parseInt(dateParts[0], 10)
+    const month = parseInt(dateParts[1], 10) - 1
+    const year = parseInt(dateParts[2], 10)
+    const hours = parseInt(timeParts[0], 10)
+    const minutes = parseInt(timeParts[1], 10)
+    
+    const date = new Date(year, month, day, hours, minutes)
+    return date.toISOString()
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
     try {
+      const isoDate = parsePolishDateToISO(formData.date)
+      if (!isoDate) {
+        setError('Nieprawidłowy format daty. Użyj: dd/mm/rrrr gg:mm')
+        setLoading(false)
+        return
+      }
+
       const payload = {
         ...formData,
-        date: new Date(formData.date).toISOString(),
+        date: isoDate,
       }
 
       await apiClient.post('/Event', payload)
@@ -111,11 +137,13 @@ function CreateEventModal({ onClose, onEventCreated }) {
           <div className="form-group">
             <label>Data i godzina:</label>
             <input
-              type="datetime-local"
+              type="text"
               name="date"
               required
               value={formData.date}
               onChange={handleChange}
+              placeholder="dd/mm/rrrr gg:mm (np. 21/04/2025 15:00)"
+              pattern="\d{2}/\d{2}/\d{4} \d{2}:\d{2}"
               style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
             />
           </div>

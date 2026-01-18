@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import ParticipantsModal from '../components/ParticipantsModal';
 import Comments from '../components/Comments';
+import { formatPolishDateTime } from '../utils/dateFormat';
 
 const EventDetailsPage = ({ currentUserId }) => {
   const { id } = useParams()
@@ -25,9 +26,8 @@ const EventDetailsPage = ({ currentUserId }) => {
       const response = await apiClient.get(`event/${id}/comments`);
       setComments(response.data);
     } catch (err) {
-      // It's okay if this fails (e.g., user not a participant), don't show an error
       console.error('Could not fetch comments:', err);
-      setComments([]); // Ensure comments are cleared if user loses access
+      setComments([]);
     }
   }, [id]);
 
@@ -197,7 +197,7 @@ const EventDetailsPage = ({ currentUserId }) => {
             📍 <b>Lokalizacja:</b> {event.city}, {event.location}
           </span>
           <span>
-            📅 <b>Data:</b> {new Date(event.date).toLocaleString()}
+            📅 <b>Data:</b> {formatPolishDateTime(event.date)}
           </span>
           {event.creator && <span>
             👤 <b>Organizator:</b> {event.creator?.email || event.creatorId}

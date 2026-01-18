@@ -90,6 +90,8 @@ textarea {
   font-size: 0.95rem;
   transition: border-color 0.2s;
   outline: none;
+  background-color: #fff;
+  color: var(--text-dark);
 }
 
 input[type='checkbox'] {

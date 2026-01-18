@@ -218,7 +218,6 @@ public class UserController : ControllerBase
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return NotFound("User not found");
 
-        // Verify current password
         var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.CurrentPassword);
         bool isCurrentPasswordValid = false;
 
@@ -228,7 +227,6 @@ public class UserController : ControllerBase
         }
         else 
         {
-            // Check old SHA256 hash for backward compatibility
             var sha = HashSha256(dto.CurrentPassword);
             if (sha == user.PasswordHash)
             {
@@ -241,7 +239,6 @@ public class UserController : ControllerBase
             return BadRequest(new { message = "Current password is incorrect" });
         }
 
-        // Hash and save new password
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
         await _context.SaveChangesAsync();
 

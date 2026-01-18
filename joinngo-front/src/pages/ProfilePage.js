@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import apiClient from '../api/axiosClient'
 import { changePassword } from '../api/auth'
 import EditEventModal from '../components/EditEventModal'
+import { formatPolishDate, formatPolishTime } from '../utils/dateFormat'
 
 function ProfilePage({ currentUserEmail, navigate }) {
   const [createdEvents, setCreatedEvents] = useState([])
@@ -144,11 +145,8 @@ function ProfilePage({ currentUserEmail, navigate }) {
 
             <div className="card-meta">
               <span>
-                📅 {new Date(event.date).toLocaleDateString()}{' '}
-                {new Date(event.date).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                📅 {formatPolishDate(event.date)}{' '}
+                {formatPolishTime(event.date)}
               </span>
               <span>
                 📍 {event.city}, {event.location}
