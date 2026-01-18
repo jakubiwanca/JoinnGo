@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import apiClient from '../api/axiosClient'
-import { POLISH_CITIES } from '../constants/cities'
+import LocationAutocomplete from './LocationAutocomplete'
 import { EVENT_CATEGORIES } from '../constants/categories'
 
 function CreateEventModal({ onClose, onEventCreated }) {
@@ -151,21 +151,12 @@ function CreateEventModal({ onClose, onEventCreated }) {
           <div style={{ display: 'flex', gap: '15px' }}>
             <div className="form-group" style={{ flex: 1 }}>
               <label>Miasto:</label>
-              <input
-                list="city-options"
-                name="city"
-                required
+              <LocationAutocomplete
                 value={formData.city}
-                onChange={handleChange}
+                onChange={(val) => setFormData(prev => ({ ...prev, city: val }))}
                 placeholder="Wybierz lub wpisz..."
-                autoComplete="off"
-                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                required
               />
-              <datalist id="city-options">
-                {POLISH_CITIES.map((city) => (
-                  <option key={city} value={city} />
-                ))}
-              </datalist>
             </div>
 
             <div className="form-group" style={{ flex: 1 }}>

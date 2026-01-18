@@ -3,7 +3,7 @@ import apiClient from '../api/axiosClient'
 import CreateEventModal from '../components/CreateEventModal'
 import ParticipantsModal from '../components/ParticipantsModal'
 import ConfirmModal from '../components/ConfirmModal'
-import { POLISH_CITIES } from '../constants/cities'
+import LocationAutocomplete from '../components/LocationAutocomplete'
 import { EVENT_CATEGORIES } from '../constants/categories'
 import { Link } from 'react-router-dom';
 import { formatPolishDateTime } from '../utils/dateFormat';
@@ -216,21 +216,17 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
             </select>
           </div>
 
-          <div className="filter-item" style={{ flex: 0.7 }}>
+
+          <div className="filter-item" style={{ flex: 1 }}>
             <label>Miasto</label>
-            <input
-              list="cities-datalist"
-              type="text"
-              name="location"
-              placeholder="Wpisz miasto..."
+            <LocationAutocomplete
               value={filters.location}
-              onChange={handleFilterChange}
+              onChange={(val) => {
+                setFilters(prev => ({ ...prev, location: val }))
+                setPage(1)
+              }}
+              placeholder="Wpisz miasto..."
             />
-            <datalist id="cities-datalist">
-              {POLISH_CITIES.map((city) => (
-                <option key={city} value={city} />
-              ))}
-            </datalist>
           </div>
 
           <div className="filter-item" style={{ flex: 0.5 }}>

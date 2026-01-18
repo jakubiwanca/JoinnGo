@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import apiClient from '../api/axiosClient'
 import ConfirmModal from './ConfirmModal'
-import { POLISH_CITIES } from '../constants/cities'
+import LocationAutocomplete from './LocationAutocomplete'
 import { EVENT_CATEGORIES } from '../constants/categories'
 
 function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
@@ -188,20 +188,12 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
           <div style={{ display: 'flex', gap: '15px' }}>
             <div className="form-group" style={{ flex: 1 }}>
               <label>Miasto:</label>
-              <input
-                list="city-options"
-                name="city"
-                required
+              <LocationAutocomplete
                 value={formData.city}
-                onChange={handleChange}
-                autoComplete="off"
-                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                onChange={(val) => setFormData(prev => ({ ...prev, city: val }))}
+                placeholder="Wybierz lub wpisz..."
+                required
               />
-              <datalist id="city-options">
-                {POLISH_CITIES.map((city) => (
-                  <option key={city} value={city} />
-                ))}
-              </datalist>
             </div>
 
             <div className="form-group" style={{ flex: 1 }}>
