@@ -204,6 +204,59 @@ public class UserController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok($"User {user.Email} deleted");
     }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+
+        int userId = int.Parse(userIdClaim.Value);
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return NotFound("User not found");
+
+        // Verify current password
+        var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.CurrentPassword);
+        bool isCurrentPasswordValid = false;
+
+        if (verify == PasswordVerificationResult.Success || verify == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            isCurrentPasswordValid = true;
+        }
+        else 
+        {
+            // Check old SHA256 hash for backward compatibility
+            var sha = HashSha256(dto.CurrentPassword);
+            if (sha == user.PasswordHash)
+            {
+                isCurrentPasswordValid = true;
+            }
+        }
+
+        if (!isCurrentPasswordValid)
+        {
+            return BadRequest(new { message = "Current password is incorrect" });
+        }
+
+        // Hash and save new password
+        user.PasswordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Password changed successfully" });
+    }
+}
+
+public class ChangePasswordDto
+{
+    [Required]
+    public string CurrentPassword { get; set; }
+
+    [Required]
+    [MinLength(6)]
+    public string NewPassword { get; set; }
 }
 
 public class SetRoleDto

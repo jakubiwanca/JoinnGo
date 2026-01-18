@@ -1,13 +1,25 @@
 import React, { useEffect, useState } from 'react'
 import apiClient from '../api/axiosClient'
+import { changePassword } from '../api/auth'
 import EditEventModal from '../components/EditEventModal'
 
 function ProfilePage({ currentUserEmail, navigate }) {
   const [createdEvents, setCreatedEvents] = useState([])
   const [joinedEvents, setJoinedEvents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('events')
 
   const [editingEvent, setEditingEvent] = useState(null)
+
+  // Password change state
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  })
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -36,6 +48,46 @@ function ProfilePage({ currentUserEmail, navigate }) {
   const handleEditSuccess = () => {
     setEditingEvent(null)
     fetchData()
+  }
+
+  const handlePasswordChange = (e) => {
+    setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value })
+    setPasswordError('')
+    setPasswordSuccess('')
+  }
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+
+    // Validation
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('Wszystkie pola są wymagane')
+      return
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Nowe hasła nie są zgodne')
+      return
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('Nowe hasło musi mieć co najmniej 6 znaków')
+      return
+    }
+
+    try {
+      setPasswordLoading(true)
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword)
+      setPasswordSuccess('Hasło zostało pomyślnie zmienione!')
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (err) {
+      console.error('Błąd zmiany hasła', err)
+      setPasswordError(err.response?.data?.message || 'Błąd zmiany hasła. Sprawdź aktualne hasło.')
+    } finally {
+      setPasswordLoading(false)
+    }
   }
 
   const renderEventList = (events, isJoinedList = false) => {
@@ -125,6 +177,102 @@ function ProfilePage({ currentUserEmail, navigate }) {
     )
   }
 
+  const renderEventsTab = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+      {/* Utworzone */}
+      <section>
+        <h3
+          style={{
+            borderBottom: '2px solid #e5e7eb',
+            paddingBottom: '10px',
+            marginBottom: '20px',
+            color: '#4f46e5',
+          }}
+        >
+          Wydarzenia utworzone przeze mnie ({createdEvents.length})
+        </h3>
+        {renderEventList(createdEvents)}
+      </section>
+
+      {/* Dołączone */}
+      <section>
+        <h3
+          style={{
+            borderBottom: '2px solid #e5e7eb',
+            paddingBottom: '10px',
+            marginBottom: '20px',
+            color: '#10b981',
+          }}
+        >
+          Wydarzenia, w których biorę udział ({joinedEvents.length})
+        </h3>
+        {renderEventList(joinedEvents, true)}
+      </section>
+    </div>
+  )
+
+  const renderSettingsTab = () => (
+    <div className="password-form-container">
+      <h3 style={{ marginBottom: '20px', color: '#1f2937' }}>Zmień hasło</h3>
+      
+      <form onSubmit={handlePasswordSubmit} className="password-form">
+        {passwordError && (
+          <div className="alert alert-error" style={{ marginBottom: '15px' }}>
+            {passwordError}
+          </div>
+        )}
+        
+        {passwordSuccess && (
+          <div className="alert alert-success" style={{ marginBottom: '15px' }}>
+            {passwordSuccess}
+          </div>
+        )}
+
+        <div className="form-group">
+          <label>Aktualne hasło</label>
+          <input
+            type="password"
+            name="currentPassword"
+            value={passwordForm.currentPassword}
+            onChange={handlePasswordChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Nowe hasło</label>
+          <input
+            type="password"
+            name="newPassword"
+            value={passwordForm.newPassword}
+            onChange={handlePasswordChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Potwierdź nowe hasło</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            value={passwordForm.confirmPassword}
+            onChange={handlePasswordChange}
+            required
+          />
+        </div>
+
+        <button 
+          type="submit" 
+          className="btn-primary" 
+          disabled={passwordLoading}
+          style={{ width: 'auto', marginTop: '10px' }}
+        >
+          {passwordLoading ? 'Zmieniam...' : 'Zmień hasło'}
+        </button>
+      </form>
+    </div>
+  )
+
   return (
     <div>
       {/* Header */}
@@ -141,41 +289,33 @@ function ProfilePage({ currentUserEmail, navigate }) {
       </header>
 
       <div className="main-container">
-        {loading ? (
-          <p>Ładowanie profilu...</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-            {/* Utworzone */}
-            <section>
-              <h3
-                style={{
-                  borderBottom: '2px solid #e5e7eb',
-                  paddingBottom: '10px',
-                  marginBottom: '20px',
-                  color: '#4f46e5',
-                }}
-              >
-                Wydarzenia utworzone przeze mnie ({createdEvents.length})
-              </h3>
-              {renderEventList(createdEvents)}
-            </section>
+        {/* Tabs Navigation */}
+        <div className="profile-tabs">
+          <button
+            className={`profile-tab ${activeTab === 'events' ? 'active' : ''}`}
+            onClick={() => setActiveTab('events')}
+          >
+            📅 Wydarzenia
+          </button>
+          <button
+            className={`profile-tab ${activeTab === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            ⚙️ Ustawienia
+          </button>
+        </div>
 
-            {/* Dołączone */}
-            <section>
-              <h3
-                style={{
-                  borderBottom: '2px solid #e5e7eb',
-                  paddingBottom: '10px',
-                  marginBottom: '20px',
-                  color: '#10b981',
-                }}
-              >
-                Wydarzenia, w których biorę udział ({joinedEvents.length})
-              </h3>
-              {renderEventList(joinedEvents, true)}
-            </section>
-          </div>
-        )}
+        {/* Tab Content */}
+        <div style={{ marginTop: '30px' }}>
+          {loading ? (
+            <p>Ładowanie profilu...</p>
+          ) : (
+            <>
+              {activeTab === 'events' && renderEventsTab()}
+              {activeTab === 'settings' && renderSettingsTab()}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Modal Edycji */}
@@ -191,3 +331,4 @@ function ProfilePage({ currentUserEmail, navigate }) {
 }
 
 export default ProfilePage
+
