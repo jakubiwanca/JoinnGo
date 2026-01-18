@@ -1,11 +1,20 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import { login } from '../api/auth'
 
 function LoginPage({ onLogin }) {
+  const location = useLocation()
   const [isLoginMode, setIsLoginMode] = useState(true)
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('register') === 'true') {
+      setIsLoginMode(false)
+    }
+  }, [location])
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })

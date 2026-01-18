@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'r
 
 import Home from './pages/Home'
 import LoginPage from './pages/LoginPage'
+import LandingPage from './pages/LandingPage'
 import AdminPanel from './pages/AdminPanel'
 import { getProfile, logout } from './api/auth'
 import ProfilePage from './pages/ProfilePage'
@@ -73,7 +74,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={user ? <HomeWrapper /> : <LoginPage onLogin={handleLogin} />} />
+        <Route path="/" element={user ? <HomeWrapper /> : <Navigate to="/landing" />} />
+
+        <Route path="/landing" element={user ? <Navigate to="/" /> : <LandingPage />} />
+
+        <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />} />
 
         <Route
           path="/admin"
@@ -86,7 +91,7 @@ function App() {
           }
         />
 
-        <Route path="/profile" element={user ? <ProfileWrapper /> : <Navigate to="/" />} />
+        <Route path="/profile" element={user ? <ProfileWrapper /> : <Navigate to="/landing" />} />
 
         <Route 
           path="/event/:id" 
