@@ -516,6 +516,58 @@ public class EventController : ControllerBase
 
         return CreatedAtAction(nameof(GetComments), new { eventId = eventId }, commentToReturn);
     }
+
+    [HttpPut("comments/{commentId}")]
+    public async Task<IActionResult> UpdateComment(int commentId, [FromBody] UpdateCommentDto dto)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var comment = await _context.Comments.FindAsync(commentId);
+        if (comment == null) return NotFound("Komentarz nie istnieje.");
+
+        if (comment.UserId != userId)
+        {
+            return Forbid("Nie możesz edytować cudzych komentarzy.");
+        }
+
+        comment.Content = dto.Content;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { comment.Id, comment.Content, comment.CreatedAt, comment.UserId });
+    }
+
+    [HttpDelete("comments/{commentId}")]
+    public async Task<IActionResult> DeleteComment(int commentId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var comment = await _context.Comments.FindAsync(commentId);
+        if (comment == null) return NotFound("Komentarz nie istnieje.");
+
+        if (comment.UserId != userId)
+        {
+            return Forbid("Nie możesz usunąć cudzych komentarzy.");
+        }
+
+        _context.Comments.Remove(comment);
+        await _context.SaveChangesAsync();
+
+        return Ok("Komentarz usunięty.");
+    }
+}
+
+public class CommentDto
+{
+    public string Content { get; set; }
+}
+
+public class UpdateCommentDto
+{
+    public string Content { get; set; }
 }
 
 public class CreateEventDto
@@ -544,7 +596,3 @@ public class UpdateEventDto
     public EventCategory Category { get; set; }
 }
 
-public class CommentDto
-{
-    public string Content { get; set; }
-}

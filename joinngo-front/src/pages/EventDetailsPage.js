@@ -39,6 +39,18 @@ const EventDetailsPage = ({ currentUserId }) => {
     danger: false,
   })
 
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy functionality', err)
+    }
+  }
+
   const showConfirm = (title, message, onConfirm, danger = false) => {
     setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
   }
@@ -143,6 +155,14 @@ const EventDetailsPage = ({ currentUserId }) => {
     setComments(prevComments => [...prevComments, newComment]);
   };
 
+  const handleCommentUpdated = (updatedComment) => {
+    setComments(prevComments => prevComments.map(c => c.id === updatedComment.id ? { ...c, ...updatedComment } : c));
+  };
+
+  const handleCommentDeleted = (commentId) => {
+    setComments(prevComments => prevComments.filter(c => c.id !== commentId));
+  };
+
   if (loading)
     return (
       <div className="main-container">
@@ -229,10 +249,18 @@ const EventDetailsPage = ({ currentUserId }) => {
       >
         <div className="category-badge">{event.category || 'Inne'}</div>
 
-        <div className="card-header">
+        <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <h1 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>
             {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}
           </h1>
+          <button 
+            onClick={handleShare}
+            className="btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', fontSize: '0.9rem' }}
+            title="Kopiuj link do wydarzenia"
+          >
+            🔗 {copied ? 'Skopiowano!' : 'Udostępnij'}
+          </button>
         </div>
 
         <div
@@ -288,9 +316,11 @@ const EventDetailsPage = ({ currentUserId }) => {
         
         {isJoined && (
             <Comments 
-                eventId={id}
-                comments={comments}
+                eventId={id} 
+                comments={comments} 
                 onCommentPosted={handleCommentPosted}
+                onCommentUpdated={handleCommentUpdated}
+                onCommentDeleted={handleCommentDeleted}
                 currentUserId={currentUserId}
             />
         )}
@@ -312,6 +342,7 @@ const EventDetailsPage = ({ currentUserId }) => {
                 onCancel={hideConfirm}
                 danger={confirmModal.danger}
             />
+
     </div>
   )
 }
