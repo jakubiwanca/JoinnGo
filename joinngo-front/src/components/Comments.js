@@ -1,9 +1,26 @@
 import React, { useState } from 'react';
 import apiClient from '../api/axiosClient';
+import ConfirmModal from './ConfirmModal';
 
 const Comments = ({ eventId, comments, onCommentPosted, currentUserId }) => {
     const [newComment, setNewComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: null,
+        danger: false,
+    });
+
+    const showConfirm = (title, message, onConfirm, danger = false) => {
+        setConfirmModal({ isOpen: true, title, message, onConfirm, danger });
+    };
+
+    const hideConfirm = () => {
+        setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -15,7 +32,7 @@ const Comments = ({ eventId, comments, onCommentPosted, currentUserId }) => {
             onCommentPosted(response.data);
             setNewComment('');
         } catch (err) {
-            alert(err.response?.data?.message || 'Nie udało się dodać komentarza.');
+            showConfirm('Błąd', err.response?.data?.message || 'Nie udało się dodać komentarza.', hideConfirm);
         } finally {
             setIsSubmitting(false);
         }
@@ -53,6 +70,15 @@ const Comments = ({ eventId, comments, onCommentPosted, currentUserId }) => {
                     </button>
                 </form>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={hideConfirm}
+                danger={confirmModal.danger}
+            />
         </div>
     );
 };

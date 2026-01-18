@@ -1,9 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import apiClient from '../api/axiosClient'
+import ConfirmModal from './ConfirmModal'
 
 function ParticipantsModal({ eventId, onClose, onStatusChange }) {
   const [participants, setParticipants] = useState([])
   const [loading, setLoading] = useState(true)
+  
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    danger: false,
+  })
+
+  const showConfirm = (title, message, onConfirm, danger = false) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  }
+
+  const hideConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
+  }
 
   const fetchParticipants = async () => {
     try {
@@ -11,8 +28,10 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
       setParticipants(response.data)
     } catch (err) {
       console.error('Błąd pobierania uczestników:', err)
-      alert('Nie udało się pobrać listy uczestników.')
-      onClose()
+      showConfirm('Błąd', 'Nie udało się pobrać listy uczestników.', () => {
+        hideConfirm()
+        onClose()
+      })
     } finally {
       setLoading(false)
     }
@@ -38,26 +57,27 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
       if (onStatusChange) onStatusChange()
     } catch (err) {
       console.error(err)
-      alert('Błąd podczas akceptacji.')
+      showConfirm('Błąd', 'Błąd podczas akceptacji.', hideConfirm)
     }
   }
 
-  const handleRemove = async (userId) => {
-    if (!window.confirm('Czy na pewno chcesz usunąć tego uczestnika z wydarzenia?')) return
-
-    try {
-      console.log(`Attempting to remove user ${userId} from event ${eventId}. Request URL: event/${eventId}/participants/${userId}`);
-      await apiClient.delete(`event/${eventId}/participants/${userId}`)
-      
-      setParticipants((prev) => prev.filter((p) => p.userId !== userId))
-      
-      alert('Uczestnik został usunięty.')
-      
-      if (onStatusChange) onStatusChange()
-    } catch (err) {
-      console.error('Błąd podczas usuwania:', err)
-      alert(err.response?.data || 'Błąd podczas usuwania uczestnika.')
-    }
+  const handleRemove = (userId, email) => {
+    showConfirm(
+      'Usuń uczestnika',
+      `Czy na pewno chcesz usunąć uczestnika ${email} z tego wydarzenia?`,
+      async () => {
+        hideConfirm()
+        try {
+          await apiClient.delete(`event/${eventId}/participants/${userId}`)
+          setParticipants((prev) => prev.filter((p) => p.userId !== userId))
+          if (onStatusChange) onStatusChange()
+        } catch (err) {
+          console.error('Błąd podczas usuwania:', err)
+          showConfirm('Błąd', err.response?.data || 'Błąd podczas usuwania uczestnika.', hideConfirm)
+        }
+      },
+      true
+    )
   }
 
   return (
@@ -124,7 +144,7 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
                   <button
                     className="btn-danger"
                     style={{ padding: '5px 10px', fontSize: '0.8em', borderRadius: '4px' }}
-                    onClick={() => handleRemove(p.userId)}
+                    onClick={() => handleRemove(p.userId, p.email)}
                   >
                     Usuń
                   </button>
@@ -134,6 +154,15 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
           </ul>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        danger={confirmModal.danger}
+      />
     </div>
   )
 }

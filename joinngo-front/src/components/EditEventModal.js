@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import apiClient from '../api/axiosClient'
+import ConfirmModal from './ConfirmModal'
 import { POLISH_CITIES } from '../constants/cities'
 import { EVENT_CATEGORIES } from '../constants/categories'
 
@@ -15,6 +16,22 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    danger: false,
+  })
+
+  const showConfirm = (title, message, onConfirm, danger = false) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  }
+
+  const hideConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
+  }
 
   useEffect(() => {
     if (eventToEdit) {
@@ -89,9 +106,11 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
 
       await apiClient.put(`/Event/${eventToEdit.id}`, payload)
 
-      alert('Wydarzenie zaktualizowane!')
-      onEventUpdated()
-      onClose()
+      showConfirm('Sukces', 'Wydarzenie zaktualizowane!', () => {
+        hideConfirm()
+        onEventUpdated()
+        onClose()
+      })
     } catch (err) {
       console.error('Błąd edycji:', err)
       setError(
@@ -227,6 +246,15 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
           </div>
         </form>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        danger={confirmModal.danger}
+      />
     </div>
   )
 }

@@ -1,10 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import { getAllUsers, deleteUser } from '../api/users'
 import { Link } from 'react-router-dom'
+import ConfirmModal from '../components/ConfirmModal'
 
 function AdminPanel({ currentUserId, onLogout }) {
   const [users, setUsers] = useState([])
   const [error, setError] = useState('')
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    danger: false,
+  })
+
+  const showConfirm = (title, message, onConfirm, danger = false) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  }
+
+  const hideConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
+  }
 
   useEffect(() => {
     getAllUsers()
@@ -15,16 +32,22 @@ function AdminPanel({ currentUserId, onLogout }) {
       })
   }, [])
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Czy na pewno chcesz usunąć tego użytkownika?')) return
-
-    try {
-      await deleteUser(id)
-      setUsers(users.filter((u) => String(u.id) !== String(id)))
-    } catch (err) {
-      console.error('deleteUser error:', err)
-      setError(err.message || 'Nie udało się usunąć użytkownika')
-    }
+  const handleDelete = (id) => {
+    showConfirm(
+      'Usuń użytkownika',
+      'Czy na pewno chcesz usunąć tego użytkownika?',
+      async () => {
+        hideConfirm()
+        try {
+          await deleteUser(id)
+          setUsers((prev) => prev.filter((u) => String(u.id) !== String(id)))
+        } catch (err) {
+          console.error('deleteUser error:', err)
+          showConfirm('Błąd', err.message || 'Nie udało się usunąć użytkownika', hideConfirm)
+        }
+      },
+      true
+    )
   }
 
   return (
@@ -143,6 +166,16 @@ function AdminPanel({ currentUserId, onLogout }) {
           </div>
         )}
       </div>
+
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        danger={confirmModal.danger}
+      />
     </div>
   )
 }

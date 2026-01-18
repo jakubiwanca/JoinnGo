@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import apiClient from '../api/axiosClient'
 import CreateEventModal from '../components/CreateEventModal'
 import ParticipantsModal from '../components/ParticipantsModal'
+import ConfirmModal from '../components/ConfirmModal'
 import { POLISH_CITIES } from '../constants/cities'
 import { EVENT_CATEGORIES } from '../constants/categories'
 import { Link } from 'react-router-dom';
@@ -16,6 +17,23 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [managingEventId, setManagingEventId] = useState(null)
+
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    danger: false,
+  })
+
+  const showConfirm = (title, message, onConfirm, danger = false) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  }
+
+  const hideConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
+  }
 
   const [filters, setFilters] = useState({
     search: '',
@@ -104,32 +122,44 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
   const handleJoin = async (eventId) => {
     try {
       const response = await apiClient.post(`/Event/${eventId}/join`)
-      alert(response.data)
+      showConfirm('Sukces', response.data, hideConfirm)
       fetchEvents()
     } catch (err) {
-      alert(err.response?.data || 'Błąd')
+      showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm)
     }
   }
 
-  const handleDelete = async (eventId) => {
-    if (!window.confirm('Czy na pewno chcesz usunąć to wydarzenie?')) return
-    try {
-      await apiClient.delete(`/Event/${eventId}`)
-      setEvents((prev) => prev.filter((e) => e.id !== eventId))
-    } catch (err) {
-      alert('Nie udało się usunąć: ' + (err.response?.data || err.message))
-    }
+  const handleDelete = (eventId) => {
+    showConfirm(
+      'Usuń wydarzenie',
+      'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja jest nieodwracalna.',
+      async () => {
+        hideConfirm()
+        try {
+          await apiClient.delete(`/Event/${eventId}`)
+          setEvents((prev) => prev.filter((e) => e.id !== eventId))
+        } catch (err) {
+          showConfirm('Błąd', 'Nie udało się usunąć: ' + (err.response?.data || err.message), hideConfirm)
+        }
+      },
+      true
+    )
   }
 
-  const handleLeave = async (eventId) => {
-    if (!window.confirm('Czy na pewno chcesz zrezygnować z udziału?')) return
-    try {
-      const response = await apiClient.delete(`/Event/${eventId}/leave`)
-      alert(response.data)
-      fetchEvents()
-    } catch (err) {
-      alert(err.response?.data || 'Błąd podczas opuszczania')
-    }
+  const handleLeave = (eventId) => {
+    showConfirm(
+      'Opuść wydarzenie',
+      'Czy na pewno chcesz zrezygnować z udziału w tym wydarzeniu?',
+      async () => {
+        hideConfirm()
+        try {
+          await apiClient.delete(`/Event/${eventId}/leave`)
+          fetchEvents()
+        } catch (err) {
+          showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
+        }
+      }
+    )
   }
 
   return (
@@ -236,10 +266,17 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                 const isJoined = !!myParticipation
                 const isConfirmed = myParticipation?.status === 1
 
+                let cardColorClass = 'event-public'
+                if (isJoined) {
+                  cardColorClass = 'event-joined'
+                } else if (event.isPrivate) {
+                  cardColorClass = 'event-private'
+                }
+
                 return (
                   <div 
                     key={event.id} 
-                    className="event-card"
+                    className={`event-card ${cardColorClass}`}
                     onClick={() => navigate(`/event/${event.id}`)}
                     style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
                     onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
@@ -354,6 +391,15 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
           onStatusChange={fetchEvents}
         />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        danger={confirmModal.danger}
+      />
     </div>
   )
 }

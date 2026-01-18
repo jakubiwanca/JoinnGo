@@ -2,12 +2,29 @@ import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import { login } from '../api/auth'
+import ConfirmModal from '../components/ConfirmModal'
 
 function LoginPage({ onLogin }) {
   const location = useLocation()
   const [isLoginMode, setIsLoginMode] = useState(true)
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    danger: false,
+  })
+
+  const showConfirm = (title, message, onConfirm, danger = false) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  }
+
+  const hideConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -32,7 +49,7 @@ function LoginPage({ onLogin }) {
           email: formData.email,
           password: formData.password,
         })
-        alert('Rejestracja udana! Możesz się teraz zalogować.')
+        showConfirm('Sukces', 'Rejestracja udana! Możesz się teraz zalogować.', hideConfirm)
         setIsLoginMode(true)
       }
     } catch (err) {
@@ -84,6 +101,15 @@ function LoginPage({ onLogin }) {
           </span>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        danger={confirmModal.danger}
+      />
     </div>
   )
 }

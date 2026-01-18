@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import ParticipantsModal from '../components/ParticipantsModal';
 import Comments from '../components/Comments';
+import ConfirmModal from '../components/ConfirmModal';
 import { formatPolishDateTime } from '../utils/dateFormat';
 
 const EventDetailsPage = ({ currentUserId }) => {
@@ -15,6 +16,22 @@ const EventDetailsPage = ({ currentUserId }) => {
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    danger: false,
+  })
+
+  const showConfirm = (title, message, onConfirm, danger = false) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  }
+
+  const hideConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
+  }
 
   const isUserParticipant = useCallback((theEvent) => {
     if (!theEvent || !theEvent.participants) return false;
@@ -56,41 +73,56 @@ const EventDetailsPage = ({ currentUserId }) => {
     setActionLoading(true)
     try {
       const response = await apiClient.post(`event/${id}/join`)
-      alert(response.data)
+      showConfirm('Sukces', response.data, hideConfirm)
       fetchEvent()
     } catch (err) {
-      alert(err.response?.data || 'Błąd podczas dołączania')
+      showConfirm('Błąd', err.response?.data || 'Błąd podczas dołączania', hideConfirm)
     } finally {
       setActionLoading(false)
     }
   }
 
-  const handleLeave = async () => {
-    if (!window.confirm('Czy na pewno chcesz zrezygnować z udziału?')) return
-    setActionLoading(true)
-    try {
-      const response = await apiClient.delete(`event/${id}/leave`)
-      alert(response.data)
-      fetchEvent()
-    } catch (err) {
-      alert(err.response?.data || 'Błąd podczas opuszczania')
-    } finally {
-      setActionLoading(false)
-    }
+  const handleLeave = () => {
+    showConfirm(
+      'Opuść wydarzenie',
+      'Czy na pewno chcesz zrezygnować z udziału?',
+      async () => {
+        hideConfirm()
+        setActionLoading(true)
+        try {
+          const response = await apiClient.delete(`event/${id}/leave`)
+          showConfirm('Sukces', response.data, hideConfirm)
+          fetchEvent()
+        } catch (err) {
+          showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
+        } finally {
+          setActionLoading(false)
+        }
+      }
+    )
   }
 
-  const handleDelete = async () => {
-    if (!window.confirm('Czy na pewno chcesz TRWALE usunąć to wydarzenie?')) return
-    setActionLoading(true)
-    try {
-      await apiClient.delete(`event/${id}`)
-      alert('Wydarzenie zostało usunięte.')
-      navigate('/')
-    } catch (err) {
-      alert(err.response?.data || 'Błąd podczas usuwania')
-    } finally {
-      setActionLoading(false)
-    }
+  const handleDelete = () => {
+    showConfirm(
+      'Usuń wydarzenie',
+      'Czy na pewno chcesz TRWALE usunąć to wydarzenie?',
+      async () => {
+        hideConfirm()
+        setActionLoading(true)
+        try {
+          await apiClient.delete(`event/${id}`)
+          showConfirm('Sukces', 'Wydarzenie zostało usunięte.', () => {
+             hideConfirm()
+             navigate('/')
+          })
+        } catch (err) {
+          showConfirm('Błąd', err.response?.data || 'Błąd podczas usuwania', hideConfirm)
+        } finally {
+          setActionLoading(false)
+        }
+      },
+      true
+    )
   }
 
   const handleCommentPosted = (newComment) => {
@@ -236,13 +268,22 @@ const EventDetailsPage = ({ currentUserId }) => {
         )}
 
       </div>
-      {isParticipantsModalOpen && (
+            {isParticipantsModalOpen && (
                 <ParticipantsModal
                     eventId={event.id}
                     onClose={() => setIsParticipantsModalOpen(false)}
                     onStatusChange={fetchEvent}
                 />
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={hideConfirm}
+                danger={confirmModal.danger}
+            />
     </div>
   )
 }

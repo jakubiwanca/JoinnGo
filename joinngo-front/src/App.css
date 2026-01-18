@@ -236,16 +236,30 @@ label {
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
   padding: 20px;
+  padding-left: 24px;
   display: flex;
   flex-direction: column;
   position: relative;
   border: 1px solid #f3f4f6;
+  border-left: 4px solid #d1d5db;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .event-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
+}
+
+.event-card.event-private {
+  border-left-color: #8b5cf6; /* fioletowy - prywatne */
+}
+
+.event-card.event-public {
+  border-left-color: #10b981; /* zielony - publiczne */
+}
+
+.event-card.event-joined {
+  border-left-color: #3b82f6; /* niebieski - dołączeni */
 }
 
 .category-badge {
@@ -264,7 +278,7 @@ label {
 .card-header h4 {
   margin: 0 0 10px 0;
   font-size: 1.25rem;
-  padding-right: 60px;
+  padding-right: 100px;
   color: var(--text-dark);
 }
 
@@ -338,6 +352,36 @@ label {
     transform: scale(1);
   }
 }
+
+/* Confirm Modal */
+.confirm-modal {
+  background: white;
+  padding: 25px 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.confirm-modal-title {
+  margin: 0 0 12px 0;
+  font-size: 1.2rem;
+  color: var(--text-dark);
+}
+
+.confirm-modal-message {
+  margin: 0 0 24px 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 
 .modal-actions {
   display: flex;
