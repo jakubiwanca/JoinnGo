@@ -161,7 +161,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className="modal-content" style={{ maxWidth: '900px', width: '90%' }}>
         <h3>Stwórz nowe wydarzenie</h3>
         {error && (
           <p className="error-msg" style={{ color: 'red' }}>
@@ -179,7 +179,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
               value={formData.title}
               onChange={handleChange}
               placeholder="Np. Mecz piłki nożnej"
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              style={{ width: '100%', marginBottom: '10px' }}
             />
           </div>
 
@@ -190,7 +190,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
               name="category"
               value={formData.category}
               onChange={handleChange}
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              style={{ width: '100%', marginBottom: '10px' }}
             >
               {EVENT_CATEGORIES.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -208,7 +208,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
               value={formData.description}
               onChange={handleChange}
               placeholder="Opisz szczegóły..."
-              style={{ width: '100%', padding: '8px', minHeight: '60px', marginBottom: '10px' }}
+              style={{ width: '100%', minHeight: '60px', marginBottom: '10px' }}
             />
           </div>
 
@@ -222,7 +222,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
               onChange={handleChange}
               placeholder="dd/mm/rrrr gg:mm (np. 21/04/2025 15:00)"
               pattern="\d{2}/\d{2}/\d{4} \d{2}:\d{2}"
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              style={{ width: '100%', marginBottom: '10px' }}
             />
           </div>
 
@@ -255,7 +255,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="Np. Hala sportowa"
-                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                style={{ width: '100%', marginBottom: '10px' }}
               />
             </div>
           </div>

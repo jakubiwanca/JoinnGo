@@ -123,7 +123,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className="modal-content" style={{ maxWidth: '900px', width: '90%' }}>
         <h3>Edytuj wydarzenie</h3>
         {error && (
           <p className="error-msg" style={{ color: 'red' }}>
@@ -150,7 +150,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
               name="category"
               value={formData.category}
               onChange={handleChange}
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              style={{ width: '100%', marginBottom: '10px' }}
             >
               {EVENT_CATEGORIES.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -167,7 +167,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
               required
               value={formData.description}
               onChange={handleChange}
-              style={{ width: '100%', padding: '8px', minHeight: '60px', marginBottom: '10px' }}
+              style={{ width: '100%', minHeight: '60px', marginBottom: '10px' }}
             />
           </div>
 
@@ -181,7 +181,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
               onChange={handleChange}
               placeholder="dd/mm/rrrr gg:mm (np. 21/04/2025 15:00)"
               pattern="\d{2}/\d{2}/\d{4} \d{2}:\d{2}"
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              style={{ width: '100%', marginBottom: '10px' }}
             />
           </div>
 
@@ -204,7 +204,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                 required
                 value={formData.location}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                style={{ width: '100%', marginBottom: '10px' }}
               />
             </div>
           </div>

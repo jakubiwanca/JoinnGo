@@ -97,7 +97,7 @@ const LocationAutocomplete = ({ value, onChange, onLocationSelect, placeholder =
         className="location-input"
         autoComplete="off"
         onFocus={() => query.length > 2 && setIsOpen(true)}
-        style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+        style={{ width: '100%' }}
       />
       
       {isOpen && (suggestions.length > 0 || isLoading) && (

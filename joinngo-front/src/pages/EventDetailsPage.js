@@ -225,7 +225,7 @@ const EventDetailsPage = ({ currentUserId }) => {
 
       <div
         className="event-card"
-        style={{ maxWidth: '800px', margin: '0 auto', cursor: 'default' }}
+        style={{ margin: '0 auto', cursor: 'default' }}
       >
         <div className="category-badge">{event.category || 'Inne'}</div>
 

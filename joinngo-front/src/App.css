@@ -94,6 +94,7 @@ textarea {
   background-color: #fff;
   color: var(--text-dark);
   color-scheme: light;
+  font-family: inherit;
 }
 
 option {
@@ -235,6 +236,14 @@ label {
 .filter-item {
   flex: 1;
   min-width: 200px;
+}
+
+.filters-bar input,
+.filters-bar select {
+  height: 42px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
 }
 
 .events-grid {
