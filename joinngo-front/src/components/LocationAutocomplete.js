@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 
-const LocationAutocomplete = ({ value, onChange, placeholder = 'Wpisz miasto...', required = false }) => {
+const LocationAutocomplete = ({ value, onChange, onLocationSelect, placeholder = 'Wpisz miasto...', required = false }) => {
   const [query, setQuery] = useState(value || '')
   const [suggestions, setSuggestions] = useState([])
   const [isOpen, setIsOpen] = useState(false)
@@ -26,6 +26,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder = 'Wpisz miasto...'
       if (query.length > 2 && isOpen) {
         setIsLoading(true)
         try {
+          // Switch to Nominatim API using Polish language
           const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&countrycodes=pl&accept-language=pl`)
           
           if (!response.ok) {
@@ -38,12 +39,13 @@ const LocationAutocomplete = ({ value, onChange, placeholder = 'Wpisz miasto...'
 
           data.forEach(item => {
              const addr = item.address
-             const city = addr.city || addr.town || addr.village || addr.municipality || item.name
+             const cityName = addr.city || addr.town || addr.village || addr.municipality || item.name
              
-             if (city) {
-                 if (!uniqueCities.has(city)) {
-                     uniqueCities.add(city)
-                     mappedSuggestions.push(city)
+             if (cityName) {
+                 if (!uniqueCities.has(cityName)) {
+                     uniqueCities.add(cityName)
+                     // Store full item and extracted city name
+                     mappedSuggestions.push({ ...item, cityName })
                  }
              }
           })
@@ -70,9 +72,16 @@ const LocationAutocomplete = ({ value, onChange, placeholder = 'Wpisz miasto...'
     setIsOpen(true)
   }
 
-  const handleSelect = (city) => {
-    setQuery(city)
-    onChange(city)
+  const handleSelect = (item) => {
+    setQuery(item.cityName)
+    onChange(item.cityName)
+    if (onLocationSelect) {
+        onLocationSelect({
+            lat: parseFloat(item.lat),
+            lon: parseFloat(item.lon),
+            display_name: item.display_name
+        })
+    }
     setIsOpen(false)
     setSuggestions([])
   }
@@ -91,14 +100,13 @@ const LocationAutocomplete = ({ value, onChange, placeholder = 'Wpisz miasto...'
         style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #d1d5db' }}
       />
       
-      {/* Dropdown */}
       {isOpen && (suggestions.length > 0 || isLoading) && (
         <ul className="location-dropdown-list">
           {isLoading && suggestions.length === 0 && <li className="loading-item">Szukam...</li>}
           
-          {!isLoading && suggestions.map((city, index) => (
-            <li key={index} onClick={() => handleSelect(city)}>
-              {city}
+          {!isLoading && suggestions.map((item, index) => (
+            <li key={index} onClick={() => handleSelect(item)}>
+              {item.cityName} <span style={{fontSize: '0.8em', color: '#6b7280'}}>({item.display_name})</span>
             </li>
           ))}
         </ul>

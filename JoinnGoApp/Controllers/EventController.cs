@@ -32,6 +32,8 @@ public class EventController : ControllerBase
             Date = eventDate,
             Location = dto.Location,
             City = dto.City,
+            Latitude = dto.Latitude,
+            Longitude = dto.Longitude,
             IsPrivate = dto.IsPrivate,
             Category = dto.Category,
             CreatorId = userId
@@ -109,6 +111,8 @@ public class EventController : ControllerBase
         eventItem.Date = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc);
         eventItem.Location = dto.Location;
         eventItem.City = dto.City;
+        eventItem.Latitude = dto.Latitude;
+        eventItem.Longitude = dto.Longitude;
         eventItem.IsPrivate = dto.IsPrivate;
         eventItem.Category = dto.Category;
 
@@ -288,6 +292,8 @@ public class EventController : ControllerBase
             eventItem.Date,
             eventItem.Location,
             eventItem.City,
+            eventItem.Latitude,
+            eventItem.Longitude,
             eventItem.IsPrivate,
             Category = eventItem.Category.ToString(),
             eventItem.CreatorId,
@@ -319,6 +325,8 @@ public class EventController : ControllerBase
                 e.Date,
                 e.Location,
                 e.City,
+                e.Latitude,
+                e.Longitude,
                 e.IsPrivate,
                 Category = e.Category.ToString(),
                 ParticipantsCount = e.EventParticipants.Count
@@ -347,6 +355,8 @@ public class EventController : ControllerBase
                 e.Date,
                 e.Location,
                 e.City,
+                e.Latitude,
+                e.Longitude,
                 e.IsPrivate,
                 Category = e.Category.ToString(),
                 CreatorId = e.CreatorId,
@@ -418,6 +428,8 @@ public class EventController : ControllerBase
                 e.Date,
                 e.Location,
                 e.City,
+                e.Latitude,
+                e.Longitude,
                 e.IsPrivate,
                 Category = e.Category.ToString(),
                 e.CreatorId,
@@ -513,6 +525,8 @@ public class CreateEventDto
     public DateTime Date { get; set; }
     public string Location { get; set; }
     public string City { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public bool IsPrivate { get; set; }
     public EventCategory Category { get; set; }
 }
@@ -524,6 +538,8 @@ public class UpdateEventDto
     public DateTime Date { get; set; }
     public string Location { get; set; }
     public string City { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public bool IsPrivate { get; set; }
     public EventCategory Category { get; set; }
 }
