@@ -86,7 +86,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
     latitude: null,
     longitude: null,
     isPrivate: false,
-    category: 0,
+    category: '',
   })
 
   const [mapCenter, setMapCenter] = useState([52.2297, 21.0122]) // Default: Warszawa
@@ -116,6 +116,12 @@ function CreateEventModal({ onClose, onEventCreated }) {
     try {
       if (!formData.date) {
         setError('Proszę wybrać datę i godzinę.')
+        setLoading(false)
+        return
+      }
+
+      if (formData.category === '' || formData.category === null) {
+        setError('Proszę wybrać kategorię.')
         setLoading(false)
         return
       }
@@ -185,10 +191,18 @@ function CreateEventModal({ onClose, onEventCreated }) {
               name="category"
               value={formData.category}
               onChange={handleChange}
-              style={{ width: '100%', marginBottom: '10px' }}
+              style={{
+                width: '100%',
+                marginBottom: '10px',
+                color: formData.category === '' ? '#6b7280' : 'var(--text-dark)',
+              }}
+              required
             >
+              <option value="" disabled>
+                Wybierz kategorię
+              </option>
               {EVENT_CATEGORIES.map((cat) => (
-                <option key={cat.id} value={cat.id}>
+                <option key={cat.id} value={cat.id} style={{ color: 'var(--text-dark)' }}>
                   {cat.name}
                 </option>
               ))}
@@ -248,14 +262,21 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
             <div className="form-group" style={{ flex: 1 }}>
               <label>Dokładne miejsce:</label>
-              <input
-                type="text"
-                name="location"
-                required
+              <LocationAutocomplete
                 value={formData.location}
-                onChange={handleChange}
-                placeholder="Np. Hala sportowa"
-                style={{ width: '100%', marginBottom: '10px' }}
+                onChange={(val) => setFormData((prev) => ({ ...prev, location: val }))}
+                onLocationSelect={(loc) => {
+                  setMapCenter([loc.lat, loc.lon])
+                  setMarkerPosition({ lat: loc.lat, lng: loc.lon })
+                  setFormData((prev) => ({
+                    ...prev,
+                    latitude: loc.lat,
+                    longitude: loc.lon,
+                  }))
+                }}
+                placeholder="Np. ul. Prosta 51"
+                required
+                contextQuery={formData.city}
               />
             </div>
           </div>

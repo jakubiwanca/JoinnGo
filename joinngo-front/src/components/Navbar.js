@@ -1,0 +1,35 @@
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+
+function Navbar({ user, onLogout, onOpenCreateModal }) {
+  const navigate = useNavigate()
+
+  return (
+    <header className="app-header">
+      <div style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+        <h2>Join'nGo</h2>
+        <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+          Zalogowany jako: <b>{user?.email}</b>
+        </span>
+      </div>
+      <div className="header-actions">
+        <button className="btn-primary" onClick={onOpenCreateModal}>
+          + Nowe Wydarzenie
+        </button>
+        <button className="btn-secondary" onClick={() => navigate('/profile')}>
+          👤 Mój Profil
+        </button>
+        {user?.role === 'Admin' && (
+          <button className="btn-secondary" onClick={() => navigate('/admin')}>
+            Panel Admina
+          </button>
+        )}
+        <button className="logout-btn" onClick={onLogout}>
+          Wyloguj
+        </button>
+      </div>
+    </header>
+  )
+}
+
+export default Navbar

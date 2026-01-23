@@ -4,7 +4,7 @@ import { changePassword } from '../api/auth'
 import EditEventModal from '../components/EditEventModal'
 import { formatPolishDate, formatPolishTime } from '../utils/dateFormat'
 
-function ProfilePage({ currentUserEmail, navigate }) {
+function ProfilePage({ refreshTrigger }) {
   const [createdEvents, setCreatedEvents] = useState([])
   const [joinedEvents, setJoinedEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +42,7 @@ function ProfilePage({ currentUserEmail, navigate }) {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [refreshTrigger])
 
   const handleEditClick = (event) => {
     setEditingEvent(event)
@@ -277,20 +277,8 @@ function ProfilePage({ currentUserEmail, navigate }) {
 
   return (
     <div>
-      {/* Header */}
-      <header className="app-header">
-        <div>
-          <h2>Mój Profil 👤</h2>
-          <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>{currentUserEmail}</span>
-        </div>
-        <div className="header-actions">
-          <button className="btn-secondary" onClick={() => navigate('/')}>
-            ← Powrót do wydarzeń
-          </button>
-        </div>
-      </header>
-
       <div className="main-container">
+        <h2 style={{ marginBottom: '20px' }}>Mój Profil 👤</h2>
         {/* Tabs Navigation */}
         <div className="profile-tabs">
           <button
@@ -320,7 +308,7 @@ function ProfilePage({ currentUserEmail, navigate }) {
         </div>
       </div>
 
-      {/* Modal Edycji */}
+      {/* Edit Modal */}
       {editingEvent && (
         <EditEventModal
           eventToEdit={editingEvent}

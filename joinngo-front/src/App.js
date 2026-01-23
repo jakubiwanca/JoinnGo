@@ -8,11 +8,16 @@ import AdminPanel from './pages/AdminPanel'
 import { getProfile, logout } from './api/auth'
 import ProfilePage from './pages/ProfilePage'
 import './App.css'
-import EventDetailsPage from './pages/EventDetailsPage';
+import EventDetailsPage from './pages/EventDetailsPage'
+import Navbar from './components/Navbar'
+import CreateEventModal from './components/CreateEventModal'
 
 function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
     checkSession()
@@ -44,23 +49,22 @@ function App() {
     }
   }
 
-  const HomeWrapper = () => {
-    const navigate = useNavigate()
-    return (
-      <Home
-        currentUserId={user ? parseInt(user.id, 10) : null}
-        currentUserEmail={user ? user.email : ''}
-        token={null}
-        role={user?.role || 'User'}
-        onLogout={handleLogout}
-        navigate={navigate}
-      />
-    )
+  const handleEventCreated = () => {
+    setRefreshTrigger((prev) => prev + 1)
   }
 
-  const ProfileWrapper = () => {
-    const navigate = useNavigate()
-    return <ProfilePage currentUserEmail={user?.email} navigate={navigate} />
+  // Layout for authenticated pages
+  const AuthenticatedLayout = ({ children }) => {
+    return (
+      <>
+        <Navbar
+          user={user}
+          onLogout={handleLogout}
+          onOpenCreateModal={() => setCreateModalOpen(true)}
+        />
+        <div style={{ paddingTop: '20px' }}>{children}</div>
+      </>
+    )
   }
 
   if (loading) {
@@ -73,33 +77,81 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={user ? <HomeWrapper /> : <Navigate to="/landing" />} />
+      <div className="app-container">
+        <Routes>
+          <Route
+            path="/"
+            element={
+              user ? (
+                <AuthenticatedLayout>
+                  <Home
+                    currentUserId={user ? parseInt(user.id, 10) : null}
+                    role={user?.role || 'User'}
+                    refreshTrigger={refreshTrigger}
+                  />
+                </AuthenticatedLayout>
+              ) : (
+                <Navigate to="/landing" />
+              )
+            }
+          />
 
-        <Route path="/landing" element={user ? <Navigate to="/" /> : <LandingPage />} />
+          <Route path="/landing" element={user ? <Navigate to="/" /> : <LandingPage />} />
 
-        <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />} />
+          <Route
+            path="/login"
+            element={user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />}
+          />
 
-        <Route
-          path="/admin"
-          element={
-            user && user.role === 'Admin' ? (
-              <AdminPanel token={null} currentUserId={parseInt(user.id, 10)} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" />
-            )
-          }
-        />
+          <Route
+            path="/admin"
+            element={
+              user && user.role === 'Admin' ? (
+                <AuthenticatedLayout>
+                  <AdminPanel
+                    token={null}
+                    currentUserId={parseInt(user.id, 10)}
+                    onLogout={handleLogout}
+                  />
+                </AuthenticatedLayout>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
 
-        <Route path="/profile" element={user ? <ProfileWrapper /> : <Navigate to="/landing" />} />
+          <Route
+            path="/profile"
+            element={
+              user ? (
+                <AuthenticatedLayout>
+                  <ProfilePage currentUserEmail={user?.email} refreshTrigger={refreshTrigger} />
+                </AuthenticatedLayout>
+              ) : (
+                <Navigate to="/landing" />
+              )
+            }
+          />
 
-        <Route 
-          path="/event/:id" 
-          element={<EventDetailsPage currentUserId={user ? parseInt(user.id, 10) : null} />} 
-        />
+          <Route
+            path="/event/:id"
+            element={
+              <AuthenticatedLayout>
+                <EventDetailsPage currentUserId={user ? parseInt(user.id, 10) : null} />
+              </AuthenticatedLayout>
+            }
+          />
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+
+        {user && createModalOpen && (
+          <CreateEventModal
+            onClose={() => setCreateModalOpen(false)}
+            onEventCreated={handleEventCreated}
+          />
+        )}
+      </div>
     </Router>
   )
 }

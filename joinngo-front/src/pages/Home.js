@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
-import CreateEventModal from '../components/CreateEventModal'
 import ParticipantsModal from '../components/ParticipantsModal'
 import ConfirmModal from '../components/ConfirmModal'
 import LocationAutocomplete from '../components/LocationAutocomplete'
@@ -12,14 +12,14 @@ import { pl } from 'date-fns/locale/pl'
 
 registerLocale('pl', pl)
 
-function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
+function Home({ role, currentUserId, refreshTrigger }) {
+  const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
 
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [managingEventId, setManagingEventId] = useState(null)
 
   // Confirm modal state
@@ -147,7 +147,7 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
 
   useEffect(() => {
     fetchEvents()
-  }, [fetchEvents])
+  }, [fetchEvents, refreshTrigger])
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target
@@ -224,32 +224,6 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
 
   return (
     <div>
-      {/* HEADER */}
-      <header className="app-header">
-        <div>
-          <h2>Join'nGo</h2>
-          <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-            Zalogowany jako: <b>{currentUserEmail}</b>
-          </span>
-        </div>
-        <div className="header-actions">
-          <button className="btn-secondary" onClick={() => navigate('/profile')}>
-            👤 Mój Profil
-          </button>
-          <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
-            + Nowe Wydarzenie
-          </button>
-          {role === 'Admin' && (
-            <button className="btn-secondary" onClick={() => navigate('/admin')}>
-              Panel Admina
-            </button>
-          )}
-          <button className="logout-btn" onClick={onLogout}>
-            Wyloguj
-          </button>
-        </div>
-      </header>
-
       <div className="main-container">
         {/* FILTERS */}
         <div className="filters-bar">
@@ -448,17 +422,6 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
           </>
         )}
       </div>
-
-      {isCreateModalOpen && (
-        <CreateEventModal
-          onClose={() => setIsCreateModalOpen(false)}
-          onEventCreated={() => {
-            setPage(1)
-            fetchEvents()
-          }}
-        />
-      )}
-
       {managingEventId && (
         <ParticipantsModal
           eventId={managingEventId}
