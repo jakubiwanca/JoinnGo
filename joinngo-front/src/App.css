@@ -282,15 +282,19 @@ label {
 }
 
 .event-card.event-private {
-  border-left-color: #8b5cf6; /* fioletowy - prywatne */
+  border-left-color: #881337; /* bordowy - prywatne */
 }
 
 .event-card.event-public {
-  border-left-color: #10b981; /* zielony - publiczne */
+  border-left-color: #3b82f6; /* niebieski - publiczne */
 }
 
 .event-card.event-joined {
-  border-left-color: #3b82f6; /* niebieski - dołączeni */
+  border-left-color: #10b981; /* zielony - dołączeni */
+}
+
+.event-card.event-created {
+  border-left-color: #4f46e5; /* fioletowy - utworzone przze mnie */
 }
 
 .category-badge {

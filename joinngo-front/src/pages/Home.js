@@ -328,7 +328,9 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                 const isConfirmed = myParticipation?.status === 1
 
                 let cardColorClass = 'event-public'
-                if (isJoined) {
+                if (isMyEvent) {
+                  cardColorClass = 'event-created'
+                } else if (isJoined) {
                   cardColorClass = 'event-joined'
                 } else if (event.isPrivate) {
                   cardColorClass = 'event-private'
