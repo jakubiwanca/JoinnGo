@@ -396,8 +396,7 @@ public class EventController : ControllerBase
         if (!string.IsNullOrEmpty(location))
         {
             location = location.ToLower();
-            query = query.Where(e => e.Location.ToLower().Contains(location) ||
-                                     e.City.ToLower().Contains(location));
+            query = query.Where(e => e.City.ToLower().Contains(location));
         }
 
         if (category.HasValue)

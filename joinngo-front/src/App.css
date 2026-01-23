@@ -176,6 +176,14 @@ label {
 .toggle-link:hover {
   text-decoration: underline;
 }
+/* --- DatePicker --- */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
 
 /* --- HEADER --- */
 .app-header {
@@ -263,7 +271,9 @@ label {
   position: relative;
   border: 1px solid #f3f4f6;
   border-left: 4px solid #d1d5db;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .event-card:hover {
@@ -351,6 +361,7 @@ label {
   align-items: center;
   z-index: 1000;
   backdrop-filter: blur(2px);
+  padding: 20px;
 }
 
 .modal-content {
@@ -360,6 +371,10 @@ label {
   width: 90%;
   max-width: 500px;
   box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow-y: auto;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -403,7 +418,6 @@ label {
   gap: 12px;
 }
 
-
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -444,12 +458,13 @@ label {
   right: -50%;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
   animation: pulse 15s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.5;
   }
@@ -485,7 +500,8 @@ label {
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -531,7 +547,9 @@ label {
   padding: 25px;
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   border-radius: 16px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .feature-item:hover {
@@ -734,6 +752,20 @@ label {
   position: relative;
 }
 
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close-btn:hover {
+  color: #1f2937;
+}
+
 .location-dropdown-list {
   position: absolute;
   top: 100%;
@@ -744,7 +776,7 @@ label {
   border-radius: 0 0 8px 8px;
   max-height: 200px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 99999;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -754,14 +786,14 @@ label {
 .location-dropdown-list li {
   padding: 10px 12px;
   cursor: pointer;
-  color: #1f2937; /* Force dark text */
-  background-color: #ffffff; /* Force white background */
+  color: #1f2937;
+  background-color: #ffffff;
   border-bottom: 1px solid #f3f4f6;
   font-size: 0.95rem;
 }
 
 .location-dropdown-list li:hover {
-  background-color: #f3f4f6; /* Light gray on hover */
+  background-color: #f3f4f6;
 }
 
 .location-dropdown-list li:last-child {
@@ -773,5 +805,3 @@ label {
   font-style: italic;
   cursor: default;
 }
-
-

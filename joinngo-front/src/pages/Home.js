@@ -5,8 +5,12 @@ import ParticipantsModal from '../components/ParticipantsModal'
 import ConfirmModal from '../components/ConfirmModal'
 import LocationAutocomplete from '../components/LocationAutocomplete'
 import { EVENT_CATEGORIES } from '../constants/categories'
-import { Link } from 'react-router-dom';
-import { formatPolishDateTime } from '../utils/dateFormat';
+import { formatPolishDateTime } from '../utils/dateFormat'
+import DatePicker, { registerLocale } from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
+import { pl } from 'date-fns/locale/pl'
+
+registerLocale('pl', pl)
 
 function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
   const [events, setEvents] = useState([])
@@ -42,16 +46,51 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
     category: '',
   })
 
+  const [locationInput, setLocationInput] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (locationInput.length >= 3 || locationInput.length === 0) {
+        setFilters((prev) => {
+          if (prev.location !== locationInput) {
+            setPage(1)
+            return { ...prev, location: locationInput }
+          }
+          return prev
+        })
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [locationInput])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput.length >= 3 || searchInput.length === 0) {
+        setFilters((prev) => {
+          if (prev.search !== searchInput) {
+            setPage(1)
+            return { ...prev, search: searchInput }
+          }
+          return prev
+        })
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
       if (filters.search) params.append('search', filters.search)
       if (filters.location) params.append('location', filters.location)
-      
+
       let clientSideDateFilter = null
       if (filters.date) {
-        const dateParts = filters.date.split('/').filter(part => part !== '')
+        const dateParts = filters.date.split('.').filter((part) => part !== '')
         if (dateParts.length === 3 && dateParts[2].length === 4) {
           const day = dateParts[0].padStart(2, '0')
           const month = dateParts[1].padStart(2, '0')
@@ -62,7 +101,7 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
           clientSideDateFilter = dateParts
         }
       }
-      
+
       if (filters.category !== '') params.append('category', filters.category)
 
       params.append('page', page)
@@ -79,17 +118,19 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
       }
 
       if (clientSideDateFilter) {
-        events = events.filter(event => {
+        events = events.filter((event) => {
           const eventDate = new Date(event.date)
           const eventDay = String(eventDate.getDate()).padStart(2, '0')
           const eventMonth = String(eventDate.getMonth() + 1).padStart(2, '0')
-          
+
           if (clientSideDateFilter.length === 1) {
             return eventDay === clientSideDateFilter[0].padStart(2, '0')
           }
           if (clientSideDateFilter.length === 2) {
-            return eventDay === clientSideDateFilter[0].padStart(2, '0') &&
-                   eventMonth === clientSideDateFilter[1].padStart(2, '0')
+            return (
+              eventDay === clientSideDateFilter[0].padStart(2, '0') &&
+              eventMonth === clientSideDateFilter[1].padStart(2, '0')
+            )
           }
           return false
         })
@@ -114,8 +155,23 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
     setPage(1)
   }
 
+  const handleDateChange = (date) => {
+    if (date) {
+      const day = String(date.getDate()).padStart(2, '0')
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const year = date.getFullYear()
+      const formattedDate = `${day}.${month}.${year}`
+      setFilters((prev) => ({ ...prev, date: formattedDate }))
+    } else {
+      setFilters((prev) => ({ ...prev, date: '' }))
+    }
+    setPage(1)
+  }
+
   const clearFilters = () => {
     setFilters({ search: '', location: '', date: '', category: '' })
+    setLocationInput('')
+    setSearchInput('')
     setPage(1)
   }
 
@@ -139,10 +195,14 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
           await apiClient.delete(`/Event/${eventId}`)
           setEvents((prev) => prev.filter((e) => e.id !== eventId))
         } catch (err) {
-          showConfirm('Błąd', 'Nie udało się usunąć: ' + (err.response?.data || err.message), hideConfirm)
+          showConfirm(
+            'Błąd',
+            'Nie udało się usunąć: ' + (err.response?.data || err.message),
+            hideConfirm,
+          )
         }
       },
-      true
+      true,
     )
   }
 
@@ -158,7 +218,7 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
         } catch (err) {
           showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
         }
-      }
+      },
     )
   }
 
@@ -199,8 +259,8 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
               type="text"
               name="search"
               placeholder="Nazwa wydarzenia..."
-              value={filters.search}
-              onChange={handleFilterChange}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
 
@@ -216,28 +276,33 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
             </select>
           </div>
 
-
           <div className="filter-item" style={{ flex: 1 }}>
             <label>Miasto</label>
             <LocationAutocomplete
-              value={filters.location}
-              onChange={(val) => {
-                setFilters(prev => ({ ...prev, location: val }))
-                setPage(1)
-              }}
+              value={locationInput}
+              onChange={(val) => setLocationInput(val)}
               placeholder="Wpisz miasto..."
             />
           </div>
 
           <div className="filter-item" style={{ flex: 0.5 }}>
             <label>Data</label>
-            <input 
-              type="text" 
-              name="date" 
-              value={filters.date} 
-              onChange={handleFilterChange}
-              placeholder="dd/mm/rrrr"
-              pattern="\d{2}/\d{2}/\d{4}"
+            <DatePicker
+              selected={
+                filters.date
+                  ? (() => {
+                      const [d, m, y] = filters.date.split('.')
+                      return new Date(y, m - 1, d)
+                    })()
+                  : null
+              }
+              onChange={handleDateChange}
+              dateFormat="dd.MM.yyyy"
+              locale="pl"
+              placeholderText="dd.mm.rrrr"
+              className="date-picker-input"
+              isClearable
+              wrapperClassName="date-picker-wrapper"
             />
           </div>
 
@@ -270,13 +335,13 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                 }
 
                 return (
-                  <div 
-                    key={event.id} 
+                  <div
+                    key={event.id}
                     className={`event-card ${cardColorClass}`}
                     onClick={() => navigate(`/event/${event.id}`)}
                     style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
+                    onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
                   >
                     <div className="category-badge">{event.category || 'Inne'}</div>
 
@@ -302,9 +367,12 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
 
                       <div style={{ display: 'flex', gap: '8px' }}>
                         {canDelete && (
-                          <button 
-                            className="btn-danger" 
-                            onClick={(e) => { e.stopPropagation(); handleDelete(event.id); }}
+                          <button
+                            className="btn-danger"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(event.id)
+                            }}
                           >
                             Usuń
                           </button>
@@ -315,7 +383,10 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                             <button
                               className="btn-primary"
                               style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                              onClick={(e) => { e.stopPropagation(); handleJoin(event.id); }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleJoin(event.id)
+                              }}
                             >
                               {event.isPrivate ? 'Poproś' : 'Dołącz'}
                             </button>
@@ -323,7 +394,10 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                             <button
                               className="btn-secondary"
                               style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                              onClick={(e) => { e.stopPropagation(); handleLeave(event.id); }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleLeave(event.id)
+                              }}
                             >
                               {isConfirmed ? 'Opuść' : 'Anuluj'}
                             </button>
@@ -332,7 +406,10 @@ function Home({ onLogout, navigate, role, currentUserId, currentUserEmail }) {
                           <button
                             className="btn-secondary"
                             style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                            onClick={(e) => { e.stopPropagation(); setManagingEventId(event.id); }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setManagingEventId(event.id)
+                            }}
                           >
                             Zarządzaj
                           </button>
