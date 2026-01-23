@@ -1,35 +1,35 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
-import ParticipantsModal from '../components/ParticipantsModal';
-import Comments from '../components/Comments';
-import ConfirmModal from '../components/ConfirmModal';
-import { formatPolishDateTime } from '../utils/dateFormat';
+import ParticipantsModal from '../components/ParticipantsModal'
+import Comments from '../components/Comments'
+import ConfirmModal from '../components/ConfirmModal'
+import { formatPolishDateTime } from '../utils/dateFormat'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import icon from 'leaflet/dist/images/marker-icon.png'
+import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 
 let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-});
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+})
 
-L.Marker.prototype.options.icon = DefaultIcon;
+L.Marker.prototype.options.icon = DefaultIcon
 
 const EventDetailsPage = ({ currentUserId }) => {
   const { id } = useParams()
   const navigate = useNavigate()
 
   const [event, setEvent] = useState(null)
-  const [comments, setComments] = useState([]);
+  const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
-  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false)
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -59,29 +59,32 @@ const EventDetailsPage = ({ currentUserId }) => {
     setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
   }
 
-  const isUserParticipant = useCallback((theEvent) => {
-    if (!theEvent || !theEvent.participants) return false;
-    return theEvent.participants.some(p => p.userId === currentUserId);
-  }, [currentUserId]);
+  const isUserParticipant = useCallback(
+    (theEvent) => {
+      if (!theEvent || !theEvent.participants) return false
+      return theEvent.participants.some((p) => p.userId === currentUserId)
+    },
+    [currentUserId],
+  )
 
   const fetchComments = useCallback(async () => {
     try {
-      const response = await apiClient.get(`event/${id}/comments`);
-      setComments(response.data);
+      const response = await apiClient.get(`event/${id}/comments`)
+      setComments(response.data)
     } catch (err) {
-      console.error('Could not fetch comments:', err);
-      setComments([]);
+      console.error('Could not fetch comments:', err)
+      setComments([])
     }
-  }, [id]);
+  }, [id])
 
   const fetchEvent = useCallback(async () => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.get(`event/${id}`)
-      const fetchedEvent = response.data;
-      setEvent(fetchedEvent);
+      const fetchedEvent = response.data
+      setEvent(fetchedEvent)
       if (isUserParticipant(fetchedEvent)) {
-        fetchComments();
+        fetchComments()
       }
     } catch (err) {
       console.error(err)
@@ -89,7 +92,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     } finally {
       setLoading(false)
     }
-  }, [id, fetchComments, isUserParticipant]);
+  }, [id, fetchComments, isUserParticipant])
 
   useEffect(() => {
     fetchEvent()
@@ -109,23 +112,19 @@ const EventDetailsPage = ({ currentUserId }) => {
   }
 
   const handleLeave = () => {
-    showConfirm(
-      'Opuść wydarzenie',
-      'Czy na pewno chcesz zrezygnować z udziału?',
-      async () => {
-        hideConfirm()
-        setActionLoading(true)
-        try {
-          const response = await apiClient.delete(`event/${id}/leave`)
-          showConfirm('Sukces', response.data, hideConfirm)
-          fetchEvent()
-        } catch (err) {
-          showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
-        } finally {
-          setActionLoading(false)
-        }
+    showConfirm('Opuść wydarzenie', 'Czy na pewno chcesz zrezygnować z udziału?', async () => {
+      hideConfirm()
+      setActionLoading(true)
+      try {
+        const response = await apiClient.delete(`event/${id}/leave`)
+        showConfirm('Sukces', response.data, hideConfirm)
+        fetchEvent()
+      } catch (err) {
+        showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
+      } finally {
+        setActionLoading(false)
       }
-    )
+    })
   }
 
   const handleDelete = () => {
@@ -138,8 +137,8 @@ const EventDetailsPage = ({ currentUserId }) => {
         try {
           await apiClient.delete(`event/${id}`)
           showConfirm('Sukces', 'Wydarzenie zostało usunięte.', () => {
-             hideConfirm()
-             navigate('/')
+            hideConfirm()
+            navigate('/')
           })
         } catch (err) {
           showConfirm('Błąd', err.response?.data || 'Błąd podczas usuwania', hideConfirm)
@@ -147,21 +146,23 @@ const EventDetailsPage = ({ currentUserId }) => {
           setActionLoading(false)
         }
       },
-      true
+      true,
     )
   }
 
   const handleCommentPosted = (newComment) => {
-    setComments(prevComments => [...prevComments, newComment]);
-  };
+    setComments((prevComments) => [...prevComments, newComment])
+  }
 
   const handleCommentUpdated = (updatedComment) => {
-    setComments(prevComments => prevComments.map(c => c.id === updatedComment.id ? { ...c, ...updatedComment } : c));
-  };
+    setComments((prevComments) =>
+      prevComments.map((c) => (c.id === updatedComment.id ? { ...c, ...updatedComment } : c)),
+    )
+  }
 
   const handleCommentDeleted = (commentId) => {
-    setComments(prevComments => prevComments.filter(c => c.id !== commentId));
-  };
+    setComments((prevComments) => prevComments.filter((c) => c.id !== commentId))
+  }
 
   if (loading)
     return (
@@ -179,31 +180,31 @@ const EventDetailsPage = ({ currentUserId }) => {
 
   const participantsList = event.participants || []
   const isOrganizer = currentUserId === event.creatorId
-  const isJoined = isUserParticipant(event);
+  const isJoined = isUserParticipant(event)
   const isFull = event.maxParticipants > 0 && participantsList.length >= event.maxParticipants
 
   let actionButton
 
   if (isOrganizer) {
-        actionButton = (
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <button 
-                    className="btn-secondary" 
-                    onClick={() => setIsParticipantsModalOpen(true)} 
-                    style={{ padding: '10px 25px' }}
-                >
-                    ⚙️ Zarządzaj uczestnikami
-                </button>
-                <button 
-                    className="btn-danger" 
-                    onClick={handleDelete} 
-                    disabled={actionLoading} 
-                    style={{ padding: '10px 25px' }}
-                >
-                    {actionLoading ? "Usuwanie..." : "Usuń wydarzenie"}
-                </button>
-            </div>
-        );
+    actionButton = (
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button
+          className="btn-secondary"
+          onClick={() => setIsParticipantsModalOpen(true)}
+          style={{ padding: '10px 25px' }}
+        >
+          ⚙️ Zarządzaj uczestnikami
+        </button>
+        <button
+          className="btn-danger"
+          onClick={handleDelete}
+          disabled={actionLoading}
+          style={{ padding: '10px 25px' }}
+        >
+          {actionLoading ? 'Usuwanie...' : 'Usuń wydarzenie'}
+        </button>
+      </div>
+    )
   } else if (isJoined) {
     actionButton = (
       <button
@@ -216,9 +217,7 @@ const EventDetailsPage = ({ currentUserId }) => {
       </button>
     )
   } else {
-    const buttonText = event.isPrivate 
-      ? 'Poproś o dołączenie' 
-      : 'Dołącz do wydarzenia';
+    const buttonText = event.isPrivate ? 'Poproś o dołączenie' : 'Dołącz do wydarzenia'
 
     actionButton = (
       <button
@@ -234,29 +233,38 @@ const EventDetailsPage = ({ currentUserId }) => {
 
   return (
     <div className="main-container">
-      <header className="app-header" style={{ marginBottom: '2rem' }}>
-        <div>
-          <button className="btn-secondary" onClick={() => navigate('/')}>
-            &laquo; Powrót do listy
-          </button>
-        </div>
-        <h2>Szczegóły Wydarzenia</h2>
-      </header>
-
       <div
-        className="event-card"
-        style={{ margin: '0 auto', cursor: 'default' }}
+        style={{
+          background: 'var(--card-bg)',
+          padding: '20px',
+          borderRadius: '12px',
+          boxShadow: 'var(--shadow-sm)',
+          marginBottom: '2rem',
+          border: '1px solid #e5e7eb',
+          display: 'flex',
+          alignItems: 'center',
+        }}
       >
+        <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>Szczegóły Wydarzenia</h2>
+      </div>
+
+      <div className="event-card" style={{ margin: '0 auto', cursor: 'default' }}>
         <div className="category-badge">{event.category || 'Inne'}</div>
 
         <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <h1 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>
             {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}
           </h1>
-          <button 
+          <button
             onClick={handleShare}
             className="btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', fontSize: '0.9rem' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '5px 10px',
+              fontSize: '0.9rem',
+            }}
             title="Kopiuj link do wydarzenia"
           >
             🔗 {copied ? 'Skopiowano!' : 'Udostępnij'}
@@ -273,9 +281,11 @@ const EventDetailsPage = ({ currentUserId }) => {
           <span>
             📅 <b>Data:</b> {formatPolishDateTime(event.date)}
           </span>
-          {event.creator && <span>
-            👤 <b>Organizator:</b> {event.creator?.email || event.creatorId}
-          </span>}
+          {event.creator && (
+            <span>
+              👤 <b>Organizator:</b> {event.creator?.email || event.creatorId}
+            </span>
+          )}
         </div>
 
         <div className="card-body">
@@ -289,17 +299,30 @@ const EventDetailsPage = ({ currentUserId }) => {
         </div>
 
         {event.latitude && event.longitude && (
-            <div style={{ height: '300px', width: '100%', borderRadius: '10px', overflow: 'hidden', margin: '20px 0', border: '1px solid #ddd' }}>
-                <MapContainer center={[event.latitude, event.longitude]} zoom={13} style={{ height: '100%', width: '100%' }}>
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  />
-                  <Marker position={[event.latitude, event.longitude]}>
-                      <Popup>{event.title}</Popup>
-                  </Marker>
-                </MapContainer>
-            </div>
+          <div
+            style={{
+              height: '300px',
+              width: '100%',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              margin: '20px 0',
+              border: '1px solid #ddd',
+            }}
+          >
+            <MapContainer
+              center={[event.latitude, event.longitude]}
+              zoom={13}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              <Marker position={[event.latitude, event.longitude]}>
+                <Popup>{event.title}</Popup>
+              </Marker>
+            </MapContainer>
+          </div>
         )}
 
         <div
@@ -313,36 +336,34 @@ const EventDetailsPage = ({ currentUserId }) => {
 
           <div style={{ display: 'flex', gap: '10px' }}>{actionButton}</div>
         </div>
-        
+
         {isJoined && (
-            <Comments 
-                eventId={id} 
-                comments={comments} 
-                onCommentPosted={handleCommentPosted}
-                onCommentUpdated={handleCommentUpdated}
-                onCommentDeleted={handleCommentDeleted}
-                currentUserId={currentUserId}
-            />
+          <Comments
+            eventId={id}
+            comments={comments}
+            onCommentPosted={handleCommentPosted}
+            onCommentUpdated={handleCommentUpdated}
+            onCommentDeleted={handleCommentDeleted}
+            currentUserId={currentUserId}
+          />
         )}
-
       </div>
-            {isParticipantsModalOpen && (
-                <ParticipantsModal
-                    eventId={event.id}
-                    onClose={() => setIsParticipantsModalOpen(false)}
-                    onStatusChange={fetchEvent}
-                />
-            )}
+      {isParticipantsModalOpen && (
+        <ParticipantsModal
+          eventId={event.id}
+          onClose={() => setIsParticipantsModalOpen(false)}
+          onStatusChange={fetchEvent}
+        />
+      )}
 
-            <ConfirmModal
-                isOpen={confirmModal.isOpen}
-                title={confirmModal.title}
-                message={confirmModal.message}
-                onConfirm={confirmModal.onConfirm}
-                onCancel={hideConfirm}
-                danger={confirmModal.danger}
-            />
-
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        danger={confirmModal.danger}
+      />
     </div>
   )
 }

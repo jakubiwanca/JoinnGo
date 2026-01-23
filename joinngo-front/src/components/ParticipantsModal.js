@@ -5,7 +5,7 @@ import ConfirmModal from './ConfirmModal'
 function ParticipantsModal({ eventId, onClose, onStatusChange }) {
   const [participants, setParticipants] = useState([])
   const [loading, setLoading] = useState(true)
-  
+
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: '',
@@ -44,7 +44,7 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
   const handleAccept = async (userId) => {
     try {
       await apiClient.put(`event/${eventId}/participants/${userId}/status`, 'Confirmed', {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       })
 
       setParticipants((prev) =>
@@ -73,10 +73,14 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
           if (onStatusChange) onStatusChange()
         } catch (err) {
           console.error('Błąd podczas usuwania:', err)
-          showConfirm('Błąd', err.response?.data || 'Błąd podczas usuwania uczestnika.', hideConfirm)
+          showConfirm(
+            'Błąd',
+            err.response?.data || 'Błąd podczas usuwania uczestnika.',
+            hideConfirm,
+          )
         }
       },
-      true
+      true,
     )
   }
 
@@ -92,16 +96,8 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
           }}
         >
           <h3>Uczestnicy wydarzenia</h3>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              fontSize: '1.5em',
-              cursor: 'pointer',
-            }}
-          >
-            ×
+          <button onClick={onClose} className="modal-close-btn">
+            &times;
           </button>
         </div>
 
@@ -132,14 +128,23 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
                   {p.status === 'Interested' && (
                     <button
                       className="btn-primary"
-                      style={{ padding: '5px 10px', fontSize: '0.8em', background: '#28a745', border: 'none', borderRadius: '4px', color: 'white' }}
+                      style={{
+                        padding: '5px 10px',
+                        fontSize: '0.8em',
+                        background: '#28a745',
+                        border: 'none',
+                        borderRadius: '4px',
+                        color: 'white',
+                      }}
                       onClick={() => handleAccept(p.userId)}
                     >
                       Zatwierdź
                     </button>
                   )}
 
-                  {p.status === 'Confirmed' && <span style={{ color: 'green', fontSize: '1.2em' }}>✅</span>}
+                  {p.status === 'Confirmed' && (
+                    <span style={{ color: 'green', fontSize: '1.2em' }}>✅</span>
+                  )}
 
                   <button
                     className="btn-danger"

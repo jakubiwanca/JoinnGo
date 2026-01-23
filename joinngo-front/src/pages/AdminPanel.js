@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { getAllUsers, deleteUser } from '../api/users'
-import { Link } from 'react-router-dom'
 import ConfirmModal from '../components/ConfirmModal'
 
 function AdminPanel({ currentUserId, onLogout }) {
@@ -25,7 +24,7 @@ function AdminPanel({ currentUserId, onLogout }) {
 
   useEffect(() => {
     getAllUsers()
-      .then(users => setUsers(users.filter(u => u.email)))
+      .then((users) => setUsers(users.filter((u) => u.email)))
       .catch((err) => {
         console.error('getAllUsers error:', err)
         setError(err.message || 'Błąd podczas ładowania użytkowników')
@@ -46,31 +45,28 @@ function AdminPanel({ currentUserId, onLogout }) {
           showConfirm('Błąd', err.message || 'Nie udało się usunąć użytkownika', hideConfirm)
         }
       },
-      true
+      true,
     )
   }
 
   return (
     <div>
-      <header className="app-header">
-        <div>
-          <h2>Panel Administratora 🛠️</h2>
-        </div>
-        <div className="header-actions">
-          <Link
-            to="/"
-            className="btn-secondary"
-            style={{ textDecoration: 'none', marginRight: '10px' }}
-          >
-            ← Wróć na stronę główną
-          </Link>
-          <button onClick={onLogout} className="logout-btn">
-            Wyloguj
-          </button>
-        </div>
-      </header>
-
       <div className="main-container">
+        <div
+          style={{
+            background: 'var(--card-bg)',
+            padding: '20px',
+            borderRadius: '12px',
+            boxShadow: 'var(--shadow-sm)',
+            marginBottom: '30px',
+            border: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>Panel Administratora 🛠️</h2>
+        </div>
         {error && (
           <div
             style={{
@@ -166,7 +162,6 @@ function AdminPanel({ currentUserId, onLogout }) {
           </div>
         )}
       </div>
-
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}

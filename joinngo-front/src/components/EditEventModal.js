@@ -195,7 +195,19 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
   return (
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '900px', width: '90%' }}>
-        <h3>Edytuj wydarzenie</h3>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px',
+          }}
+        >
+          <h3 style={{ margin: 0 }}>Edytuj wydarzenie</h3>
+          <button onClick={onClose} className="modal-close-btn">
+            &times;
+          </button>
+        </div>
         {error && (
           <p className="error-msg" style={{ color: 'red' }}>
             {error}

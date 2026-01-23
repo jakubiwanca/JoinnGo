@@ -278,7 +278,21 @@ function ProfilePage({ refreshTrigger }) {
   return (
     <div>
       <div className="main-container">
-        <h2 style={{ marginBottom: '20px' }}>Mój Profil 👤</h2>
+        <div
+          style={{
+            background: 'var(--card-bg)',
+            padding: '20px',
+            borderRadius: '12px',
+            boxShadow: 'var(--shadow-sm)',
+            marginBottom: '30px',
+            border: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>Mój Profil 👤</h2>
+        </div>
         {/* Tabs Navigation */}
         <div className="profile-tabs">
           <button
