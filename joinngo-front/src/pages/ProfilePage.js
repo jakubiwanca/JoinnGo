@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import apiClient from '../api/axiosClient'
 import { changePassword } from '../api/auth'
 import EditEventModal from '../components/EditEventModal'
+import ConfirmModal from '../components/ConfirmModal'
 import { formatPolishDate, formatPolishTime } from '../utils/dateFormat'
 
 function ProfilePage({ refreshTrigger }) {
@@ -12,7 +13,6 @@ function ProfilePage({ refreshTrigger }) {
 
   const [editingEvent, setEditingEvent] = useState(null)
 
-  // Password change state
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -21,6 +21,22 @@ function ProfilePage({ refreshTrigger }) {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    danger: false,
+  })
+
+  const showConfirm = (title, message, onConfirm, danger = false) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  }
+
+  const hideConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
+  }
 
   const fetchData = async () => {
     try {
@@ -64,7 +80,7 @@ function ProfilePage({ refreshTrigger }) {
     setPasswordError('')
     setPasswordSuccess('')
 
-    // Validation
+    // walidacja
     if (
       !passwordForm.currentPassword ||
       !passwordForm.newPassword ||
@@ -97,6 +113,23 @@ function ProfilePage({ refreshTrigger }) {
     }
   }
 
+  const handleDismiss = (eventId) => {
+    showConfirm(
+      'Usuń powiadomienie',
+      'Czy chcesz usunąć to wydarzenie z listy odrzuconych?',
+      async () => {
+        hideConfirm()
+        try {
+          await apiClient.delete(`/Event/${eventId}/leave`)
+          fetchData()
+        } catch (err) {
+          console.error(err)
+        }
+      },
+      true,
+    )
+  }
+
   const renderEventList = (events, isJoinedList = false) => {
     if (!events || events.length === 0) {
       return <p style={{ color: '#6b7280', fontStyle: 'italic' }}>Brak wydarzeń.</p>
@@ -111,7 +144,13 @@ function ProfilePage({ refreshTrigger }) {
         }}
       >
         {events.map((event) => {
-          const colorClass = isJoinedList ? 'event-joined' : 'event-created'
+          let colorClass = isJoinedList ? 'event-joined' : 'event-created'
+
+          if (isJoinedList) {
+            if (event.myStatus === 'Interested') colorClass = 'event-pending'
+            else if (event.myStatus === 'Rejected') colorClass = 'event-rejected'
+          }
+
           return (
             <div key={event.id} className={`event-card ${colorClass}`}>
               <div
@@ -140,9 +179,26 @@ function ProfilePage({ refreshTrigger }) {
                   <button
                     className="btn-secondary"
                     style={{ padding: '4px 8px', fontSize: '0.8rem' }}
-                    onClick={() => handleEditClick(event)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEditClick(event)
+                    }}
                   >
                     ✏️ Edytuj
+                  </button>
+                )}
+
+                {isJoinedList && event.myStatus === 'Rejected' && (
+                  <button
+                    className="btn-danger"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDismiss(event.id)
+                    }}
+                    style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+                    title="Usuń z listy"
+                  >
+                    🗑️ Usuń
                   </button>
                 )}
               </div>
@@ -161,8 +217,21 @@ function ProfilePage({ refreshTrigger }) {
                   Organizator: <b>{event.creatorEmail}</b>
                   <br />
                   Twój status:{' '}
-                  <span style={{ color: event.myStatus === 'Confirmed' ? 'green' : 'orange' }}>
-                    {event.myStatus === 'Confirmed' ? 'Potwierdzony' : event.myStatus}
+                  <span
+                    style={{
+                      color:
+                        event.myStatus === 'Confirmed'
+                          ? 'green'
+                          : event.myStatus === 'Rejected'
+                            ? 'red'
+                            : 'orange',
+                    }}
+                  >
+                    {event.myStatus === 'Confirmed'
+                      ? 'Potwierdzony'
+                      : event.myStatus === 'Rejected'
+                        ? 'Odrzucony'
+                        : 'Oczekuje na akceptację'}
                   </span>
                 </div>
               )}
@@ -179,39 +248,79 @@ function ProfilePage({ refreshTrigger }) {
     )
   }
 
-  const renderEventsTab = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-      {/* Utworzone */}
-      <section>
-        <h3
-          style={{
-            borderBottom: '2px solid #e5e7eb',
-            paddingBottom: '10px',
-            marginBottom: '20px',
-            color: '#4f46e5',
-          }}
-        >
-          Wydarzenia utworzone przeze mnie ({createdEvents.length})
-        </h3>
-        {renderEventList(createdEvents)}
-      </section>
+  const renderEventsTab = () => {
+    const pendingEvents = joinedEvents.filter((e) => e.myStatus === 'Interested')
+    const confirmedEvents = joinedEvents.filter((e) => e.myStatus === 'Confirmed')
+    const rejectedEvents = joinedEvents.filter((e) => e.myStatus === 'Rejected')
 
-      {/* Dołączone */}
-      <section>
-        <h3
-          style={{
-            borderBottom: '2px solid #e5e7eb',
-            paddingBottom: '10px',
-            marginBottom: '20px',
-            color: '#10b981',
-          }}
-        >
-          Wydarzenia, w których biorę udział ({joinedEvents.length})
-        </h3>
-        {renderEventList(joinedEvents, true)}
-      </section>
-    </div>
-  )
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+        {/* Utworzone */}
+        <section>
+          <h3
+            style={{
+              borderBottom: '2px solid #e5e7eb',
+              paddingBottom: '10px',
+              marginBottom: '20px',
+              color: '#4f46e5',
+            }}
+          >
+            Wydarzenia utworzone przeze mnie ({createdEvents.length})
+          </h3>
+          {renderEventList(createdEvents)}
+        </section>
+
+        {/* Oczekujące */}
+        {pendingEvents.length > 0 && (
+          <section>
+            <h3
+              style={{
+                borderBottom: '2px solid #e5e7eb',
+                paddingBottom: '10px',
+                marginBottom: '20px',
+                color: '#f59e0b',
+              }}
+            >
+              Oczekujące zgłoszenia ({pendingEvents.length})
+            </h3>
+            {renderEventList(pendingEvents, true)}
+          </section>
+        )}
+
+        {/* Potwierdzone */}
+        <section>
+          <h3
+            style={{
+              borderBottom: '2px solid #e5e7eb',
+              paddingBottom: '10px',
+              marginBottom: '20px',
+              color: '#10b981',
+            }}
+          >
+            Wydarzenia, w których biorę udział ({confirmedEvents.length})
+          </h3>
+          {renderEventList(confirmedEvents, true)}
+        </section>
+
+        {/* Odrzucone */}
+        {rejectedEvents.length > 0 && (
+          <section>
+            <h3
+              style={{
+                borderBottom: '2px solid #e5e7eb',
+                paddingBottom: '10px',
+                marginBottom: '20px',
+                color: '#ef4444',
+              }}
+            >
+              Odrzucone zgłoszenia ({rejectedEvents.length})
+            </h3>
+            {renderEventList(rejectedEvents, true)}
+          </section>
+        )}
+      </div>
+    )
+  }
 
   const renderSettingsTab = () => (
     <div className="password-form-container">
@@ -330,6 +439,15 @@ function ProfilePage({ refreshTrigger }) {
           onEventUpdated={handleEditSuccess}
         />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        danger={confirmModal.danger}
+      />
     </div>
   )
 }

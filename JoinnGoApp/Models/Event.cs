@@ -17,6 +17,7 @@ namespace JoinnGoApp.Models
         public EventCategory Category { get; set; }
         public int CreatorId { get; set; }
         public User Creator { get; set; }
+        public int MaxParticipants { get; set; }
 
         public List<EventParticipant> EventParticipants { get; set; } = new List<EventParticipant>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();

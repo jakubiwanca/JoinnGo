@@ -1,6 +1,15 @@
 import React from 'react'
 
-function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, confirmText = 'Tak', cancelText = 'Anuluj', danger = false }) {
+function ConfirmModal({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  confirmText = 'Tak',
+  cancelText = 'Anuluj',
+  danger = false,
+}) {
   if (!isOpen) return null
 
   return (
@@ -12,10 +21,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, confirmText
           <button className="btn-secondary" onClick={onCancel}>
             {cancelText}
           </button>
-          <button 
-            className={danger ? 'btn-danger' : 'btn-primary'} 
-            onClick={onConfirm}
-          >
+          <button className={danger ? 'btn-danger' : 'btn-primary'} onClick={onConfirm}>
             {confirmText}
           </button>
         </div>

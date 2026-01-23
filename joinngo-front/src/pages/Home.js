@@ -305,7 +305,14 @@ function Home({ role, currentUserId, refreshTrigger }) {
                 if (isMyEvent) {
                   cardColorClass = 'event-created'
                 } else if (isJoined) {
-                  cardColorClass = 'event-joined'
+                  const status = myParticipation?.status
+                  if (status === 0 || status === 'Interested') {
+                    cardColorClass = 'event-pending'
+                  } else if (status === 2 || status === 'Rejected') {
+                    cardColorClass = 'event-rejected'
+                  } else {
+                    cardColorClass = 'event-joined'
+                  }
                 } else if (event.isPrivate) {
                   cardColorClass = 'event-private'
                 }
@@ -338,7 +345,8 @@ function Home({ role, currentUserId, refreshTrigger }) {
 
                     <div className="card-footer">
                       <div className="participants-info">
-                        👥 {event.participants?.length || 0} osób
+                        👥 {event.participants?.length || 0}
+                        {event.maxParticipants > 0 ? ` / ${event.maxParticipants}` : ''}
                       </div>
 
                       <div style={{ display: 'flex', gap: '8px' }}>

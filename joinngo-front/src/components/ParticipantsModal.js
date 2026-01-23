@@ -61,6 +61,26 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
     }
   }
 
+  const handleReject = async (userId) => {
+    try {
+      await apiClient.put(`event/${eventId}/participants/${userId}/status`, 'Rejected', {
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      setParticipants((prev) =>
+        prev.map((p) => {
+          if (p.userId === userId) return { ...p, status: 'Rejected' }
+          return p
+        }),
+      )
+
+      if (onStatusChange) onStatusChange()
+    } catch (err) {
+      console.error(err)
+      showConfirm('Błąd', 'Błąd podczas odrzucania.', hideConfirm)
+    }
+  }
+
   const handleRemove = (userId, email) => {
     showConfirm(
       'Usuń uczestnika',
@@ -84,6 +104,9 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
     )
   }
 
+  const pendingParticipants = participants.filter((p) => p.status === 'Interested')
+  const confirmedParticipants = participants.filter((p) => p.status === 'Confirmed')
+
   return (
     <div className="modal-overlay">
       <div className="modal-content">
@@ -104,59 +127,96 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
         {loading ? (
           <p>Ładowanie...</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {participants.length === 0 && <p>Brak zgłoszeń.</p>}
-
-            {participants.map((p) => (
-              <li
-                key={p.userId}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px',
-                  borderBottom: '1px solid #eee',
-                }}
-              >
-                <div>
-                  <strong>{p.email}</strong>
-                  <br />
-                  <small>Status: {getStatusLabel(p.status)}</small>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  {p.status === 'Interested' && (
-                    <button
-                      className="btn-primary"
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* PENDING / OCZEKUJĄCE */}
+            {pendingParticipants.length > 0 && (
+              <div>
+                <h4 style={{ margin: '0 0 10px 0', color: '#f59e0b', fontSize: '1rem' }}>
+                  Oczekujące zgłoszenia ({pendingParticipants.length})
+                </h4>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {pendingParticipants.map((p) => (
+                    <li
+                      key={p.userId}
                       style={{
-                        padding: '5px 10px',
-                        fontSize: '0.8em',
-                        background: '#28a745',
-                        border: 'none',
-                        borderRadius: '4px',
-                        color: 'white',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '10px',
+                        borderBottom: '1px solid #eee',
                       }}
-                      onClick={() => handleAccept(p.userId)}
                     >
-                      Zatwierdź
-                    </button>
-                  )}
+                      <div>
+                        <strong>{p.email}</strong>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="btn-primary"
+                          style={{
+                            padding: '5px 10px',
+                            fontSize: '0.8em',
+                            background: '#10b981', // green
+                            border: 'none',
+                          }}
+                          onClick={() => handleAccept(p.userId)}
+                        >
+                          Zatwierdź
+                        </button>
+                        <button
+                          className="btn-danger"
+                          style={{ padding: '5px 10px', fontSize: '0.8em' }}
+                          onClick={() => handleReject(p.userId)}
+                        >
+                          Odrzuć
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-                  {p.status === 'Confirmed' && (
-                    <span style={{ color: 'green', fontSize: '1.2em' }}>✅</span>
-                  )}
-
-                  <button
-                    className="btn-danger"
-                    style={{ padding: '5px 10px', fontSize: '0.8em', borderRadius: '4px' }}
-                    onClick={() => handleRemove(p.userId, p.email)}
-                  >
-                    Usuń
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+            {/* CONFIRMED / UCZESTNICY */}
+            <div>
+              <h4 style={{ margin: '0 0 10px 0', color: '#4f46e5', fontSize: '1rem' }}>
+                Uczestnicy ({confirmedParticipants.length})
+              </h4>
+              {confirmedParticipants.length === 0 ? (
+                <p style={{ fontStyle: 'italic', color: '#6b7280' }}>Brak uczestników.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {confirmedParticipants.map((p) => (
+                    <li
+                      key={p.userId}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '10px',
+                        borderBottom: '1px solid #eee',
+                      }}
+                    >
+                      <div>
+                        <strong>{p.email}</strong>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <span style={{ color: 'green', fontSize: '1.2em', marginRight: '5px' }}>
+                          ✅
+                        </span>
+                        <button
+                          className="btn-danger"
+                          style={{ padding: '5px 10px', fontSize: '0.8em' }}
+                          onClick={() => handleRemove(p.userId, p.email)}
+                        >
+                          Usuń
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
@@ -175,7 +235,7 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
 function getStatusLabel(status) {
   switch (status) {
     case 'Interested':
-      return 'Oczekuje ⏳'
+      return 'Oczekuje na akceptację ⏳'
     case 'Confirmed':
       return 'Potwierdzony ✅'
     case 'Rejected':

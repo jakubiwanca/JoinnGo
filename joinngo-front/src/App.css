@@ -297,6 +297,14 @@ label {
   border-left-color: #4f46e5; /* fioletowy - utworzone przze mnie */
 }
 
+.event-card.event-pending {
+  border-left-color: #f59e0b; /* pomarańczowy - oczekujące */
+}
+
+.event-card.event-rejected {
+  border-left-color: #ef4444; /* czerwony - odrzucone */
+}
+
 .category-badge {
   position: absolute;
   top: 15px;

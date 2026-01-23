@@ -102,7 +102,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     setActionLoading(true)
     try {
       const response = await apiClient.post(`event/${id}/join`)
-      showConfirm('Sukces', response.data, hideConfirm)
+      showConfirm('Sukces', 'Pomyślnie dołączono do wydarzenia!', hideConfirm)
       fetchEvent()
     } catch (err) {
       showConfirm('Błąd', err.response?.data || 'Błąd podczas dołączania', hideConfirm)
@@ -117,7 +117,7 @@ const EventDetailsPage = ({ currentUserId }) => {
       setActionLoading(true)
       try {
         const response = await apiClient.delete(`event/${id}/leave`)
-        showConfirm('Sukces', response.data, hideConfirm)
+        showConfirm('Sukces', 'Pomyślnie opuszczono wydarzenie.', hideConfirm)
         fetchEvent()
       } catch (err) {
         showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
@@ -130,7 +130,7 @@ const EventDetailsPage = ({ currentUserId }) => {
   const handleDelete = () => {
     showConfirm(
       'Usuń wydarzenie',
-      'Czy na pewno chcesz TRWALE usunąć to wydarzenie?',
+      'Czy na pewno chcesz trwale usunąć to wydarzenie?',
       async () => {
         hideConfirm()
         setActionLoading(true)
@@ -195,14 +195,6 @@ const EventDetailsPage = ({ currentUserId }) => {
         >
           ⚙️ Zarządzaj uczestnikami
         </button>
-        <button
-          className="btn-danger"
-          onClick={handleDelete}
-          disabled={actionLoading}
-          style={{ padding: '10px 25px' }}
-        >
-          {actionLoading ? 'Usuwanie...' : 'Usuń wydarzenie'}
-        </button>
       </div>
     )
   } else if (isJoined) {
@@ -255,20 +247,46 @@ const EventDetailsPage = ({ currentUserId }) => {
           <h1 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>
             {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}
           </h1>
-          <button
-            onClick={handleShare}
-            className="btn-secondary"
+          <div
             style={{
+              marginLeft: 'auto',
               display: 'flex',
+              gap: '10px',
               alignItems: 'center',
-              gap: '5px',
-              padding: '5px 10px',
-              fontSize: '0.9rem',
+              marginTop: '25px',
             }}
-            title="Kopiuj link do wydarzenia"
           >
-            🔗 {copied ? 'Skopiowano!' : 'Udostępnij'}
-          </button>
+            <button
+              onClick={handleShare}
+              className="btn-secondary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 10px',
+                fontSize: '0.9rem',
+              }}
+              title="Kopiuj link do wydarzenia"
+            >
+              🔗 {copied ? 'Skopiowano link' : 'Udostępnij'}
+            </button>
+            {isOrganizer && (
+              <button
+                onClick={handleDelete}
+                className="btn-danger"
+                disabled={actionLoading}
+                style={{
+                  padding: '5px 10px',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                }}
+              >
+                🗑️ {actionLoading ? 'Usuwanie...' : 'Usuń'}
+              </button>
+            )}
+          </div>
         </div>
 
         <div

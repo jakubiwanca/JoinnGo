@@ -87,6 +87,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
     longitude: null,
     isPrivate: false,
     category: '',
+    maxParticipants: 0,
   })
 
   const [mapCenter, setMapCenter] = useState([52.2297, 21.0122]) // Default: Warszawa
@@ -100,7 +101,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
     let newValue = value
     if (type === 'checkbox') newValue = checked
-    if (name === 'category') newValue = parseInt(value, 10)
+    if (name === 'category' || name === 'maxParticipants') newValue = parseInt(value, 10)
 
     setFormData((prev) => ({
       ...prev,
@@ -324,6 +325,18 @@ function CreateEventModal({ onClose, onEventCreated }) {
               />
               Wydarzenie prywatne (wymaga akceptacji)
             </label>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: '20px' }}>
+            <label>Limit uczestników (0 = brak limitu):</label>
+            <input
+              type="number"
+              name="maxParticipants"
+              min="0"
+              value={formData.maxParticipants}
+              onChange={handleChange}
+              style={{ width: '100%', padding: '8px' }}
+            />
           </div>
 
           <div

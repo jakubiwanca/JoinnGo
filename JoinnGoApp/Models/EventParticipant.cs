@@ -4,7 +4,8 @@ public enum ParticipantStatus
 {
     Interested,
     Confirmed,
-    Cancelled
+    Cancelled,
+    Rejected
 }
 
 public class EventParticipant

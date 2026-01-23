@@ -88,6 +88,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     longitude: null,
     isPrivate: false,
     category: 0,
+    maxParticipants: 0,
   })
 
   const [mapCenter, setMapCenter] = useState([52.2297, 21.0122]) // Default: Warszawa
@@ -132,6 +133,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
         longitude: eventToEdit.longitude,
         isPrivate: eventToEdit.isPrivate,
         category: categoryId,
+        maxParticipants: eventToEdit.maxParticipants || 0,
       })
 
       if (eventToEdit.latitude && eventToEdit.longitude) {
@@ -145,7 +147,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     const { name, value, type, checked } = e.target
     let newValue = value
     if (type === 'checkbox') newValue = checked
-    if (name === 'category') newValue = parseInt(value, 10)
+    if (name === 'category' || name === 'maxParticipants') newValue = parseInt(value, 10)
 
     setFormData((prev) => ({ ...prev, [name]: newValue }))
   }
@@ -369,6 +371,18 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
               />
               Wydarzenie prywatne
             </label>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: '20px' }}>
+            <label>Limit uczestników (0 = brak limitu):</label>
+            <input
+              type="number"
+              name="maxParticipants"
+              min="0"
+              value={formData.maxParticipants}
+              onChange={handleChange}
+              style={{ width: '100%', padding: '8px' }}
+            />
           </div>
 
           <div

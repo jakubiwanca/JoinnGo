@@ -19,14 +19,14 @@ function LandingPage() {
           <span className="logo-icon">🎉</span>
           <h1 className="landing-title">Join'nGo</h1>
         </div>
-        
+
         <p className="landing-subtitle">
           Odkrywaj wydarzenia, łącz się z ludźmi, twórz niezapomniane wspomnienia
         </p>
-        
+
         <p className="landing-description">
-          Platforma do zarządzania i odkrywania wydarzeń. Dołącz do społeczności,
-          organizuj eventy i bierz udział w ekscytujących przygodach w Twojej okolicy.
+          Platforma do zarządzania i odkrywania wydarzeń. Dołącz do społeczności, organizuj eventy i
+          bierz udział w ekscytujących przygodach w Twojej okolicy.
         </p>
 
         <div className="landing-features">

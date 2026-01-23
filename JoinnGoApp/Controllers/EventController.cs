@@ -36,6 +36,7 @@ public class EventController : ControllerBase
             Longitude = dto.Longitude,
             IsPrivate = dto.IsPrivate,
             Category = dto.Category,
+            MaxParticipants = dto.MaxParticipants,
             CreatorId = userId
         };
 
@@ -70,6 +71,17 @@ public class EventController : ControllerBase
 
         if (existingParticipant != null)
             return BadRequest("Już jesteś zapisany na to wydarzenie.");
+
+        if (eventItem.MaxParticipants > 0)
+        {
+            var confirmedCount = await _context.EventParticipants
+                .CountAsync(ep => ep.EventId == eventId && ep.Status == ParticipantStatus.Confirmed);
+
+            if (confirmedCount >= eventItem.MaxParticipants)
+            {
+                return BadRequest("Wydarzenie osiągnęło limit miejsc.");
+            }
+        }
 
         var status = eventItem.IsPrivate ? ParticipantStatus.Interested : ParticipantStatus.Confirmed;
 
@@ -115,6 +127,7 @@ public class EventController : ControllerBase
         eventItem.Longitude = dto.Longitude;
         eventItem.IsPrivate = dto.IsPrivate;
         eventItem.Category = dto.Category;
+        eventItem.MaxParticipants = dto.MaxParticipants;
 
         await _context.SaveChangesAsync();
 
@@ -295,6 +308,7 @@ public class EventController : ControllerBase
             eventItem.Latitude,
             eventItem.Longitude,
             eventItem.IsPrivate,
+            eventItem.MaxParticipants,
             Category = eventItem.Category.ToString(),
             eventItem.CreatorId,
             Creator = eventItem.Creator != null ? new { eventItem.Creator.Email } : null,
@@ -328,6 +342,7 @@ public class EventController : ControllerBase
                 e.Latitude,
                 e.Longitude,
                 e.IsPrivate,
+                e.MaxParticipants,
                 Category = e.Category.ToString(),
                 ParticipantsCount = e.EventParticipants.Count
             })
@@ -358,6 +373,7 @@ public class EventController : ControllerBase
                 e.Latitude,
                 e.Longitude,
                 e.IsPrivate,
+                MaxParticipants = e.MaxParticipants,
                 Category = e.Category.ToString(),
                 CreatorId = e.CreatorId,
                 CreatorEmail = e.Creator != null ? e.Creator.Email : null,
@@ -430,6 +446,7 @@ public class EventController : ControllerBase
                 e.Latitude,
                 e.Longitude,
                 e.IsPrivate,
+                e.MaxParticipants,
                 Category = e.Category.ToString(),
                 e.CreatorId,
                 Creator = e.Creator != null ? new { e.Creator.Email } : null,
@@ -579,6 +596,7 @@ public class CreateEventDto
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public bool IsPrivate { get; set; }
+    public int MaxParticipants { get; set; }
     public EventCategory Category { get; set; }
 }
 
@@ -592,6 +610,7 @@ public class UpdateEventDto
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public bool IsPrivate { get; set; }
+    public int MaxParticipants { get; set; }
     public EventCategory Category { get; set; }
 }
 
