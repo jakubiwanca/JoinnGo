@@ -1,4 +1,4 @@
-# JoinnGo - Projekt Inżynierski
+# JoinnGo
 
 Aplikacja do zarządzania i dołączania do wydarzeń.
 
