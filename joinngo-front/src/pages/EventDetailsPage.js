@@ -307,6 +307,46 @@ const EventDetailsPage = ({ currentUserId }) => {
           )}
         </div>
 
+        {event.recurrence && (
+          <div
+            className="recurrence-info"
+            style={{
+              marginBottom: '1rem',
+              borderRadius: '8px',
+              fontSize: '0.95rem',
+              color: '#4b5563',
+            }}
+          >
+            <div style={{ fontWeight: '600', marginBottom: '4px' }}>🔄 Szczegóły:</div>
+            <div>
+              • Powtarzanie:{' '}
+              {event.recurrence.type === 1
+                ? event.recurrence.interval === 1
+                  ? 'Co tydzień'
+                  : `Co ${event.recurrence.interval} tygodnie`
+                : event.recurrence.interval === 1
+                  ? 'Co miesiąc'
+                  : `Co ${event.recurrence.interval} miesiące`}
+            </div>
+            {event.recurrence.type === 1 && event.recurrence.daysOfWeek && (
+              <div>
+                • Dni:{' '}
+                {event.recurrence.daysOfWeek
+                  .map((d) => ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'][d])
+                  .join(', ')}
+              </div>
+            )}
+            <div>
+              • Koniec:{' '}
+              {event.recurrence.endDate
+                ? `do ${formatPolishDateTime(event.recurrence.endDate)}`
+                : event.recurrence.maxOccurrences
+                  ? `po ${event.recurrence.maxOccurrences} wystąpieniach`
+                  : 'Brak daty końcowej'}
+            </div>
+          </div>
+        )}
+
         <div className="card-body">
           <h4 style={{ color: 'var(--text-dark)', marginBottom: '10px' }}>Opis:</h4>
           <p

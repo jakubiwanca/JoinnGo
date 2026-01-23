@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import { changePassword } from '../api/auth'
 import EditEventModal from '../components/EditEventModal'
 import ConfirmModal from '../components/ConfirmModal'
-import { formatPolishDate, formatPolishTime } from '../utils/dateFormat'
+import EventCard from '../components/EventCard'
 
-function ProfilePage({ refreshTrigger }) {
+function ProfilePage({ role, currentUserId, refreshTrigger }) {
+  const navigate = useNavigate()
   const [createdEvents, setCreatedEvents] = useState([])
   const [joinedEvents, setJoinedEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -147,111 +149,19 @@ function ProfilePage({ refreshTrigger }) {
           gap: '20px',
         }}
       >
-        {events.map((event) => {
-          let colorClass = isJoinedList ? 'event-joined' : 'event-created'
-
-          if (isJoinedList) {
-            if (event.myStatus === 'Interested') colorClass = 'event-pending'
-            else if (event.myStatus === 'Rejected') colorClass = 'event-rejected'
-          }
-
-          return (
-            <div key={event.id} className={`event-card ${colorClass}`}>
-              <div
-                className="card-header"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <div>
-                  <h4 style={{ fontSize: '1.1rem', margin: '0 0 5px 0' }}>
-                    {event.title}{' '}
-                    {event.isRecurring && <span title="Wydarzenie cykliczne">🔄</span>}
-                  </h4>
-                  <span
-                    style={{
-                      fontSize: '0.8rem',
-                      background: '#f3f4f6',
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                    }}
-                  >
-                    {event.category}
-                  </span>
-                </div>
-
-                {!isJoinedList && (
-                  <button
-                    className="btn-secondary"
-                    style={{ padding: '4px 8px', fontSize: '0.8rem' }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleEditClick(event)
-                    }}
-                  >
-                    ✏️ Edytuj
-                  </button>
-                )}
-
-                {isJoinedList && event.myStatus === 'Rejected' && (
-                  <button
-                    className="btn-danger"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDismiss(event.id)
-                    }}
-                    style={{ fontSize: '0.8rem', padding: '4px 8px' }}
-                    title="Usuń z listy"
-                  >
-                    🗑️ Usuń
-                  </button>
-                )}
-              </div>
-
-              <div className="card-meta">
-                <span>
-                  📅 {formatPolishDate(event.date)} {formatPolishTime(event.date)}
-                </span>
-                <span>
-                  📍 {event.city}, {event.location}
-                </span>
-              </div>
-
-              {isJoinedList && (
-                <div style={{ marginTop: '10px', fontSize: '0.9rem' }}>
-                  Organizator: <b>{event.creatorEmail}</b>
-                  <br />
-                  Twój status:{' '}
-                  <span
-                    style={{
-                      color:
-                        event.myStatus === 'Confirmed'
-                          ? 'green'
-                          : event.myStatus === 'Rejected'
-                            ? 'red'
-                            : 'orange',
-                    }}
-                  >
-                    {event.myStatus === 'Confirmed'
-                      ? 'Potwierdzony'
-                      : event.myStatus === 'Rejected'
-                        ? 'Odrzucony'
-                        : 'Oczekuje na akceptację'}
-                  </span>
-                </div>
-              )}
-
-              {!isJoinedList && (
-                <div className="participants-info" style={{ marginTop: '10px' }}>
-                  👥 {event.participantsCount}
-                  {event.maxParticipants > 0 ? ` / ${event.maxParticipants}` : ''}
-                </div>
-              )}
-            </div>
-          )
-        })}
+        {events.map((event) => (
+          <EventCard
+            key={event.id}
+            event={event}
+            currentUserId={currentUserId}
+            role={role}
+            onEdit={handleEditClick}
+            onDismiss={handleDismiss}
+            isJoinedList={isJoinedList}
+            isOwner={!isJoinedList}
+            onCardClick={(id) => navigate(`/event/${id}`)}
+          />
+        ))}
       </div>
     )
   }

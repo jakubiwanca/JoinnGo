@@ -33,9 +33,6 @@ const LocationAutocomplete = ({
       if (query.length > 2 && isOpen) {
         setIsLoading(true)
         try {
-          // Prepare search query. Context helps narrow down if e.g. city is known.
-          // However, Nominatim works best with comma separated values "Startowej 5, Warszawa".
-          // We can append contextQuery if provided.
           let searchQuery = query
           if (contextQuery && !query.toLowerCase().includes(contextQuery.toLowerCase())) {
             searchQuery = `${query}, ${contextQuery}`
@@ -57,11 +54,7 @@ const LocationAutocomplete = ({
             const addr = item.address
             const itemCityName = addr.city || addr.town || addr.village || addr.municipality
 
-            // If we are just searching for cities (default behavior when no context), we dedup by city.
-            // If we are searching for addresses (with context), we show specific results.
             if (contextQuery) {
-              // Strict filtering: ensure the result is actually in the requested city
-              // We check against city/town/village fields and also display_name as fallback
               const contextLower = contextQuery.toLowerCase()
               const cityLower = (itemCityName || '').toLowerCase()
               const displayLower = (item.display_name || '').toLowerCase()
@@ -71,9 +64,7 @@ const LocationAutocomplete = ({
 
               if (!isMatch) return
 
-              // For address search, try to construct a shorter name (e.g. Street + Number)
-              // instead of the full display_name (which includes city, country, postcode etc.)
-              let shortName = item.display_name // fallback
+              let shortName = item.display_name
 
               const road = addr.road || addr.pedestrian || addr.street || addr.residential
               const houseNumber = addr.house_number
@@ -85,13 +76,11 @@ const LocationAutocomplete = ({
               } else if (name) {
                 shortName = name
               } else {
-                // fallback if no road/name: first part of display name
                 shortName = item.display_name.split(',')[0]
               }
 
               mappedSuggestions.push({ ...item, cityName: shortName, isAddress: true })
             } else {
-              // City search logic
               if (itemCityName) {
                 if (!uniqueCities.has(itemCityName)) {
                   uniqueCities.add(itemCityName)

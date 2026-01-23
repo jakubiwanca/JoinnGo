@@ -2,10 +2,10 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import ParticipantsModal from '../components/ParticipantsModal'
+import EventCard from '../components/EventCard'
 import ConfirmModal from '../components/ConfirmModal'
 import LocationAutocomplete from '../components/LocationAutocomplete'
 import { EVENT_CATEGORIES } from '../constants/categories'
-import { formatPolishDateTime } from '../utils/dateFormat'
 import DatePicker, { registerLocale } from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { pl } from 'date-fns/locale/pl'
@@ -295,113 +295,19 @@ function Home({ role, currentUserId, refreshTrigger }) {
 
               {events.map((event) => {
                 const isMyEvent = currentUserId === event.creatorId
-                const isAdmin = role === 'Admin'
-                const canDelete = isMyEvent || isAdmin
-                const myParticipation = event.participants?.find((p) => p.userId === currentUserId)
-                const isJoined = !!myParticipation
-                const isConfirmed = myParticipation?.status === 1
-
-                let cardColorClass = 'event-public'
-                if (isMyEvent) {
-                  cardColorClass = 'event-created'
-                } else if (isJoined) {
-                  const status = myParticipation?.status
-                  if (status === 0 || status === 'Interested') {
-                    cardColorClass = 'event-pending'
-                  } else if (status === 2 || status === 'Rejected') {
-                    cardColorClass = 'event-rejected'
-                  } else {
-                    cardColorClass = 'event-joined'
-                  }
-                } else if (event.isPrivate) {
-                  cardColorClass = 'event-private'
-                }
 
                 return (
-                  <div
+                  <EventCard
                     key={event.id}
-                    className={`event-card ${cardColorClass}`}
-                    onClick={() => navigate(`/event/${event.id}`)}
-                    style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-                    onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
-                    onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                  >
-                    <div className="category-badge">{event.category || 'Inne'}</div>
-
-                    <div className="card-header">
-                      <h4>
-                        {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}{' '}
-                        {event.isRecurring && <span title="Wydarzenie cykliczne">🔄</span>}
-                      </h4>
-                    </div>
-
-                    <div className="card-meta">
-                      <span>
-                        📍 {event.city}, {event.location}
-                      </span>
-                      <span>📅 {formatPolishDateTime(event.date)}</span>
-                    </div>
-
-                    <p className="card-desc">{event.description}</p>
-
-                    <div className="card-footer">
-                      <div className="participants-info">
-                        👥 {event.participants?.length || 0}
-                        {event.maxParticipants > 0 ? ` / ${event.maxParticipants}` : ''}
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {canDelete && (
-                          <button
-                            className="btn-danger"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(event.id)
-                            }}
-                          >
-                            Usuń
-                          </button>
-                        )}
-
-                        {!isMyEvent ? (
-                          !isJoined ? (
-                            <button
-                              className="btn-primary"
-                              style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleJoin(event.id)
-                              }}
-                            >
-                              {event.isPrivate ? 'Poproś' : 'Dołącz'}
-                            </button>
-                          ) : (
-                            <button
-                              className="btn-secondary"
-                              style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleLeave(event.id)
-                              }}
-                            >
-                              {isConfirmed ? 'Opuść' : 'Anuluj'}
-                            </button>
-                          )
-                        ) : (
-                          <button
-                            className="btn-secondary"
-                            style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setManagingEventId(event.id)
-                            }}
-                          >
-                            Zarządzaj
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    event={event}
+                    currentUserId={currentUserId}
+                    role={role}
+                    onJoin={handleJoin}
+                    onLeave={handleLeave}
+                    onDelete={handleDelete}
+                    onManage={setManagingEventId}
+                    onCardClick={(id) => navigate(`/event/${id}`)}
+                  />
                 )
               })}
             </div>

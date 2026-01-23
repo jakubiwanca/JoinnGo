@@ -545,6 +545,7 @@ public class EventController : ControllerBase
         {
             e.Id,
             e.Title,
+            e.CreatorId, // Add this line
             e.Description,
             e.Date,
             e.Location,
@@ -601,6 +602,7 @@ public class EventController : ControllerBase
                     .Where(ep => ep.UserId == userId)
                     .Select(ep => ep.Status.ToString())
                     .FirstOrDefault(),
+                ParticipantsCount = e.EventParticipants.Count,
                 IsRecurring = e.RecurrenceGroupId != null
             })
             .ToListAsync();

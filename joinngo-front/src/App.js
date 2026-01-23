@@ -125,7 +125,12 @@ function App() {
             element={
               user ? (
                 <AuthenticatedLayout>
-                  <ProfilePage currentUserEmail={user?.email} refreshTrigger={refreshTrigger} />
+                  <ProfilePage
+                    currentUserEmail={user?.email}
+                    currentUserId={user ? parseInt(user.id, 10) : null}
+                    role={user?.role || 'User'}
+                    refreshTrigger={refreshTrigger}
+                  />
                 </AuthenticatedLayout>
               ) : (
                 <Navigate to="/landing" />
