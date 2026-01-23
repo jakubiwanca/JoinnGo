@@ -77,6 +77,8 @@ function MapUpdater({ center }) {
 }
 
 function CreateEventModal({ onClose, onEventCreated }) {
+  const modalTopRef = React.useRef(null)
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -88,6 +90,15 @@ function CreateEventModal({ onClose, onEventCreated }) {
     isPrivate: false,
     category: '',
     maxParticipants: 0,
+  })
+
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurrence, setRecurrence] = useState({
+    type: 1, // 1=Weekly, 2=Monthly
+    interval: 1,
+    daysOfWeek: [],
+    endDate: null,
+    maxOccurrences: null,
   })
 
   const [mapCenter, setMapCenter] = useState([52.2297, 21.0122]) // Default: Warszawa
@@ -118,12 +129,16 @@ function CreateEventModal({ onClose, onEventCreated }) {
       if (!formData.date) {
         setError('Proszę wybrać datę i godzinę.')
         setLoading(false)
+        if (modalTopRef.current)
+          modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
 
       if (formData.category === '' || formData.category === null) {
         setError('Proszę wybrać kategorię.')
         setLoading(false)
+        if (modalTopRef.current)
+          modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
 
@@ -132,6 +147,16 @@ function CreateEventModal({ onClose, onEventCreated }) {
       const payload = {
         ...formData,
         date: isoDate,
+      }
+
+      if (isRecurring) {
+        payload.recurrence = {
+          type: recurrence.type,
+          interval: recurrence.interval,
+          daysOfWeek: recurrence.daysOfWeek.length > 0 ? recurrence.daysOfWeek : null,
+          endDate: recurrence.endDate ? new Date(recurrence.endDate).toISOString() : null,
+          maxOccurrences: recurrence.maxOccurrences || null,
+        }
       }
 
       await apiClient.post('/Event', payload)
@@ -144,6 +169,8 @@ function CreateEventModal({ onClose, onEventCreated }) {
           ? err.response.data
           : 'Nie udało się utworzyć wydarzenia. Sprawdź dane.'
       setError(backendError)
+      if (modalTopRef.current)
+        modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     } finally {
       setLoading(false)
     }
@@ -160,7 +187,9 @@ function CreateEventModal({ onClose, onEventCreated }) {
             marginBottom: '20px',
           }}
         >
-          <h3 style={{ margin: 0 }}>Stwórz nowe wydarzenie</h3>
+          <h3 ref={modalTopRef} style={{ margin: 0 }}>
+            Stwórz nowe wydarzenie
+          </h3>
           <button onClick={onClose} className="modal-close-btn">
             &times;
           </button>
@@ -338,6 +367,151 @@ function CreateEventModal({ onClose, onEventCreated }) {
               style={{ width: '100%', padding: '8px' }}
             />
           </div>
+
+          {/* Recurring Event Checkbox */}
+          <div
+            className="form-group checkbox-group"
+            style={{ marginTop: '10px', marginBottom: '20px' }}
+          >
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                style={{ marginRight: '8px' }}
+              />
+              Wydarzenie cykliczne
+            </label>
+          </div>
+
+          {/* Recurrence Configuration */}
+          {isRecurring && (
+            <div
+              style={{
+                padding: '15px',
+                background: '#f9fafb',
+                borderRadius: '8px',
+                marginBottom: '20px',
+              }}
+            >
+              <div className="form-group">
+                <label>Częstotliwość:</label>
+                <select
+                  value={recurrence.type}
+                  onChange={(e) => setRecurrence({ ...recurrence, type: parseInt(e.target.value) })}
+                  style={{ width: '100%', padding: '8px' }}
+                >
+                  <option value={1}>Tygodniowo</option>
+                  <option value={2}>Miesięcznie</option>
+                </select>
+              </div>
+
+              {recurrence.type === 1 && (
+                <div className="form-group">
+                  <label>Dni tygodnia:</label>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'].map((day, index) => (
+                      <label
+                        key={index}
+                        style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={recurrence.daysOfWeek.includes(index)}
+                          onChange={(e) => {
+                            const newDays = e.target.checked
+                              ? [...recurrence.daysOfWeek, index]
+                              : recurrence.daysOfWeek.filter((d) => d !== index)
+                            setRecurrence({ ...recurrence, daysOfWeek: newDays })
+                          }}
+                          style={{ marginRight: '4px' }}
+                        />
+                        {day}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Co ile {recurrence.type === 1 ? 'tygodni' : 'miesięcy'}:</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={recurrence.interval}
+                  onChange={(e) =>
+                    setRecurrence({ ...recurrence, interval: parseInt(e.target.value) || 1 })
+                  }
+                  style={{ width: '100%', padding: '8px' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Zakończenie:</label>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      name="endType"
+                      checked={recurrence.endDate !== null}
+                      onChange={() =>
+                        setRecurrence({ ...recurrence, endDate: new Date(), maxOccurrences: null })
+                      }
+                      style={{ marginRight: '5px' }}
+                    />
+                    Do daty
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      name="endType"
+                      checked={recurrence.maxOccurrences !== null}
+                      onChange={() =>
+                        setRecurrence({ ...recurrence, endDate: null, maxOccurrences: 10 })
+                      }
+                      style={{ marginRight: '5px' }}
+                    />
+                    Po X wystąpieniach
+                  </label>
+                </div>
+              </div>
+
+              {recurrence.endDate !== null && (
+                <div className="form-group">
+                  <label>Data zakończenia:</label>
+                  <DatePicker
+                    selected={recurrence.endDate}
+                    onChange={(date) => setRecurrence({ ...recurrence, endDate: date })}
+                    dateFormat="dd.MM.yyyy"
+                    locale="pl"
+                    placeholderText="Wybierz datę zakończenia"
+                    className="date-picker-input"
+                    wrapperClassName="date-picker-wrapper"
+                    popperProps={{ strategy: 'fixed' }}
+                    minDate={new Date()}
+                  />
+                </div>
+              )}
+
+              {recurrence.maxOccurrences !== null && (
+                <div className="form-group">
+                  <label>Liczba wystąpień:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={recurrence.maxOccurrences}
+                    onChange={(e) =>
+                      setRecurrence({
+                        ...recurrence,
+                        maxOccurrences: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    style={{ width: '100%', padding: '8px' }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           <div
             className="modal-actions"

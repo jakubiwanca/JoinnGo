@@ -330,7 +330,8 @@ function Home({ role, currentUserId, refreshTrigger }) {
 
                     <div className="card-header">
                       <h4>
-                        {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}
+                        {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}{' '}
+                        {event.isRecurring && <span title="Wydarzenie cykliczne">🔄</span>}
                       </h4>
                     </div>
 

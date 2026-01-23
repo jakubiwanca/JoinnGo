@@ -245,7 +245,8 @@ const EventDetailsPage = ({ currentUserId }) => {
 
         <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <h1 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>
-            {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}
+            {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}{' '}
+            {event.recurrence && <span title="Wydarzenie cykliczne">🔄</span>}
           </h1>
           <div
             style={{

@@ -87,16 +87,19 @@ function ProfilePage({ refreshTrigger }) {
       !passwordForm.confirmPassword
     ) {
       setPasswordError('Wszystkie pola są wymagane')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setPasswordError('Nowe hasła nie są zgodne')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 
     if (passwordForm.newPassword.length < 6) {
       setPasswordError('Nowe hasło musi mieć co najmniej 6 znaków')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 
@@ -108,6 +111,7 @@ function ProfilePage({ refreshTrigger }) {
     } catch (err) {
       console.error('Błąd zmiany hasła', err)
       setPasswordError(err.response?.data?.message || 'Błąd zmiany hasła. Sprawdź aktualne hasło.')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } finally {
       setPasswordLoading(false)
     }
@@ -162,7 +166,10 @@ function ProfilePage({ refreshTrigger }) {
                 }}
               >
                 <div>
-                  <h4 style={{ fontSize: '1.1rem', margin: '0 0 5px 0' }}>{event.title}</h4>
+                  <h4 style={{ fontSize: '1.1rem', margin: '0 0 5px 0' }}>
+                    {event.title}{' '}
+                    {event.isRecurring && <span title="Wydarzenie cykliczne">🔄</span>}
+                  </h4>
                   <span
                     style={{
                       fontSize: '0.8rem',
@@ -237,8 +244,9 @@ function ProfilePage({ refreshTrigger }) {
               )}
 
               {!isJoinedList && (
-                <div style={{ marginTop: '10px', fontSize: '0.9rem', color: '#6b7280' }}>
-                  Uczestników: {event.participantsCount}
+                <div className="participants-info" style={{ marginTop: '10px' }}>
+                  👥 {event.participantsCount}
+                  {event.maxParticipants > 0 ? ` / ${event.maxParticipants}` : ''}
                 </div>
               )}
             </div>

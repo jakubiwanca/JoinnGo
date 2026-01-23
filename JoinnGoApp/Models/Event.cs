@@ -19,6 +19,10 @@ namespace JoinnGoApp.Models
         public User Creator { get; set; }
         public int MaxParticipants { get; set; }
 
+        public int? RecurrenceGroupId { get; set; }
+        public RecurrenceGroup? RecurrenceGroup { get; set; }
+        public bool RecurrenceException { get; set; }
+
         public List<EventParticipant> EventParticipants { get; set; } = new List<EventParticipant>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }

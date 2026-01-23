@@ -11,10 +11,12 @@ using System.Security.Claims;
 public class EventController : ControllerBase
 {
     private readonly MyDbContext _context;
+    private readonly JoinnGoApp.Services.RecurrenceService _recurrenceService;
 
-    public EventController(MyDbContext context)
+    public EventController(MyDbContext context, JoinnGoApp.Services.RecurrenceService recurrenceService)
     {
         _context = context;
+        _recurrenceService = recurrenceService;
     }
 
     [HttpPost]
@@ -25,34 +27,113 @@ public class EventController : ControllerBase
         var eventDate = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc);
         var userId = int.Parse(userIdClaim.Value);
 
-        var newEvent = new Event
+        // czy wydarzenie cykliczne
+        if (dto.Recurrence != null && dto.Recurrence.Type > 0)
         {
-            Title = dto.Title,
-            Description = dto.Description,
-            Date = eventDate,
-            Location = dto.Location,
-            City = dto.City,
-            Latitude = dto.Latitude,
-            Longitude = dto.Longitude,
-            IsPrivate = dto.IsPrivate,
-            Category = dto.Category,
-            MaxParticipants = dto.MaxParticipants,
-            CreatorId = userId
-        };
+            // stworz grupe cykliczna
+            var recurrenceGroup = new RecurrenceGroup
+            {
+                CreatorId = userId,
+                Type = (RecurrenceType)dto.Recurrence.Type,
+                Interval = dto.Recurrence.Interval,
+                DaysOfWeek = dto.Recurrence.DaysOfWeek != null 
+                    ? System.Text.Json.JsonSerializer.Serialize(dto.Recurrence.DaysOfWeek)
+                    : null,
+                StartDate = eventDate.Date,
+                EndDate = dto.Recurrence.EndDate,
+                MaxOccurrences = dto.Recurrence.MaxOccurrences
+            };
 
-        var adminParticipant = new EventParticipant
+            _context.RecurrenceGroups.Add(recurrenceGroup);
+            await _context.SaveChangesAsync();
+
+            var templateEvent = new Event
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                Date = eventDate,
+                Location = dto.Location,
+                City = dto.City,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                IsPrivate = dto.IsPrivate,
+                Category = dto.Category,
+                MaxParticipants = dto.MaxParticipants
+            };
+
+            // Validation for recurrence
+            if (!recurrenceGroup.EndDate.HasValue && !recurrenceGroup.MaxOccurrences.HasValue)
+            {
+                return BadRequest("Musisz podać datę końcową lub liczbę powtórzeń dla wydarzenia cyklicznego.");
+            }
+
+            if (recurrenceGroup.Type == RecurrenceType.Weekly)
+            {
+                // dto.Recurrence.DaysOfWeek is the source, checking that
+                if (dto.Recurrence.DaysOfWeek == null || dto.Recurrence.DaysOfWeek.Length == 0)
+                {
+                    return BadRequest("Dla powtarzania co tydzień musisz wybrać przynajmniej jeden dzień tygodnia.");
+                }
+            }
+
+            var eventInstances = _recurrenceService.CreateEventInstances(
+                recurrenceGroup,
+                templateEvent,
+                userId
+            );
+
+            _context.Events.AddRange(eventInstances);
+
+            foreach (var eventInstance in eventInstances)
+            {
+                var participant = new EventParticipant
+                {
+                    UserId = userId,
+                    Event = eventInstance,
+                    Status = ParticipantStatus.Confirmed
+                };
+                _context.EventParticipants.Add(participant);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { 
+                Message = $"Created {eventInstances.Count} recurring events", 
+                Count = eventInstances.Count,
+                RecurrenceGroupId = recurrenceGroup.Id
+            });
+        }
+        else
         {
-            User = _context.Users.Local.FirstOrDefault(u => u.Id == userId) ?? await _context.Users.FindAsync(userId),
-            Event = newEvent,
-            Status = ParticipantStatus.Confirmed
-        };
+            var newEvent = new Event
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                Date = eventDate,
+                Location = dto.Location,
+                City = dto.City,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                IsPrivate = dto.IsPrivate,
+                Category = dto.Category,
+                MaxParticipants = dto.MaxParticipants,
+                CreatorId = userId
+            };
 
-        _context.Events.Add(newEvent);
-        _context.EventParticipants.Add(adminParticipant);
+            var adminParticipant = new EventParticipant
+            {
+                User = _context.Users.Local.FirstOrDefault(u => u.Id == userId) ?? await _context.Users.FindAsync(userId),
+                Event = newEvent,
+                Status = ParticipantStatus.Confirmed
+            };
 
-        await _context.SaveChangesAsync();
+            _context.Events.Add(newEvent);
+            _context.EventParticipants.Add(adminParticipant);
 
-        return Ok(newEvent);
+            await _context.SaveChangesAsync();
+
+            return Ok(newEvent);
+        }
     }
 
     [HttpPost("{eventId}/join")]
@@ -128,6 +209,110 @@ public class EventController : ControllerBase
         eventItem.IsPrivate = dto.IsPrivate;
         eventItem.Category = dto.Category;
         eventItem.MaxParticipants = dto.MaxParticipants;
+
+        // Handle recurrence logic (Update, Create, or Remove)
+        
+        // 1. If event was already recurring, remove old recurrence data (reset to single)
+        if (eventItem.RecurrenceGroupId != null)
+        {
+            var oldGroupId = eventItem.RecurrenceGroupId;
+            
+            // Unlink this event
+            eventItem.RecurrenceGroupId = null;
+
+            // Find other events in the group
+            var otherEvents = _context.Events.Where(e => e.RecurrenceGroupId == oldGroupId && e.Id != id);
+            _context.Events.RemoveRange(otherEvents);
+
+            // Remove the group itself
+            var oldGroup = await _context.RecurrenceGroups.FindAsync(oldGroupId);
+            if (oldGroup != null)
+            {
+                _context.RecurrenceGroups.Remove(oldGroup);
+            }
+        }
+
+        // 2. If new recurrence is requested, create it (treat as new recurrence starting from this event)
+        if (dto.Recurrence != null && dto.Recurrence.Type > 0)
+        {
+            var recurrenceGroup = new RecurrenceGroup
+            {
+                CreatorId = userId,
+                Type = (RecurrenceType)dto.Recurrence.Type,
+                Interval = dto.Recurrence.Interval,
+                DaysOfWeek = dto.Recurrence.DaysOfWeek != null 
+                    ? System.Text.Json.JsonSerializer.Serialize(dto.Recurrence.DaysOfWeek)
+                    : null,
+                StartDate = eventItem.Date.Date,
+                EndDate = dto.Recurrence.EndDate,
+                MaxOccurrences = dto.Recurrence.MaxOccurrences
+            };
+
+            _context.RecurrenceGroups.Add(recurrenceGroup);
+            await _context.SaveChangesAsync();
+
+            // Link current event to group
+            eventItem.RecurrenceGroupId = recurrenceGroup.Id;
+
+            // Generate additional instances
+            var templateEvent = new Event
+            {
+                Title = eventItem.Title,
+                Description = eventItem.Description,
+                Date = eventItem.Date,
+                Location = eventItem.Location,
+                City = eventItem.City,
+                Latitude = eventItem.Latitude,
+                Longitude = eventItem.Longitude,
+                IsPrivate = eventItem.IsPrivate,
+                Category = eventItem.Category,
+                MaxParticipants = eventItem.MaxParticipants
+            };
+
+            // Validation for recurrence
+            if (!recurrenceGroup.EndDate.HasValue && !recurrenceGroup.MaxOccurrences.HasValue)
+            {
+                return BadRequest("Musisz podać datę końcową lub liczbę powtórzeń dla wydarzenia cyklicznego.");
+            }
+
+            if (recurrenceGroup.Type == RecurrenceType.Weekly)
+            {
+                // dto.Recurrence.DaysOfWeek is the source, checking that
+                if (dto.Recurrence.DaysOfWeek == null || dto.Recurrence.DaysOfWeek.Length == 0)
+                {
+                    return BadRequest("Dla powtarzania co tydzień musisz wybrać przynajmniej jeden dzień tygodnia.");
+                }
+            }
+
+            var eventInstances = _recurrenceService.CreateEventInstances(
+                recurrenceGroup,
+                templateEvent,
+                userId
+            );
+
+            // Remove the first instance if it matches the current event date
+            var firstInstance = eventInstances.FirstOrDefault(e => e.Date.Date == eventItem.Date.Date);
+            if (firstInstance != null)
+            {
+                eventInstances.Remove(firstInstance);
+            }
+
+            if (eventInstances.Any())
+            {
+                _context.Events.AddRange(eventInstances);
+
+                foreach (var instance in eventInstances)
+                {
+                    var participant = new EventParticipant
+                    {
+                        UserId = userId,
+                        Event = instance,
+                        Status = ParticipantStatus.Confirmed
+                    };
+                    _context.EventParticipants.Add(participant);
+                }
+            }
+        }
 
         await _context.SaveChangesAsync();
 
@@ -293,6 +478,7 @@ public class EventController : ControllerBase
             .Include(e => e.Creator)
             .Include(e => e.EventParticipants)
                 .ThenInclude(ep => ep.User)
+            .Include(e => e.RecurrenceGroup)
             .FirstOrDefaultAsync(e => e.Id == id);
 
         if (eventItem == null) return NotFound("Wydarzenie nie istnieje.");
@@ -317,7 +503,17 @@ public class EventController : ControllerBase
                 ep.UserId,
                 Email = ep.User?.Email,
                 Status = ep.Status
-            }).ToList()
+            }).ToList(),
+            Recurrence = eventItem.RecurrenceGroup == null ? null : new
+            {
+                eventItem.RecurrenceGroup.Type,
+                eventItem.RecurrenceGroup.Interval,
+                DaysOfWeek = eventItem.RecurrenceGroup.DaysOfWeek != null
+                    ? System.Text.Json.JsonSerializer.Deserialize<int[]>(eventItem.RecurrenceGroup.DaysOfWeek)
+                    : null,
+                eventItem.RecurrenceGroup.EndDate,
+                eventItem.RecurrenceGroup.MaxOccurrences
+            }
         });
     }
 
@@ -328,27 +524,51 @@ public class EventController : ControllerBase
         if (userIdClaim == null) return Unauthorized();
         var userId = int.Parse(userIdClaim.Value);
 
+        var now = DateTime.UtcNow;
+
         var events = await _context.Events
+            .Include(e => e.RecurrenceGroup)
+            .Include(e => e.EventParticipants)
             .Where(e => e.CreatorId == userId)
+            .Where(e =>
+                e.RecurrenceGroupId == null ||
+                e.Id == (_context.Events
+                    .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.Date >= now)
+                    .OrderBy(sub => sub.Date)
+                    .Select(sub => sub.Id)
+                    .FirstOrDefault())
+            )
             .OrderByDescending(e => e.Date)
-            .Select(e => new
-            {
-                e.Id,
-                e.Title,
-                e.Description,
-                e.Date,
-                e.Location,
-                e.City,
-                e.Latitude,
-                e.Longitude,
-                e.IsPrivate,
-                e.MaxParticipants,
-                Category = e.Category.ToString(),
-                ParticipantsCount = e.EventParticipants.Count
-            })
             .ToListAsync();
 
-        return Ok(events);
+        var result = events.Select(e => new
+        {
+            e.Id,
+            e.Title,
+            e.Description,
+            e.Date,
+            e.Location,
+            e.City,
+            e.Latitude,
+            e.Longitude,
+            e.IsPrivate,
+            e.MaxParticipants,
+            Category = e.Category.ToString(),
+            ParticipantsCount = e.EventParticipants.Count,
+            IsRecurring = e.RecurrenceGroupId != null,
+            Recurrence = e.RecurrenceGroup == null ? null : new
+            {
+                e.RecurrenceGroup.Type,
+                e.RecurrenceGroup.Interval,
+                DaysOfWeek = e.RecurrenceGroup.DaysOfWeek != null
+                    ? System.Text.Json.JsonSerializer.Deserialize<int[]>(e.RecurrenceGroup.DaysOfWeek)
+                    : null,
+                e.RecurrenceGroup.EndDate,
+                e.RecurrenceGroup.MaxOccurrences
+            }
+        });
+
+        return Ok(result);
     }
 
     [HttpGet("my-joined")]
@@ -380,7 +600,8 @@ public class EventController : ControllerBase
                 MyStatus = e.EventParticipants
                     .Where(ep => ep.UserId == userId)
                     .Select(ep => ep.Status.ToString())
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                IsRecurring = e.RecurrenceGroupId != null
             })
             .ToListAsync();
 
@@ -401,6 +622,19 @@ public class EventController : ControllerBase
             .Include(e => e.Creator)
             .Include(e => e.EventParticipants)
             .AsQueryable();
+
+        if (!date.HasValue)
+        {
+            var now = DateTime.UtcNow;
+            query = query.Where(e =>
+                e.RecurrenceGroupId == null ||
+                e.Id == (_context.Events
+                    .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.Date >= now)
+                    .OrderBy(sub => sub.Date)
+                    .Select(sub => sub.Id)
+                    .FirstOrDefault())
+            );
+        }
 
         if (!string.IsNullOrEmpty(search))
         {
@@ -450,7 +684,8 @@ public class EventController : ControllerBase
                 Category = e.Category.ToString(),
                 e.CreatorId,
                 Creator = e.Creator != null ? new { e.Creator.Email } : null,
-                Participants = e.EventParticipants.Select(ep => new { ep.UserId, ep.Status }).ToList()
+                Participants = e.EventParticipants.Select(ep => new { ep.UserId, ep.Status }).ToList(),
+                IsRecurring = e.RecurrenceGroupId != null
             })
             .ToListAsync();
 
@@ -598,6 +833,7 @@ public class CreateEventDto
     public bool IsPrivate { get; set; }
     public int MaxParticipants { get; set; }
     public EventCategory Category { get; set; }
+    public RecurrenceDto? Recurrence { get; set; }
 }
 
 public class UpdateEventDto
@@ -612,5 +848,15 @@ public class UpdateEventDto
     public bool IsPrivate { get; set; }
     public int MaxParticipants { get; set; }
     public EventCategory Category { get; set; }
+    public RecurrenceDto? Recurrence { get; set; }
+}
+
+public class RecurrenceDto
+{
+    public int Type { get; set; }
+    public int Interval { get; set; }
+    public int[]? DaysOfWeek { get; set; }
+    public DateTime? EndDate { get; set; }
+    public int? MaxOccurrences { get; set; }
 }
 

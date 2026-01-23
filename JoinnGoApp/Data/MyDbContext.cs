@@ -13,6 +13,7 @@ namespace JoinnGoApp.Data
         public DbSet<Event> Events { get; set; }
         public DbSet<EventParticipant> EventParticipants { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        public DbSet<RecurrenceGroup> RecurrenceGroups { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,6 +47,18 @@ namespace JoinnGoApp.Data
                 .WithMany(u => u.Comments)
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RecurrenceGroup>()
+                .HasOne(rg => rg.Creator)
+                .WithMany()
+                .HasForeignKey(rg => rg.CreatorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.RecurrenceGroup)
+                .WithMany(rg => rg.Events)
+                .HasForeignKey(e => e.RecurrenceGroupId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }
