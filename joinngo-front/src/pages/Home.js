@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getEvents, joinEvent, leaveEvent, deleteEvent } from '../api/events'
 import { useConfirm } from '../hooks/useConfirm'
 import ParticipantsModal from '../components/ParticipantsModal'
+import EditEventModal from '../components/EditEventModal'
 import EventCard from '../components/EventCard'
 import ConfirmModal from '../components/ConfirmModal'
 import LocationAutocomplete from '../components/LocationAutocomplete'
@@ -22,6 +23,16 @@ function Home({ role, currentUserId, refreshTrigger }) {
   const [totalPages, setTotalPages] = useState(1)
 
   const [managingEventId, setManagingEventId] = useState(null)
+  const [editingEvent, setEditingEvent] = useState(null)
+
+  const handleEditClick = (event) => {
+    setEditingEvent(event)
+  }
+
+  const handleEditSuccess = () => {
+    setEditingEvent(null)
+    fetchEvents()
+  }
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
@@ -300,7 +311,7 @@ function Home({ role, currentUserId, refreshTrigger }) {
                     onJoin={handleJoin}
                     onLeave={handleLeave}
                     onDelete={handleDelete}
-                    onManage={setManagingEventId}
+                    onEdit={handleEditClick}
                     onCardClick={(id) => navigate(`/event/${id}`)}
                   />
                 )
@@ -337,6 +348,14 @@ function Home({ role, currentUserId, refreshTrigger }) {
           eventId={managingEventId}
           onClose={() => setManagingEventId(null)}
           onStatusChange={fetchEvents}
+        />
+      )}
+
+      {editingEvent && (
+        <EditEventModal
+          eventToEdit={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onEventUpdated={handleEditSuccess}
         />
       )}
 

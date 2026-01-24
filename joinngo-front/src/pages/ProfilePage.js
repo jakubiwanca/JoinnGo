@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import ReactDOM from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { changePassword, updateProfile } from '../api/auth'
 import { getMyCreatedEvents, getMyJoinedEvents, deleteEvent, leaveEvent } from '../api/events'
@@ -24,6 +25,7 @@ function ProfilePage({
 
   const [usernameForm, setUsernameForm] = useState(currentUserUsername || '')
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' })
+  const [redirecting, setRedirecting] = useState(false)
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -74,11 +76,30 @@ function ProfilePage({
 
     try {
       await updateProfile({ username: usernameForm })
-      setProfileMessage({ type: 'success', text: 'Profil zaktualizowany!' })
-      if (onProfileUpdate) await onProfileUpdate()
-      if (!currentUserUsername) {
-        setTimeout(() => navigate('/'), 1500)
-      }
+
+      const isFirstTime = !currentUserUsername
+      const msg = isFirstTime
+        ? 'Pomyślnie dodano nazwę użytkownika!'
+        : 'Pomyślnie zaktualizowano nazwę użytkownika!'
+
+      console.log('Profile update: isFirstTime=', isFirstTime)
+
+      showConfirm(
+        'Sukces',
+        msg,
+        async () => {
+          hideConfirm()
+
+          if (isFirstTime) {
+            setRedirecting(true)
+            setTimeout(() => navigate('/'), 2500)
+          }
+
+          if (onProfileUpdate) await onProfileUpdate()
+        },
+        false,
+        false,
+      )
     } catch (err) {
       console.error(err)
       setProfileMessage({ type: 'error', text: err.response?.data || 'Błąd aktualizacji profilu' })
@@ -247,26 +268,12 @@ function ProfilePage({
               paddingBottom: '10px',
               marginBottom: '20px',
               color: '#4f46e5',
+              marginTop: 0,
             }}
           >
             Wydarzenia utworzone przeze mnie ({createdEvents.length})
           </h3>
           {renderEventList(createdEvents)}
-        </section>
-
-        {/* Oczekujące */}
-        <section>
-          <h3
-            style={{
-              borderBottom: '2px solid #e5e7eb',
-              paddingBottom: '10px',
-              marginBottom: '20px',
-              color: '#f59e0b',
-            }}
-          >
-            Oczekujące zgłoszenia ({pendingEvents.length})
-          </h3>
-          {renderEventList(pendingEvents, true)}
         </section>
 
         {/* Potwierdzone */}
@@ -277,11 +284,28 @@ function ProfilePage({
               paddingBottom: '10px',
               marginBottom: '20px',
               color: '#10b981',
+              marginTop: 0,
             }}
           >
             Wydarzenia, w których biorę udział ({confirmedEvents.length})
           </h3>
           {renderEventList(confirmedEvents, true)}
+        </section>
+
+        {/* Oczekujące */}
+        <section>
+          <h3
+            style={{
+              borderBottom: '2px solid #e5e7eb',
+              paddingBottom: '10px',
+              marginBottom: '20px',
+              color: '#f59e0b',
+              marginTop: 0,
+            }}
+          >
+            Wydarzenia oczekujące na akceptację ({pendingEvents.length})
+          </h3>
+          {renderEventList(pendingEvents, true)}
         </section>
 
         {/* Odrzucone */}
@@ -292,6 +316,7 @@ function ProfilePage({
               paddingBottom: '10px',
               marginBottom: '20px',
               color: '#ef4444',
+              marginTop: 0,
             }}
           >
             Odrzucone zgłoszenia ({rejectedEvents.length})
@@ -490,8 +515,24 @@ function ProfilePage({
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={hideConfirm}
+        showCancel={confirmModal.showCancel}
         danger={confirmModal.danger}
       />
+
+      {redirecting &&
+        ReactDOM.createPortal(
+          <div className="modal-overlay" style={{ zIndex: 3000 }}>
+            <div className="modal-content" style={{ textAlign: 'center', padding: '40px' }}>
+              <h2 style={{ color: '#10b981', marginBottom: '20px' }}>Gotowe! 🚀</h2>
+              <p>Konfiguracja zakończona.</p>
+              <p style={{ marginTop: '10px', color: '#6b7280' }}>
+                Przekierowywanie na stronę główną...
+              </p>
+              <div className="spinner" style={{ margin: '20px auto' }}></div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
