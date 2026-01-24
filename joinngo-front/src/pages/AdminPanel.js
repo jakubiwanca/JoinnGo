@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { getAllUsers, deleteUser } from '../api/users'
 import ConfirmModal from '../components/ConfirmModal'
+import EditUserModal from '../components/EditUserModal'
 
 function AdminPanel({ currentUserId, onLogout }) {
   const [users, setUsers] = useState([])
   const [error, setError] = useState('')
+  const [editingUser, setEditingUser] = useState(null)
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -47,6 +49,20 @@ function AdminPanel({ currentUserId, onLogout }) {
       },
       true,
     )
+  }
+
+  const handleEdit = (user) => {
+    setEditingUser(user)
+  }
+
+  const handleUserUpdated = () => {
+    setEditingUser(null)
+    getAllUsers()
+      .then((users) => setUsers(users.filter((u) => u.email)))
+      .catch((err) => {
+        console.error('getAllUsers error:', err)
+        setError(err.message || 'Błąd podczas ładowania użytkowników')
+      })
   }
 
   return (
@@ -137,11 +153,21 @@ function AdminPanel({ currentUserId, onLogout }) {
                   </div>
                 </div>
 
-                <div>
+                <div style={{ display: 'flex', gap: '10px' }}>
                   {String(u.id) !== String(currentUserId) ? (
-                    <button onClick={() => handleDelete(u.id)} className="btn-danger">
-                      Usuń konto
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleEdit(u)}
+                        className="btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                        title="Edytuj użytkownika"
+                      >
+                        ⚙️
+                      </button>
+                      <button onClick={() => handleDelete(u.id)} className="btn-danger">
+                        Usuń konto
+                      </button>
+                    </>
                   ) : (
                     <span
                       style={{
@@ -162,6 +188,14 @@ function AdminPanel({ currentUserId, onLogout }) {
           </div>
         )}
       </div>
+
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onUserUpdated={handleUserUpdated}
+        />
+      )}
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}

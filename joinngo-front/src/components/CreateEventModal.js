@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import apiClient from '../api/axiosClient'
+
+import ConfirmModal from './ConfirmModal'
 import LocationAutocomplete from './LocationAutocomplete'
 import { EVENT_CATEGORIES } from '../constants/categories'
 import DatePicker, { registerLocale } from 'react-datepicker'
@@ -105,7 +107,25 @@ function CreateEventModal({ onClose, onEventCreated }) {
   const [markerPosition, setMarkerPosition] = useState(null)
 
   const [loading, setLoading] = useState(false)
+
   const [error, setError] = useState('')
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    showCancel: true,
+    danger: false,
+  })
+
+  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
+  }
+
+  const hideConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -160,8 +180,17 @@ function CreateEventModal({ onClose, onEventCreated }) {
       }
 
       await apiClient.post('/Event', payload)
-      onEventCreated()
-      onClose()
+      showConfirm(
+        'Sukces',
+        'Wydarzenie zostało pomyślnie utworzone!',
+        () => {
+          hideConfirm()
+          onEventCreated()
+          onClose()
+        },
+        false,
+        false,
+      )
     } catch (err) {
       console.error('Szczegóły błędu:', err.response?.data || err.message)
       const backendError =
@@ -410,23 +439,31 @@ function CreateEventModal({ onClose, onEventCreated }) {
                 <div className="form-group">
                   <label>Dni tygodnia:</label>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'].map((day, index) => (
+                    {[
+                      { label: 'Pn', value: 1 },
+                      { label: 'Wt', value: 2 },
+                      { label: 'Śr', value: 3 },
+                      { label: 'Cz', value: 4 },
+                      { label: 'Pt', value: 5 },
+                      { label: 'Sb', value: 6 },
+                      { label: 'Nd', value: 0 },
+                    ].map((dayObj) => (
                       <label
-                        key={index}
+                        key={dayObj.value}
                         style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
                       >
                         <input
                           type="checkbox"
-                          checked={recurrence.daysOfWeek.includes(index)}
+                          checked={recurrence.daysOfWeek.includes(dayObj.value)}
                           onChange={(e) => {
                             const newDays = e.target.checked
-                              ? [...recurrence.daysOfWeek, index]
-                              : recurrence.daysOfWeek.filter((d) => d !== index)
+                              ? [...recurrence.daysOfWeek, dayObj.value]
+                              : recurrence.daysOfWeek.filter((d) => d !== dayObj.value)
                             setRecurrence({ ...recurrence, daysOfWeek: newDays })
                           }}
                           style={{ marginRight: '4px' }}
                         />
-                        {day}
+                        {dayObj.label}
                       </label>
                     ))}
                   </div>
@@ -537,6 +574,16 @@ function CreateEventModal({ onClose, onEventCreated }) {
           </div>
         </form>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        showCancel={confirmModal.showCancel}
+        danger={confirmModal.danger}
+      />
     </div>
   )
 }

@@ -64,7 +64,7 @@ const EventCard = ({
       <div className="card-header">
         <h4 title={event.title}>
           {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}{' '}
-          {event.recurrence && <span title="Wydarzenie cykliczne">🔄</span>}
+          {(event.recurrence || event.isRecurring) && <span title="Wydarzenie cykliczne">🔄</span>}
         </h4>
       </div>
 

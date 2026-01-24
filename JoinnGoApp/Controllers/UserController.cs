@@ -244,6 +244,36 @@ public class UserController : ControllerBase
 
         return Ok(new { message = "Password changed successfully" });
     }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (currentUserIdClaim == null) return Unauthorized();
+
+        int currentUserId = int.Parse(currentUserIdClaim.Value);
+
+        if (id == currentUserId)
+        {
+            return BadRequest("Nie możesz edytować własnego konta z poziomu panelu admina.");
+        }
+
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound("User not found");
+
+        if (await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != id))
+        {
+            return BadRequest("Email jest już zajęty przez innego użytkownika.");
+        }
+
+        user.Email = dto.Email;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Id = user.Id, Email = user.Email, Role = user.Role });
+    }
 }
 
 public class ChangePasswordDto
@@ -254,6 +284,13 @@ public class ChangePasswordDto
     [Required]
     [MinLength(6)]
     public string NewPassword { get; set; }
+}
+
+public class UpdateUserDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; }
 }
 
 public class SetRoleDto

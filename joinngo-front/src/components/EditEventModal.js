@@ -479,23 +479,31 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                 <div className="form-group">
                   <label>Dni tygodnia:</label>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'].map((day, index) => (
+                    {[
+                      { label: 'Pn', value: 1 },
+                      { label: 'Wt', value: 2 },
+                      { label: 'Śr', value: 3 },
+                      { label: 'Cz', value: 4 },
+                      { label: 'Pt', value: 5 },
+                      { label: 'Sb', value: 6 },
+                      { label: 'Nd', value: 0 },
+                    ].map((dayObj) => (
                       <label
-                        key={index}
+                        key={dayObj.value}
                         style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
                       >
                         <input
                           type="checkbox"
-                          checked={recurrence.daysOfWeek.includes(index)}
+                          checked={recurrence.daysOfWeek.includes(dayObj.value)}
                           onChange={(e) => {
                             const newDays = e.target.checked
-                              ? [...recurrence.daysOfWeek, index]
-                              : recurrence.daysOfWeek.filter((d) => d !== index)
+                              ? [...recurrence.daysOfWeek, dayObj.value]
+                              : recurrence.daysOfWeek.filter((d) => d !== dayObj.value)
                             setRecurrence({ ...recurrence, daysOfWeek: newDays })
                           }}
                           style={{ marginRight: '4px' }}
                         />
-                        {day}
+                        {dayObj.label}
                       </label>
                     ))}
                   </div>

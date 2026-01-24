@@ -36,6 +36,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     title: '',
     message: '',
     onConfirm: null,
+    showCancel: true,
     danger: false,
   })
 
@@ -51,8 +52,8 @@ const EventDetailsPage = ({ currentUserId }) => {
     }
   }
 
-  const showConfirm = (title, message, onConfirm, danger = false) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
   }
 
   const hideConfirm = () => {
@@ -102,7 +103,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     setActionLoading(true)
     try {
       const response = await apiClient.post(`event/${id}/join`)
-      showConfirm('Sukces', 'Pomyślnie dołączono do wydarzenia!', hideConfirm)
+      showConfirm('Sukces', 'Pomyślnie dołączono do wydarzenia!', hideConfirm, false, false)
       fetchEvent()
     } catch (err) {
       showConfirm('Błąd', err.response?.data || 'Błąd podczas dołączania', hideConfirm)
@@ -421,6 +422,7 @@ const EventDetailsPage = ({ currentUserId }) => {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={hideConfirm}
+        showCancel={confirmModal.showCancel}
         danger={confirmModal.danger}
       />
     </div>

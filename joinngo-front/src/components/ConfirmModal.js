@@ -1,5 +1,7 @@
 import React from 'react'
 
+import ReactDOM from 'react-dom'
+
 function ConfirmModal({
   isOpen,
   title,
@@ -13,8 +15,8 @@ function ConfirmModal({
 }) {
   if (!isOpen) return null
 
-  return (
-    <div className="modal-overlay" onClick={onCancel}>
+  return ReactDOM.createPortal(
+    <div className="modal-overlay" onClick={onCancel} style={{ zIndex: 2000 }}>
       <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
         <h3 className="confirm-modal-title">{title}</h3>
         <p className="confirm-modal-message">{message}</p>
@@ -29,7 +31,8 @@ function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

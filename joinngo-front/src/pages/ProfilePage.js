@@ -157,6 +157,28 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
     )
   }
 
+  const handleLeave = (eventId) => {
+    showConfirm(
+      'Opuść wydarzenie',
+      'Czy na pewno chcesz zrezygnować z udziału w tym wydarzeniu?',
+      async () => {
+        hideConfirm()
+        try {
+          await apiClient.delete(`/Event/${eventId}/leave`)
+          fetchData()
+        } catch (err) {
+          showConfirm(
+            'Błąd',
+            err.response?.data || 'Błąd podczas opuszczania',
+            hideConfirm,
+            false,
+            false,
+          )
+        }
+      },
+    )
+  }
+
   const renderEventList = (events, isJoinedList = false) => {
     if (!events || events.length === 0) {
       return <p style={{ color: '#6b7280', fontStyle: 'italic' }}>Brak wydarzeń.</p>
@@ -179,6 +201,7 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
             onEdit={handleEditClick}
             onDelete={handleDelete}
             onDismiss={handleDismiss}
+            onLeave={handleLeave}
             isJoinedList={isJoinedList}
             isOwner={!isJoinedList}
             onCardClick={(id) => navigate(`/event/${id}`)}

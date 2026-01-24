@@ -28,11 +28,12 @@ function Home({ role, currentUserId, refreshTrigger }) {
     title: '',
     message: '',
     onConfirm: null,
+    showCancel: true,
     danger: false,
   })
 
-  const showConfirm = (title, message, onConfirm, danger = false) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
   }
 
   const hideConfirm = () => {
@@ -178,7 +179,7 @@ function Home({ role, currentUserId, refreshTrigger }) {
   const handleJoin = async (eventId) => {
     try {
       const response = await apiClient.post(`/Event/${eventId}/join`)
-      showConfirm('Sukces', response.data, hideConfirm)
+      showConfirm('Sukces', response.data, hideConfirm, false, false)
       fetchEvents()
     } catch (err) {
       showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm)
@@ -351,6 +352,7 @@ function Home({ role, currentUserId, refreshTrigger }) {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={hideConfirm}
+        showCancel={confirmModal.showCancel}
         danger={confirmModal.danger}
       />
     </div>
