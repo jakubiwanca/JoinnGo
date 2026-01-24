@@ -1,28 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import apiClient from '../api/axiosClient'
-
+import { createEvent } from '../api/events'
 import ConfirmModal from './ConfirmModal'
 import LocationAutocomplete from './LocationAutocomplete'
 import { EVENT_CATEGORIES } from '../constants/categories'
+import { DAYS_OF_WEEK } from '../constants/common'
+import { useConfirm } from '../hooks/useConfirm'
+import { setupLeafletIcon } from '../utils/leafletSetup'
 import DatePicker, { registerLocale } from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { pl } from 'date-fns/locale/pl'
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
-import icon from 'leaflet/dist/images/marker-icon.png'
-import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 
 registerLocale('pl', pl)
-
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-})
-
-L.Marker.prototype.options.icon = DefaultIcon
+setupLeafletIcon()
 
 function LocationMarker({ position, setPosition, setFormData }) {
   useMapEvents({
@@ -110,22 +101,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
   const [error, setError] = useState('')
 
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-    showCancel: true,
-    danger: false,
-  })
-
-  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
-  }
-
-  const hideConfirm = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
-  }
+  const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -179,7 +155,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
         }
       }
 
-      await apiClient.post('/Event', payload)
+      await createEvent(payload)
       showConfirm(
         'Sukces',
         'Wydarzenie zostało pomyślnie utworzone!',
@@ -439,15 +415,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
                 <div className="form-group">
                   <label>Dni tygodnia:</label>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {[
-                      { label: 'Pn', value: 1 },
-                      { label: 'Wt', value: 2 },
-                      { label: 'Śr', value: 3 },
-                      { label: 'Cz', value: 4 },
-                      { label: 'Pt', value: 5 },
-                      { label: 'Sb', value: 6 },
-                      { label: 'Nd', value: 0 },
-                    ].map((dayObj) => (
+                    {DAYS_OF_WEEK.map((dayObj) => (
                       <label
                         key={dayObj.value}
                         style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}

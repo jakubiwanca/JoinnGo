@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import apiClient from '../api/axiosClient'
+import { useNavigate, useParams } from 'react-router-dom'
+import { getEvent, joinEvent, leaveEvent, deleteEvent, getEventComments } from '../api/events'
+import { useConfirm } from '../hooks/useConfirm'
+import { setupLeafletIcon } from '../utils/leafletSetup'
 import ParticipantsModal from '../components/ParticipantsModal'
 import Comments from '../components/Comments'
 import ConfirmModal from '../components/ConfirmModal'
@@ -8,17 +10,8 @@ import { formatPolishDateTime } from '../utils/dateFormat'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import icon from 'leaflet/dist/images/marker-icon.png'
-import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-})
-
-L.Marker.prototype.options.icon = DefaultIcon
+setupLeafletIcon()
 
 const EventDetailsPage = ({ currentUserId }) => {
   const { id } = useParams()
@@ -31,14 +24,7 @@ const EventDetailsPage = ({ currentUserId }) => {
   const [actionLoading, setActionLoading] = useState(false)
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false)
 
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-    showCancel: true,
-    danger: false,
-  })
+  const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
   const [copied, setCopied] = useState(false)
 
@@ -52,26 +38,18 @@ const EventDetailsPage = ({ currentUserId }) => {
     }
   }
 
-  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
-  }
-
-  const hideConfirm = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
-  }
-
-  const isUserParticipant = useCallback(
+  const getUserParticipation = useCallback(
     (theEvent) => {
-      if (!theEvent || !theEvent.participants) return false
-      return theEvent.participants.some((p) => p.userId === currentUserId)
+      if (!theEvent || !theEvent.participants) return null
+      return theEvent.participants.find((p) => p.userId === currentUserId)
     },
     [currentUserId],
   )
 
   const fetchComments = useCallback(async () => {
     try {
-      const response = await apiClient.get(`event/${id}/comments`)
-      setComments(response.data)
+      const data = await getEventComments(id)
+      setComments(data)
     } catch (err) {
       console.error('Could not fetch comments:', err)
       setComments([])
@@ -81,10 +59,10 @@ const EventDetailsPage = ({ currentUserId }) => {
   const fetchEvent = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await apiClient.get(`event/${id}`)
-      const fetchedEvent = response.data
+      const fetchedEvent = await getEvent(id)
       setEvent(fetchedEvent)
-      if (isUserParticipant(fetchedEvent)) {
+      const participation = getUserParticipation(fetchedEvent)
+      if (participation && participation.status === 'Confirmed') {
         fetchComments()
       }
     } catch (err) {
@@ -93,7 +71,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     } finally {
       setLoading(false)
     }
-  }, [id, fetchComments, isUserParticipant])
+  }, [id, fetchComments, getUserParticipation])
 
   useEffect(() => {
     fetchEvent()
@@ -102,8 +80,13 @@ const EventDetailsPage = ({ currentUserId }) => {
   const handleJoin = async () => {
     setActionLoading(true)
     try {
-      const response = await apiClient.post(`event/${id}/join`)
-      showConfirm('Sukces', 'Pomyślnie dołączono do wydarzenia!', hideConfirm, false, false)
+      await joinEvent(id)
+      const successTitle = 'Sukces'
+      const successMsg = event.isPrivate
+        ? 'Wysłano prośbę o dołączenie do wydarzenia.'
+        : 'Pomyślnie dołączono do wydarzenia!'
+
+      showConfirm(successTitle, successMsg, hideConfirm, false, false)
       fetchEvent()
     } catch (err) {
       showConfirm('Błąd', err.response?.data || 'Błąd podczas dołączania', hideConfirm)
@@ -113,12 +96,21 @@ const EventDetailsPage = ({ currentUserId }) => {
   }
 
   const handleLeave = () => {
-    showConfirm('Opuść wydarzenie', 'Czy na pewno chcesz zrezygnować z udziału?', async () => {
+    const isPending = userParticipation?.status === 'Interested'
+    const title = isPending ? 'Anuluj prośbę' : 'Opuść wydarzenie'
+    const message = isPending
+      ? 'Czy na pewno chcesz anulować prośbę o dołączenie do wydarzenia?'
+      : 'Czy na pewno chcesz zrezygnować z udziału?'
+
+    showConfirm(title, message, async () => {
       hideConfirm()
       setActionLoading(true)
       try {
-        const response = await apiClient.delete(`event/${id}/leave`)
-        showConfirm('Sukces', 'Pomyślnie opuszczono wydarzenie.', hideConfirm)
+        await leaveEvent(id)
+        const successMsg = isPending
+          ? 'Anulowano prośbę o dołączenie.'
+          : 'Pomyślnie opuszczono wydarzenie.'
+        showConfirm('Sukces', successMsg, hideConfirm, false, false)
         fetchEvent()
       } catch (err) {
         showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
@@ -136,7 +128,7 @@ const EventDetailsPage = ({ currentUserId }) => {
         hideConfirm()
         setActionLoading(true)
         try {
-          await apiClient.delete(`event/${id}`)
+          await deleteEvent(id)
           showConfirm('Sukces', 'Wydarzenie zostało usunięte.', () => {
             hideConfirm()
             navigate('/')
@@ -181,7 +173,10 @@ const EventDetailsPage = ({ currentUserId }) => {
 
   const participantsList = event.participants || []
   const isOrganizer = currentUserId === event.creatorId
-  const isJoined = isUserParticipant(event)
+  const userParticipation = getUserParticipation(event)
+  const isJoined = !!userParticipation
+  const isConfirmed = userParticipation?.status === 'Confirmed'
+  const isPending = userParticipation?.status === 'Interested'
   const isFull = event.maxParticipants > 0 && participantsList.length >= event.maxParticipants
 
   let actionButton
@@ -206,11 +201,11 @@ const EventDetailsPage = ({ currentUserId }) => {
         disabled={actionLoading}
         style={{ padding: '10px 25px' }}
       >
-        {actionLoading ? 'Przetwarzanie...' : 'Opuść wydarzenie'}
+        {actionLoading ? 'Przetwarzanie...' : isPending ? 'Anuluj prośbę' : 'Opuść wydarzenie'}
       </button>
     )
   } else {
-    const buttonText = event.isPrivate ? 'Poproś o dołączenie' : 'Dołącz do wydarzenia'
+    const buttonText = event.isPrivate ? 'Wyślij prośbę' : 'Dołącz do wydarzenia'
 
     actionButton = (
       <button
@@ -397,7 +392,7 @@ const EventDetailsPage = ({ currentUserId }) => {
           <div style={{ display: 'flex', gap: '10px' }}>{actionButton}</div>
         </div>
 
-        {isJoined && (
+        {isConfirmed && (
           <Comments
             eventId={id}
             comments={comments}

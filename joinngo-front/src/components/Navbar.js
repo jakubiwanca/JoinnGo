@@ -8,12 +8,20 @@ function Navbar({ user, onLogout, onOpenCreateModal }) {
     <header className="app-header">
       <div style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
         <h2>Join'nGo</h2>
-        <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-          Zalogowany jako: <b>{user?.email}</b>
-        </span>
+        {user?.username && (
+          <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+            Zalogowany jako: <b>{user.username}</b>
+          </span>
+        )}
       </div>
       <div className="header-actions">
-        <button className="btn-primary" onClick={onOpenCreateModal}>
+        <button
+          className="btn-primary"
+          onClick={onOpenCreateModal}
+          disabled={!user?.username}
+          style={!user?.username ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          title={!user?.username ? 'Uzupełnij profil, aby utworzyć wydarzenie' : ''}
+        >
           + Nowe Wydarzenie
         </button>
         <button className="btn-secondary" onClick={() => navigate('/profile')}>

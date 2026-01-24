@@ -67,6 +67,21 @@ function App() {
     )
   }
 
+  const ProtectedRoute = ({ children }) => {
+    const location = window.location
+
+    if (!user) {
+      return <Navigate to="/landing" replace />
+    }
+
+    // Onboarding check
+    if (!user.username && window.location.pathname !== '/profile') {
+      return <Navigate to="/profile" replace />
+    }
+
+    return <AuthenticatedLayout>{children}</AuthenticatedLayout>
+  }
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
@@ -82,17 +97,13 @@ function App() {
           <Route
             path="/"
             element={
-              user ? (
-                <AuthenticatedLayout>
-                  <Home
-                    currentUserId={user ? parseInt(user.id, 10) : null}
-                    role={user?.role || 'User'}
-                    refreshTrigger={refreshTrigger}
-                  />
-                </AuthenticatedLayout>
-              ) : (
-                <Navigate to="/landing" />
-              )
+              <ProtectedRoute>
+                <Home
+                  currentUserId={user ? parseInt(user.id, 10) : null}
+                  role={user?.role || 'User'}
+                  refreshTrigger={refreshTrigger}
+                />
+              </ProtectedRoute>
             }
           />
 
@@ -112,13 +123,13 @@ function App() {
             path="/admin"
             element={
               user && user.role === 'Admin' ? (
-                <AuthenticatedLayout>
+                <ProtectedRoute>
                   <AdminPanel
                     token={null}
                     currentUserId={parseInt(user.id, 10)}
                     onLogout={handleLogout}
                   />
-                </AuthenticatedLayout>
+                </ProtectedRoute>
               ) : (
                 <Navigate to="/" />
               )
@@ -128,27 +139,25 @@ function App() {
           <Route
             path="/profile"
             element={
-              user ? (
-                <AuthenticatedLayout>
-                  <ProfilePage
-                    currentUserEmail={user?.email}
-                    currentUserId={user ? parseInt(user.id, 10) : null}
-                    role={user?.role || 'User'}
-                    refreshTrigger={refreshTrigger}
-                  />
-                </AuthenticatedLayout>
-              ) : (
-                <Navigate to="/landing" />
-              )
+              <ProtectedRoute>
+                <ProfilePage
+                  currentUserEmail={user?.email}
+                  currentUserId={user ? parseInt(user.id, 10) : null}
+                  role={user?.role || 'User'}
+                  refreshTrigger={refreshTrigger}
+                  currentUserUsername={user?.username}
+                  onProfileUpdate={checkSession}
+                />
+              </ProtectedRoute>
             }
           />
 
           <Route
             path="/event/:id"
             element={
-              <AuthenticatedLayout>
+              <ProtectedRoute>
                 <EventDetailsPage currentUserId={user ? parseInt(user.id, 10) : null} />
-              </AuthenticatedLayout>
+              </ProtectedRoute>
             }
           />
 

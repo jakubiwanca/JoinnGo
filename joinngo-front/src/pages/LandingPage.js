@@ -5,7 +5,7 @@ function LandingPage() {
   const navigate = useNavigate()
 
   const handleGetStarted = () => {
-    navigate('/login?register=true')
+    navigate('/register')
   }
 
   const handleLogin = () => {

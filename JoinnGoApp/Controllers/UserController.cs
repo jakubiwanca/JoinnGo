@@ -145,20 +145,51 @@ public class UserController : ControllerBase
 
     [Authorize]
     [HttpGet("profile")]
-    public IActionResult GetProfile()
+    public async Task<IActionResult> GetProfile()
     {
-        var email = User.FindFirst(ClaimTypes.Email)?.Value;
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized("Nie można odczytać danych użytkownika z tokena.");
 
-        if (email == null || userId == null)
-            return Unauthorized("Nie można odczytać danych użytkownika z tokena.");
+        var userId = int.Parse(userIdClaim.Value);
+        var user = await _context.Users.FindAsync(userId);
+
+        if (user == null) return NotFound("Użytkownik nie istnieje.");
 
         return Ok(new
         {
-            Id = userId,
-            Email = email,
-            Role = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value
+            Id = userId.ToString(),
+            Email = user.Email,
+            Role = user.Role,
+            Username = user.Username
         });
+    }
+
+    [Authorize]
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return NotFound("User not found");
+
+        if (!string.IsNullOrWhiteSpace(dto.Username))
+        {
+             // Check uniqueness if desired, enforcing specific username rules
+             if (await _context.Users.AnyAsync(u => u.Username == dto.Username && u.Id != userId))
+             {
+                 return BadRequest("Ta nazwa użytkownika jest już zajęta.");
+             }
+             user.Username = dto.Username;
+        }
+        
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Profile updated successfully", username = user.Username });
     }
 
     [Authorize(Roles = "Admin")]
@@ -166,10 +197,11 @@ public class UserController : ControllerBase
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _context.Users
-            .Select(u => new { u.Id, u.Email, u.Role })
+            .Select(u => new { u.Id, u.Email, u.Role, u.Username })
             .ToListAsync();
         return Ok(users);
     }
+
 
     [Authorize(Roles = "Admin")]
     [HttpPost("setrole")]
@@ -199,6 +231,15 @@ public class UserController : ControllerBase
 
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound("User not found");
+
+        var userEvents = _context.Events.Where(e => e.CreatorId == id);
+        _context.Events.RemoveRange(userEvents);
+
+        var userParticipations = _context.EventParticipants.Where(ep => ep.UserId == id);
+        _context.EventParticipants.RemoveRange(userParticipations);
+
+        var userComments = _context.Comments.Where(c => c.UserId == id);
+        _context.Comments.RemoveRange(userComments);
 
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
@@ -284,6 +325,13 @@ public class ChangePasswordDto
     [Required]
     [MinLength(6)]
     public string NewPassword { get; set; }
+}
+
+public class UpdateMyProfileDto
+{
+    [Required]
+    [MinLength(3)]
+    public string Username { get; set; }
 }
 
 public class UpdateUserDto

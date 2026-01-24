@@ -1,19 +1,29 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import apiClient from '../api/axiosClient'
-import { changePassword } from '../api/auth'
+import { changePassword, updateProfile } from '../api/auth'
+import { getMyCreatedEvents, getMyJoinedEvents, deleteEvent, leaveEvent } from '../api/events'
+import { useConfirm } from '../hooks/useConfirm'
 import EditEventModal from '../components/EditEventModal'
 import ConfirmModal from '../components/ConfirmModal'
 import EventCard from '../components/EventCard'
 
-function ProfilePage({ role, currentUserId, refreshTrigger }) {
+function ProfilePage({
+  role,
+  currentUserId,
+  refreshTrigger,
+  currentUserUsername,
+  onProfileUpdate,
+}) {
   const navigate = useNavigate()
   const [createdEvents, setCreatedEvents] = useState([])
   const [joinedEvents, setJoinedEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('events')
+  const [activeTab, setActiveTab] = useState(currentUserUsername ? 'events' : 'settings')
 
   const [editingEvent, setEditingEvent] = useState(null)
+
+  const [usernameForm, setUsernameForm] = useState(currentUserUsername || '')
+  const [profileMessage, setProfileMessage] = useState({ type: '', text: '' })
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -24,31 +34,18 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
 
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-    danger: false,
-  })
+  const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
-  const showConfirm = (title, message, onConfirm, danger = false) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
-  }
-
-  const hideConfirm = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
-  }
+  useEffect(() => {
+    if (currentUserUsername) setUsernameForm(currentUserUsername)
+  }, [currentUserUsername])
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [createdRes, joinedRes] = await Promise.all([
-        apiClient.get('/Event/my-created'),
-        apiClient.get('/Event/my-joined'),
-      ])
-      setCreatedEvents(createdRes.data || [])
-      setJoinedEvents(joinedRes.data || [])
+      const [createdRes, joinedRes] = await Promise.all([getMyCreatedEvents(), getMyJoinedEvents()])
+      setCreatedEvents(createdRes || [])
+      setJoinedEvents(joinedRes || [])
     } catch (err) {
       console.error('Błąd pobierania profilu', err)
       setCreatedEvents([])
@@ -71,6 +68,23 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
     fetchData()
   }
 
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault()
+    setProfileMessage({ type: '', text: '' })
+
+    try {
+      await updateProfile({ username: usernameForm })
+      setProfileMessage({ type: 'success', text: 'Profil zaktualizowany!' })
+      if (onProfileUpdate) await onProfileUpdate()
+      if (!currentUserUsername) {
+        setTimeout(() => navigate('/'), 1500)
+      }
+    } catch (err) {
+      console.error(err)
+      setProfileMessage({ type: 'error', text: err.response?.data || 'Błąd aktualizacji profilu' })
+    }
+  }
+
   const handlePasswordChange = (e) => {
     setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value })
     setPasswordError('')
@@ -82,7 +96,6 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
     setPasswordError('')
     setPasswordSuccess('')
 
-    // walidacja
     if (
       !passwordForm.currentPassword ||
       !passwordForm.newPassword ||
@@ -126,7 +139,7 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
       async () => {
         hideConfirm()
         try {
-          await apiClient.delete(`/Event/${eventId}/leave`)
+          await leaveEvent(eventId)
           fetchData()
         } catch (err) {
           console.error(err)
@@ -143,7 +156,7 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
       async () => {
         hideConfirm()
         try {
-          await apiClient.delete(`/Event/${eventId}`)
+          await deleteEvent(eventId)
           fetchData()
         } catch (err) {
           showConfirm(
@@ -158,25 +171,33 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
   }
 
   const handleLeave = (eventId) => {
-    showConfirm(
-      'Opuść wydarzenie',
-      'Czy na pewno chcesz zrezygnować z udziału w tym wydarzeniu?',
-      async () => {
-        hideConfirm()
-        try {
-          await apiClient.delete(`/Event/${eventId}/leave`)
-          fetchData()
-        } catch (err) {
-          showConfirm(
-            'Błąd',
-            err.response?.data || 'Błąd podczas opuszczania',
-            hideConfirm,
-            false,
-            false,
-          )
-        }
-      },
-    )
+    const event = joinedEvents.find((e) => e.id === eventId)
+    const isPending = event?.myStatus === 'Interested'
+
+    const title = isPending ? 'Anuluj prośbę' : 'Opuść wydarzenie'
+    const message = isPending
+      ? 'Czy na pewno chcesz anulować prośbę o dołączenie do wydarzenia?'
+      : 'Czy na pewno chcesz zrezygnować z udziału w tym wydarzeniu?'
+
+    showConfirm(title, message, async () => {
+      hideConfirm()
+      try {
+        await leaveEvent(eventId)
+        const successMsg = isPending
+          ? 'Anulowano prośbę o dołączenie.'
+          : 'Pomyślnie opuszczono wydarzenie.'
+        showConfirm('Sukces', successMsg, hideConfirm, false, false)
+        fetchData()
+      } catch (err) {
+        showConfirm(
+          'Błąd',
+          err.response?.data || 'Błąd podczas opuszczania',
+          hideConfirm,
+          false,
+          false,
+        )
+      }
+    })
   }
 
   const renderEventList = (events, isJoinedList = false) => {
@@ -234,21 +255,19 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
         </section>
 
         {/* Oczekujące */}
-        {pendingEvents.length > 0 && (
-          <section>
-            <h3
-              style={{
-                borderBottom: '2px solid #e5e7eb',
-                paddingBottom: '10px',
-                marginBottom: '20px',
-                color: '#f59e0b',
-              }}
-            >
-              Oczekujące zgłoszenia ({pendingEvents.length})
-            </h3>
-            {renderEventList(pendingEvents, true)}
-          </section>
-        )}
+        <section>
+          <h3
+            style={{
+              borderBottom: '2px solid #e5e7eb',
+              paddingBottom: '10px',
+              marginBottom: '20px',
+              color: '#f59e0b',
+            }}
+          >
+            Oczekujące zgłoszenia ({pendingEvents.length})
+          </h3>
+          {renderEventList(pendingEvents, true)}
+        </section>
 
         {/* Potwierdzone */}
         <section>
@@ -266,84 +285,143 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
         </section>
 
         {/* Odrzucone */}
-        {rejectedEvents.length > 0 && (
-          <section>
-            <h3
-              style={{
-                borderBottom: '2px solid #e5e7eb',
-                paddingBottom: '10px',
-                marginBottom: '20px',
-                color: '#ef4444',
-              }}
-            >
-              Odrzucone zgłoszenia ({rejectedEvents.length})
-            </h3>
-            {renderEventList(rejectedEvents, true)}
-          </section>
-        )}
+        <section>
+          <h3
+            style={{
+              borderBottom: '2px solid #e5e7eb',
+              paddingBottom: '10px',
+              marginBottom: '20px',
+              color: '#ef4444',
+            }}
+          >
+            Odrzucone zgłoszenia ({rejectedEvents.length})
+          </h3>
+          {renderEventList(rejectedEvents, true)}
+        </section>
       </div>
     )
   }
 
   const renderSettingsTab = () => (
-    <div className="password-form-container">
-      <h3 style={{ marginBottom: '20px', color: '#1f2937' }}>Zmień hasło</h3>
+    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      {/* Messages Area - Full Width */}
+      {(profileMessage.text || passwordError || passwordSuccess) && (
+        <div style={{ width: '100%' }}>
+          {profileMessage.text && (
+            <div className={`alert alert-${profileMessage.type}`} style={{ marginBottom: '15px' }}>
+              {profileMessage.text}
+            </div>
+          )}
+          {passwordError && (
+            <div className="alert alert-error" style={{ marginBottom: '15px' }}>
+              {passwordError}
+            </div>
+          )}
+          {passwordSuccess && (
+            <div className="alert alert-success" style={{ marginBottom: '15px' }}>
+              {passwordSuccess}
+            </div>
+          )}
+        </div>
+      )}
 
-      <form onSubmit={handlePasswordSubmit} className="password-form">
-        {passwordError && (
-          <div className="alert alert-error" style={{ marginBottom: '15px' }}>
-            {passwordError}
+      {/* Username Tile */}
+      <div
+        style={{
+          flex: 1,
+          minWidth: '300px',
+          background: 'var(--card-bg)',
+          padding: '25px',
+          borderRadius: '12px',
+          boxShadow: 'var(--shadow-sm)',
+          border: '1px solid #e5e7eb',
+        }}
+      >
+        <h3 style={{ marginBottom: '20px', color: '#1f2937', marginTop: 0 }}>Dane Użytkownika</h3>
+        <form onSubmit={handleProfileSubmit}>
+          <div className="form-group">
+            <label>Nazwa użytkownika</label>
+            <input
+              type="text"
+              name="username"
+              value={usernameForm}
+              onChange={(e) => setUsernameForm(e.target.value)}
+              required
+              minLength={3}
+              placeholder="Twój widoczny nick"
+              style={{ width: '100%' }}
+            />
           </div>
-        )}
+          <button
+            type="submit"
+            className="btn-primary"
+            style={{ width: '100%', marginTop: '10px' }}
+          >
+            Zaktualizuj profil
+          </button>
+        </form>
+      </div>
 
-        {passwordSuccess && (
-          <div className="alert alert-success" style={{ marginBottom: '15px' }}>
-            {passwordSuccess}
+      {/* Password Tile */}
+      <div
+        style={{
+          flex: 1,
+          minWidth: '300px',
+          background: 'var(--card-bg)',
+          padding: '25px',
+          borderRadius: '12px',
+          boxShadow: 'var(--shadow-sm)',
+          border: '1px solid #e5e7eb',
+        }}
+      >
+        <h3 style={{ marginBottom: '20px', color: '#1f2937', marginTop: 0 }}>Zmiana Hasła</h3>
+        <form onSubmit={handlePasswordSubmit} className="password-form-tile">
+          <div className="form-group">
+            <label>Aktualne hasło</label>
+            <input
+              type="password"
+              name="currentPassword"
+              value={passwordForm.currentPassword}
+              onChange={handlePasswordChange}
+              required
+              style={{ width: '100%' }}
+            />
           </div>
-        )}
 
-        <div className="form-group">
-          <label>Aktualne hasło</label>
-          <input
-            type="password"
-            name="currentPassword"
-            value={passwordForm.currentPassword}
-            onChange={handlePasswordChange}
-            required
-          />
-        </div>
+          <div className="form-group">
+            <label>Nowe hasło</label>
+            <input
+              type="password"
+              name="newPassword"
+              value={passwordForm.newPassword}
+              onChange={handlePasswordChange}
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Nowe hasło</label>
-          <input
-            type="password"
-            name="newPassword"
-            value={passwordForm.newPassword}
-            onChange={handlePasswordChange}
-            required
-          />
-        </div>
+          <div className="form-group">
+            <label>Potwierdź nowe hasło</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={passwordForm.confirmPassword}
+              onChange={handlePasswordChange}
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Potwierdź nowe hasło</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            value={passwordForm.confirmPassword}
-            onChange={handlePasswordChange}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="btn-primary"
-          disabled={passwordLoading}
-          style={{ width: 'auto', marginTop: '10px' }}
-        >
-          {passwordLoading ? 'Zmieniam...' : 'Zmień hasło'}
-        </button>
-      </form>
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={passwordLoading}
+            style={{ width: '100%', marginTop: '10px' }}
+          >
+            {passwordLoading ? 'Zmieniam...' : 'Zmień hasło'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 
@@ -369,7 +447,10 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
         <div className="profile-tabs">
           <button
             className={`profile-tab ${activeTab === 'events' ? 'active' : ''}`}
-            onClick={() => setActiveTab('events')}
+            onClick={() => currentUserUsername && setActiveTab('events')}
+            disabled={!currentUserUsername}
+            style={!currentUserUsername ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            title={!currentUserUsername ? 'Uzupełnij profil, aby zobaczyć wydarzenia' : ''}
           >
             📅 Wydarzenia
           </button>

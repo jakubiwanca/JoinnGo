@@ -502,7 +502,7 @@ public class EventController : ControllerBase
             {
                 ep.UserId,
                 Email = ep.User?.Email,
-                Status = ep.Status
+                Status = ep.Status.ToString()
             }).ToList(),
             Recurrence = eventItem.RecurrenceGroup == null ? null : new
             {
@@ -686,7 +686,7 @@ public class EventController : ControllerBase
                 Category = e.Category.ToString(),
                 e.CreatorId,
                 Creator = e.Creator != null ? new { e.Creator.Email } : null,
-                Participants = e.EventParticipants.Select(ep => new { ep.UserId, ep.Status }).ToList(),
+                Participants = e.EventParticipants.Select(ep => new { ep.UserId, Status = ep.Status.ToString() }).ToList(),
                 IsRecurring = e.RecurrenceGroupId != null
             })
             .ToListAsync();

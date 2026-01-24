@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import apiClient from '../api/axiosClient'
-import { login } from '../api/auth'
+import { login, register } from '../api/auth'
+import { useConfirm } from '../hooks/useConfirm'
 import ConfirmModal from '../components/ConfirmModal'
 
 function LoginPage({ onLogin }) {
@@ -11,22 +11,7 @@ function LoginPage({ onLogin }) {
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
 
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-    showCancel: true,
-    danger: false,
-  })
-
-  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
-  }
-
-  const hideConfirm = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
-  }
+  const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
   useEffect(() => {
     setIsLoginMode(location.pathname === '/login')
@@ -39,15 +24,27 @@ function LoginPage({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    // Walidacja dla rejestracji
+    if (!isLoginMode) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        setError('Proszę podać poprawny adres email.')
+        return
+      }
+
+      if (formData.password.length < 6) {
+        setError('Hasło musi mieć co najmniej 6 znaków.')
+        return
+      }
+    }
+
     try {
       if (isLoginMode) {
         const data = await login(formData.email, formData.password)
         onLogin(data.token, data.role)
       } else {
-        await apiClient.post('/User/register', {
-          email: formData.email,
-          password: formData.password,
-        })
+        await register(formData.email, formData.password)
         showConfirm(
           'Sukces',
           'Rejestracja udana! Możesz się teraz zalogować.',
@@ -72,7 +69,7 @@ function LoginPage({ onLogin }) {
           <div style={{ color: 'red', marginBottom: '15px', fontSize: '0.9rem' }}>{error}</div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <input
               name="email"

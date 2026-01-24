@@ -172,7 +172,7 @@ const EventCard = ({
                   if (onJoin) onJoin(event.id)
                 }}
               >
-                {event.isPrivate ? 'Poproś' : 'Dołącz'}
+                {event.isPrivate ? 'Wyślij prośbę' : 'Dołącz'}
               </button>
             ) : (
               !isRejected && (

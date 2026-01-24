@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import apiClient from '../api/axiosClient'
+import { getEvents, joinEvent, leaveEvent, deleteEvent } from '../api/events'
+import { useConfirm } from '../hooks/useConfirm'
 import ParticipantsModal from '../components/ParticipantsModal'
 import EventCard from '../components/EventCard'
 import ConfirmModal from '../components/ConfirmModal'
@@ -22,23 +23,7 @@ function Home({ role, currentUserId, refreshTrigger }) {
 
   const [managingEventId, setManagingEventId] = useState(null)
 
-  // Confirm modal state
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-    showCancel: true,
-    danger: false,
-  })
-
-  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
-  }
-
-  const hideConfirm = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
-  }
+  const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
   const [filters, setFilters] = useState({
     search: '',
@@ -108,14 +93,14 @@ function Home({ role, currentUserId, refreshTrigger }) {
       params.append('page', page)
       params.append('pageSize', 9)
 
-      const response = await apiClient.get(`/Event?${params.toString()}`)
+      const data = await getEvents(params)
 
       let events = []
-      if (response.data && response.data.data) {
-        events = response.data.data
-        setTotalPages(response.data.totalPages)
+      if (data && data.data) {
+        events = data.data
+        setTotalPages(data.totalPages)
       } else {
-        events = Array.isArray(response.data) ? response.data : []
+        events = Array.isArray(data) ? data : []
       }
 
       if (clientSideDateFilter) {
@@ -178,8 +163,8 @@ function Home({ role, currentUserId, refreshTrigger }) {
 
   const handleJoin = async (eventId) => {
     try {
-      const response = await apiClient.post(`/Event/${eventId}/join`)
-      showConfirm('Sukces', response.data, hideConfirm, false, false)
+      const data = await joinEvent(eventId)
+      showConfirm('Sukces', data, hideConfirm, false, false)
       fetchEvents()
     } catch (err) {
       showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm)
@@ -193,7 +178,7 @@ function Home({ role, currentUserId, refreshTrigger }) {
       async () => {
         hideConfirm()
         try {
-          await apiClient.delete(`/Event/${eventId}`)
+          await deleteEvent(eventId)
           setEvents((prev) => prev.filter((e) => e.id !== eventId))
         } catch (err) {
           showConfirm(
@@ -208,19 +193,28 @@ function Home({ role, currentUserId, refreshTrigger }) {
   }
 
   const handleLeave = (eventId) => {
-    showConfirm(
-      'Opuść wydarzenie',
-      'Czy na pewno chcesz zrezygnować z udziału w tym wydarzeniu?',
-      async () => {
-        hideConfirm()
-        try {
-          await apiClient.delete(`/Event/${eventId}/leave`)
-          fetchEvents()
-        } catch (err) {
-          showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
-        }
-      },
-    )
+    const event = events.find((e) => e.id === eventId)
+    const myParticipant = event?.participants?.find((p) => p.userId === currentUserId)
+    const isPending = myParticipant?.status === 'Interested'
+
+    const title = isPending ? 'Anuluj prośbę' : 'Opuść wydarzenie'
+    const message = isPending
+      ? 'Czy na pewno chcesz anulować prośbę o dołączenie do wydarzenia?'
+      : 'Czy na pewno chcesz zrezygnować z udziału w tym wydarzeniu?'
+
+    showConfirm(title, message, async () => {
+      hideConfirm()
+      try {
+        await leaveEvent(eventId)
+        const successMsg = isPending
+          ? 'Anulowano prośbę o dołączenie.'
+          : 'Pomyślnie opuszczono wydarzenie.'
+        showConfirm('Sukces', successMsg, hideConfirm, false, false)
+        fetchEvents()
+      } catch (err) {
+        showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
+      }
+    })
   }
 
   return (

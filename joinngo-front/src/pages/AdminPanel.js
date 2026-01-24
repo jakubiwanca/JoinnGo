@@ -2,27 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { getAllUsers, deleteUser } from '../api/users'
 import ConfirmModal from '../components/ConfirmModal'
 import EditUserModal from '../components/EditUserModal'
+import { useConfirm } from '../hooks/useConfirm'
 
 function AdminPanel({ currentUserId, onLogout }) {
   const [users, setUsers] = useState([])
   const [error, setError] = useState('')
   const [editingUser, setEditingUser] = useState(null)
 
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-    danger: false,
-  })
-
-  const showConfirm = (title, message, onConfirm, danger = false) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
-  }
-
-  const hideConfirm = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
-  }
+  const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
   useEffect(() => {
     getAllUsers()
@@ -44,7 +31,13 @@ function AdminPanel({ currentUserId, onLogout }) {
           setUsers((prev) => prev.filter((u) => String(u.id) !== String(id)))
         } catch (err) {
           console.error('deleteUser error:', err)
-          showConfirm('Błąd', err.message || 'Nie udało się usunąć użytkownika', hideConfirm)
+          showConfirm(
+            'Błąd',
+            err.message || 'Nie udało się usunąć użytkownika',
+            hideConfirm,
+            false,
+            false,
+          )
         }
       },
       true,
@@ -203,6 +196,7 @@ function AdminPanel({ currentUserId, onLogout }) {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={hideConfirm}
+        showCancel={confirmModal.showCancel}
         danger={confirmModal.danger}
       />
     </div>

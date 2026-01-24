@@ -15,6 +15,13 @@ function EditUserModal({ user, onClose, onUserUpdated }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Proszę podać poprawny adres email.')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -58,7 +65,7 @@ function EditUserModal({ user, onClose, onUserUpdated }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label>Email:</label>
             <input
