@@ -224,353 +224,372 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '900px', width: '90%' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px',
-          }}
-        >
-          <h3 ref={modalTopRef} style={{ margin: 0 }}>
-            Edytuj wydarzenie
-          </h3>
-          <button onClick={onClose} className="modal-close-btn">
-            &times;
-          </button>
-        </div>
-        {error && (
-          <p className="error-msg" style={{ color: 'red' }}>
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Tytuł:</label>
-            <input
-              type="text"
-              name="title"
-              required
-              value={formData.title}
-              onChange={handleChange}
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Kategoria:</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              style={{
-                width: '100%',
-                marginBottom: '10px',
-                color:
-                  formData.category === 0 || formData.category === ''
-                    ? '#6b7280'
-                    : 'var(--text-dark)',
-              }}
-              required
-            >
-              <option value="" disabled>
-                Wybierz kategorię
-              </option>
-              {EVENT_CATEGORIES.map((cat) => (
-                <option key={cat.id} value={cat.id} style={{ color: 'var(--text-dark)' }}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Opis:</label>
-            <textarea
-              name="description"
-              required
-              value={formData.description}
-              onChange={handleChange}
-              style={{ width: '100%', minHeight: '60px', marginBottom: '10px' }}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Data i godzina:</label>
-            <DatePicker
-              selected={formData.date}
-              onChange={(date) => setFormData((prev) => ({ ...prev, date }))}
-              showTimeSelect
-              timeFormat="HH:mm"
-              timeIntervals={5}
-              timeCaption="Godzina"
-              dateFormat="dd.MM.yyyy HH:mm"
-              locale="pl"
-              placeholderText="Wybierz datę i godzinę"
-              className="date-picker-input"
-              wrapperClassName="date-picker-wrapper"
-              popperProps={{ strategy: 'fixed' }}
-              required
-              style={{ width: '100%' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '15px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Miasto:</label>
-              <LocationAutocomplete
-                value={formData.city}
-                onChange={(val) => setFormData((prev) => ({ ...prev, city: val }))}
-                onLocationSelect={(loc) => {
-                  setMapCenter([loc.lat, loc.lon])
-                  setMarkerPosition({ lat: loc.lat, lng: loc.lon })
-                  setFormData((prev) => ({
-                    ...prev,
-                    latitude: loc.lat,
-                    longitude: loc.lon,
-                  }))
-                }}
-                placeholder="Wybierz lub wpisz..."
-                required
-              />
-            </div>
-
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Dokładne miejsce:</label>
-              <LocationAutocomplete
-                value={formData.location}
-                onChange={(val) => setFormData((prev) => ({ ...prev, location: val }))}
-                onLocationSelect={(loc) => {
-                  setMapCenter([loc.lat, loc.lon])
-                  setMarkerPosition({ lat: loc.lat, lng: loc.lon })
-                  setFormData((prev) => ({
-                    ...prev,
-                    latitude: loc.lat,
-                    longitude: loc.lon,
-                  }))
-                }}
-                placeholder="Np. ul. Prosta 51"
-                required
-                contextQuery={formData.city}
-              />
-            </div>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '8px' }}>
-              Zaznacz na mapie (opcjonalne):
-            </label>
-            <div
-              style={{
-                height: '300px',
-                width: '100%',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                border: '1px solid #ddd',
-              }}
-            >
-              <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <LocationMarker
-                  position={markerPosition}
-                  setPosition={setMarkerPosition}
-                  setFormData={setFormData}
-                />
-                <MapUpdater center={mapCenter} />
-              </MapContainer>
-            </div>
-            <small style={{ color: '#666' }}>Kliknij na mapę, aby postawić pineskę.</small>
-          </div>
-
+      <div
+        className="modal-content"
+        style={{ maxWidth: '900px', width: '90%', padding: 0, overflow: 'hidden' }}
+      >
+        <div style={{ maxHeight: '90vh', overflowY: 'auto', padding: '30px' }}>
           <div
-            className="form-group checkbox-group"
-            style={{ marginTop: '10px', marginBottom: '20px' }}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+            }}
           >
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            <h3 ref={modalTopRef} style={{ margin: 0 }}>
+              Edytuj wydarzenie
+            </h3>
+            <button onClick={onClose} className="modal-close-btn">
+              &times;
+            </button>
+          </div>
+          {error && (
+            <p className="error-msg" style={{ color: 'red' }}>
+              {error}
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Tytuł:</label>
               <input
-                type="checkbox"
-                name="isPrivate"
-                checked={formData.isPrivate}
+                type="text"
+                name="title"
+                required
+                value={formData.title}
                 onChange={handleChange}
-                style={{ marginRight: '8px' }}
+                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
               />
-              Wydarzenie prywatne
-            </label>
-          </div>
+            </div>
 
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label>Limit uczestników (0 = brak limitu):</label>
-            <input
-              type="number"
-              name="maxParticipants"
-              min="0"
-              value={formData.maxParticipants}
-              onChange={handleChange}
-              style={{ width: '100%', padding: '8px' }}
-            />
-          </div>
+            <div className="form-group">
+              <label>Kategoria:</label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  marginBottom: '10px',
+                  color:
+                    formData.category === 0 || formData.category === ''
+                      ? '#6b7280'
+                      : 'var(--text-dark)',
+                }}
+                required
+              >
+                <option value="" disabled>
+                  Wybierz kategorię
+                </option>
+                {EVENT_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id} style={{ color: 'var(--text-dark)' }}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Recurring Event Checkbox */}
-          <div
-            className="form-group checkbox-group"
-            style={{ marginTop: '10px', marginBottom: '20px' }}
-          >
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={isRecurring}
-                onChange={(e) => setIsRecurring(e.target.checked)}
-                style={{ marginRight: '8px' }}
+            <div className="form-group">
+              <label>Opis:</label>
+              <textarea
+                name="description"
+                required
+                value={formData.description}
+                onChange={handleChange}
+                style={{ width: '100%', minHeight: '60px', marginBottom: '10px' }}
               />
-              Wydarzenie cykliczne
-            </label>
-          </div>
+            </div>
 
-          {isRecurring && (
-            <div
-              style={{
-                padding: '15px',
-                background: '#f9fafb',
-                borderRadius: '8px',
-                marginBottom: '20px',
-              }}
-            >
-              <div className="form-group">
-                <label>Częstotliwość:</label>
-                <select
-                  value={recurrence.type}
-                  onChange={(e) => setRecurrence({ ...recurrence, type: parseInt(e.target.value) })}
-                  style={{ width: '100%', padding: '8px' }}
-                >
-                  <option value={1}>Tygodniowo</option>
-                  <option value={2}>Miesięcznie</option>
-                </select>
-              </div>
+            <div className="form-group">
+              <label>Data i godzina:</label>
+              <DatePicker
+                selected={formData.date}
+                onChange={(date) => setFormData((prev) => ({ ...prev, date }))}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={5}
+                timeCaption="Godzina"
+                dateFormat="dd.MM.yyyy HH:mm"
+                locale="pl"
+                placeholderText="Wybierz datę i godzinę"
+                className="date-picker-input"
+                wrapperClassName="date-picker-wrapper"
+                popperProps={{ strategy: 'fixed' }}
+                required
+                style={{ width: '100%' }}
+              />
+            </div>
 
-              {recurrence.type === 1 && (
-                <div className="form-group">
-                  <label>Dni tygodnia:</label>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {DAYS_OF_WEEK.map((dayObj) => (
-                      <label
-                        key={dayObj.value}
-                        style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={recurrence.daysOfWeek.includes(dayObj.value)}
-                          onChange={(e) => {
-                            const newDays = e.target.checked
-                              ? [...recurrence.daysOfWeek, dayObj.value]
-                              : recurrence.daysOfWeek.filter((d) => d !== dayObj.value)
-                            setRecurrence({ ...recurrence, daysOfWeek: newDays })
-                          }}
-                          style={{ marginRight: '4px' }}
-                        />
-                        {dayObj.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label>Co ile {recurrence.type === 1 ? 'tygodni' : 'miesięcy'}:</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={recurrence.interval}
-                  onChange={(e) =>
-                    setRecurrence({ ...recurrence, interval: parseInt(e.target.value) || 1 })
-                  }
-                  style={{ width: '100%', padding: '8px' }}
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Miasto:</label>
+                <LocationAutocomplete
+                  value={formData.city}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, city: val }))}
+                  onLocationSelect={(loc) => {
+                    setMapCenter([loc.lat, loc.lon])
+                    setMarkerPosition({ lat: loc.lat, lng: loc.lon })
+                    setFormData((prev) => ({
+                      ...prev,
+                      latitude: loc.lat,
+                      longitude: loc.lon,
+                    }))
+                  }}
+                  placeholder="Wybierz lub wpisz..."
+                  required
                 />
               </div>
 
-              <div className="form-group">
-                <label>Zakończenie:</label>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center' }}>
-                    <input
-                      type="radio"
-                      name="editEndType"
-                      checked={recurrence.endDate !== null}
-                      onChange={() =>
-                        setRecurrence({ ...recurrence, endDate: new Date(), maxOccurrences: null })
-                      }
-                      style={{ marginRight: '5px' }}
-                    />
-                    Do daty
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center' }}>
-                    <input
-                      type="radio"
-                      name="editEndType"
-                      checked={recurrence.maxOccurrences !== null}
-                      onChange={() =>
-                        setRecurrence({ ...recurrence, endDate: null, maxOccurrences: 10 })
-                      }
-                      style={{ marginRight: '5px' }}
-                    />
-                    Po X wystąpieniach
-                  </label>
-                </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Dokładne miejsce:</label>
+                <LocationAutocomplete
+                  value={formData.location}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, location: val }))}
+                  onLocationSelect={(loc) => {
+                    setMapCenter([loc.lat, loc.lon])
+                    setMarkerPosition({ lat: loc.lat, lng: loc.lon })
+                    setFormData((prev) => ({
+                      ...prev,
+                      latitude: loc.lat,
+                      longitude: loc.lon,
+                    }))
+                  }}
+                  placeholder="Np. ul. Prosta 51"
+                  required
+                  contextQuery={formData.city}
+                />
               </div>
+            </div>
 
-              {recurrence.endDate !== null && (
-                <div className="form-group">
-                  <label>Data zakończenia:</label>
-                  <DatePicker
-                    selected={recurrence.endDate}
-                    onChange={(date) => setRecurrence({ ...recurrence, endDate: date })}
-                    dateFormat="dd.MM.yyyy"
-                    locale="pl"
-                    placeholderText="Wybierz datę zakończenia"
-                    className="date-picker-input"
-                    wrapperClassName="date-picker-wrapper"
-                    popperProps={{ strategy: 'fixed' }}
-                    minDate={new Date()}
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px' }}>
+                Zaznacz na mapie (opcjonalne):
+              </label>
+              <div
+                style={{
+                  height: '300px',
+                  width: '100%',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  border: '1px solid #ddd',
+                }}
+              >
+                <MapContainer
+                  center={mapCenter}
+                  zoom={13}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
-                </div>
-              )}
+                  <LocationMarker
+                    position={markerPosition}
+                    setPosition={setMarkerPosition}
+                    setFormData={setFormData}
+                  />
+                  <MapUpdater center={mapCenter} />
+                </MapContainer>
+              </div>
+              <small style={{ color: '#666' }}>Kliknij na mapę, aby postawić pineskę.</small>
+            </div>
 
-              {recurrence.maxOccurrences !== null && (
+            <div
+              className="form-group checkbox-group"
+              style={{ marginTop: '10px', marginBottom: '20px' }}
+            >
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  name="isPrivate"
+                  checked={formData.isPrivate}
+                  onChange={handleChange}
+                  style={{ marginRight: '8px' }}
+                />
+                Wydarzenie prywatne
+              </label>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label>Limit uczestników (0 = brak limitu):</label>
+              <input
+                type="number"
+                name="maxParticipants"
+                min="0"
+                value={formData.maxParticipants}
+                onChange={handleChange}
+                style={{ width: '100%', padding: '8px' }}
+              />
+            </div>
+
+            {/* Recurring Event Checkbox */}
+            <div
+              className="form-group checkbox-group"
+              style={{ marginTop: '10px', marginBottom: '20px' }}
+            >
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={isRecurring}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                  style={{ marginRight: '8px' }}
+                />
+                Wydarzenie cykliczne
+              </label>
+            </div>
+
+            {isRecurring && (
+              <div
+                style={{
+                  padding: '15px',
+                  background: '#f9fafb',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                }}
+              >
                 <div className="form-group">
-                  <label>Liczba wystąpień:</label>
+                  <label>Częstotliwość:</label>
+                  <select
+                    value={recurrence.type}
+                    onChange={(e) =>
+                      setRecurrence({ ...recurrence, type: parseInt(e.target.value) })
+                    }
+                    style={{ width: '100%', padding: '8px' }}
+                  >
+                    <option value={1}>Tygodniowo</option>
+                    <option value={2}>Miesięcznie</option>
+                  </select>
+                </div>
+
+                {recurrence.type === 1 && (
+                  <div className="form-group">
+                    <label>Dni tygodnia:</label>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      {DAYS_OF_WEEK.map((dayObj) => (
+                        <label
+                          key={dayObj.value}
+                          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={recurrence.daysOfWeek.includes(dayObj.value)}
+                            onChange={(e) => {
+                              const newDays = e.target.checked
+                                ? [...recurrence.daysOfWeek, dayObj.value]
+                                : recurrence.daysOfWeek.filter((d) => d !== dayObj.value)
+                              setRecurrence({ ...recurrence, daysOfWeek: newDays })
+                            }}
+                            style={{ marginRight: '4px' }}
+                          />
+                          {dayObj.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Co ile {recurrence.type === 1 ? 'tygodni' : 'miesięcy'}:</label>
                   <input
                     type="number"
                     min="1"
-                    value={recurrence.maxOccurrences}
+                    value={recurrence.interval}
                     onChange={(e) =>
-                      setRecurrence({
-                        ...recurrence,
-                        maxOccurrences: parseInt(e.target.value) || 1,
-                      })
+                      setRecurrence({ ...recurrence, interval: parseInt(e.target.value) || 1 })
                     }
                     style={{ width: '100%', padding: '8px' }}
                   />
                 </div>
-              )}
-            </div>
-          )}
 
-          <div
-            className="modal-actions"
-            style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}
-          >
-            <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
-              Anuluj
-            </button>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Zapisywanie...' : 'Zapisz zmiany'}
-            </button>
-          </div>
-        </form>
+                <div className="form-group">
+                  <label>Zakończenie:</label>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center' }}>
+                      <input
+                        type="radio"
+                        name="editEndType"
+                        checked={recurrence.endDate !== null}
+                        onChange={() =>
+                          setRecurrence({
+                            ...recurrence,
+                            endDate: new Date(),
+                            maxOccurrences: null,
+                          })
+                        }
+                        style={{ marginRight: '5px' }}
+                      />
+                      Do daty
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center' }}>
+                      <input
+                        type="radio"
+                        name="editEndType"
+                        checked={recurrence.maxOccurrences !== null}
+                        onChange={() =>
+                          setRecurrence({
+                            ...recurrence,
+                            endDate: null,
+                            maxOccurrences: 10,
+                          })
+                        }
+                        style={{ marginRight: '5px' }}
+                      />
+                      Po X wystąpieniach
+                    </label>
+                  </div>
+                </div>
+
+                {recurrence.endDate !== null && (
+                  <div className="form-group">
+                    <label>Data zakończenia:</label>
+                    <DatePicker
+                      selected={recurrence.endDate}
+                      onChange={(date) => setRecurrence({ ...recurrence, endDate: date })}
+                      dateFormat="dd.MM.yyyy"
+                      locale="pl"
+                      placeholderText="Wybierz datę zakończenia"
+                      className="date-picker-input"
+                      wrapperClassName="date-picker-wrapper"
+                      popperProps={{ strategy: 'fixed' }}
+                      minDate={new Date()}
+                    />
+                  </div>
+                )}
+
+                {recurrence.maxOccurrences !== null && (
+                  <div className="form-group">
+                    <label>Liczba wystąpień:</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={recurrence.maxOccurrences}
+                      onChange={(e) =>
+                        setRecurrence({
+                          ...recurrence,
+                          maxOccurrences: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      style={{ width: '100%', padding: '8px' }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div
+              className="modal-actions"
+              style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}
+            >
+              <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
+                Anuluj
+              </button>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Zapisywanie...' : 'Zapisz zmiany'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <ConfirmModal
