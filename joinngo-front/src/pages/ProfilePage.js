@@ -136,6 +136,27 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
     )
   }
 
+  const handleDelete = (eventId) => {
+    showConfirm(
+      'Usuń wydarzenie',
+      'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja jest nieodwracalna.',
+      async () => {
+        hideConfirm()
+        try {
+          await apiClient.delete(`/Event/${eventId}`)
+          fetchData()
+        } catch (err) {
+          showConfirm(
+            'Błąd',
+            'Nie udało się usunąć: ' + (err.response?.data || err.message),
+            hideConfirm,
+          )
+        }
+      },
+      true,
+    )
+  }
+
   const renderEventList = (events, isJoinedList = false) => {
     if (!events || events.length === 0) {
       return <p style={{ color: '#6b7280', fontStyle: 'italic' }}>Brak wydarzeń.</p>
@@ -156,6 +177,7 @@ function ProfilePage({ role, currentUserId, refreshTrigger }) {
             currentUserId={currentUserId}
             role={role}
             onEdit={handleEditClick}
+            onDelete={handleDelete}
             onDismiss={handleDismiss}
             isJoinedList={isJoinedList}
             isOwner={!isJoinedList}

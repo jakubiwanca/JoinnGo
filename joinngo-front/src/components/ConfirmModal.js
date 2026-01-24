@@ -9,6 +9,7 @@ function ConfirmModal({
   confirmText = 'Tak',
   cancelText = 'Anuluj',
   danger = false,
+  showCancel = true,
 }) {
   if (!isOpen) return null
 
@@ -18,11 +19,13 @@ function ConfirmModal({
         <h3 className="confirm-modal-title">{title}</h3>
         <p className="confirm-modal-message">{message}</p>
         <div className="confirm-modal-actions">
-          <button className="btn-secondary" onClick={onCancel}>
-            {cancelText}
-          </button>
+          {showCancel && (
+            <button className="btn-secondary" onClick={onCancel}>
+              {cancelText}
+            </button>
+          )}
           <button className={danger ? 'btn-danger' : 'btn-primary'} onClick={onConfirm}>
-            {confirmText}
+            {showCancel ? confirmText : 'OK'}
           </button>
         </div>
       </div>

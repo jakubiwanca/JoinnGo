@@ -104,6 +104,11 @@ function App() {
           />
 
           <Route
+            path="/register"
+            element={user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />}
+          />
+
+          <Route
             path="/admin"
             element={
               user && user.role === 'Admin' ? (

@@ -380,6 +380,7 @@ label {
   z-index: 1000;
   backdrop-filter: blur(2px);
   padding: 20px;
+  pointer-events: auto;
 }
 
 .modal-content {
@@ -394,6 +395,9 @@ label {
   max-height: 90vh;
   overflow-y: auto;
   animation: fadeIn 0.2s ease-out;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1001;
 }
 
 @keyframes fadeIn {
@@ -416,6 +420,9 @@ label {
   max-width: 400px;
   box-shadow: var(--shadow-lg);
   animation: fadeIn 0.2s ease-out;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1001;
 }
 
 .confirm-modal-title {

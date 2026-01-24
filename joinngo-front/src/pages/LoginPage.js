@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import { login } from '../api/auth'
 import ConfirmModal from '../components/ConfirmModal'
 
 function LoginPage({ onLogin }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [isLoginMode, setIsLoginMode] = useState(true)
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
@@ -15,11 +16,12 @@ function LoginPage({ onLogin }) {
     title: '',
     message: '',
     onConfirm: null,
+    showCancel: true,
     danger: false,
   })
 
-  const showConfirm = (title, message, onConfirm, danger = false) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
   }
 
   const hideConfirm = () => {
@@ -27,11 +29,8 @@ function LoginPage({ onLogin }) {
   }
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    if (params.get('register') === 'true') {
-      setIsLoginMode(false)
-    }
-  }, [location])
+    setIsLoginMode(location.pathname === '/login')
+  }, [location.pathname])
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -49,8 +48,14 @@ function LoginPage({ onLogin }) {
           email: formData.email,
           password: formData.password,
         })
-        showConfirm('Sukces', 'Rejestracja udana! Możesz się teraz zalogować.', hideConfirm)
-        setIsLoginMode(true)
+        showConfirm(
+          'Sukces',
+          'Rejestracja udana! Możesz się teraz zalogować.',
+          hideConfirm,
+          false,
+          false,
+        )
+        navigate('/login')
       }
     } catch (err) {
       console.error(err)
@@ -96,7 +101,10 @@ function LoginPage({ onLogin }) {
 
         <div className="toggle-text">
           {isLoginMode ? 'Nie masz jeszcze konta?' : 'Masz już konto?'}
-          <span className="toggle-link" onClick={() => setIsLoginMode(!isLoginMode)}>
+          <span
+            className="toggle-link"
+            onClick={() => navigate(isLoginMode ? '/register' : '/login')}
+          >
             {isLoginMode ? 'Zarejestruj się' : 'Zaloguj się'}
           </span>
         </div>
@@ -108,6 +116,7 @@ function LoginPage({ onLogin }) {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={hideConfirm}
+        showCancel={confirmModal.showCancel}
         danger={confirmModal.danger}
       />
     </div>

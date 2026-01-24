@@ -113,11 +113,12 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     title: '',
     message: '',
     onConfirm: null,
+    showCancel: true,
     danger: false,
   })
 
-  const showConfirm = (title, message, onConfirm, danger = false) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
+  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
   }
 
   const hideConfirm = () => {
@@ -220,11 +221,17 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
 
       await apiClient.put(`/Event/${eventToEdit.id}`, payload)
 
-      showConfirm('Sukces', 'Wydarzenie zaktualizowane!', () => {
-        hideConfirm()
-        onEventUpdated()
-        onClose()
-      })
+      showConfirm(
+        'Sukces',
+        'Wydarzenie zaktualizowane!',
+        () => {
+          hideConfirm()
+          onEventUpdated()
+          onClose()
+        },
+        false,
+        false,
+      )
     } catch (err) {
       console.error('Błąd edycji:', err)
       setError(
@@ -595,6 +602,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={hideConfirm}
+        showCancel={confirmModal.showCancel}
         danger={confirmModal.danger}
       />
     </div>
