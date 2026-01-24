@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: JoinnGoDb
     ports:
-      - "5433:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -18,9 +18,9 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
-      - "8080:80"
+      - '8080:80'
     volumes:
-      - pgadmin_data:/var/lib/pgadmin  # zapis konfiguracji pgAdmin
+      - pgadmin_data:/var/lib/pgadmin # zapis konfiguracji pgAdmin
 
 volumes:
   postgres_data:
