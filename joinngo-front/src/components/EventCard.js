@@ -1,5 +1,6 @@
 import React from 'react'
 import { formatPolishDateTime } from '../utils/dateFormat'
+import { getEventColorClass } from '../utils/eventHelpers'
 
 const EventCard = ({
   event,
@@ -36,20 +37,7 @@ const EventCard = ({
   const isPending = status === 0 || status === 'Interested' || status === 'Pending'
   const isRejected = status === 2 || status === 'Rejected'
 
-  let cardColorClass = 'event-public'
-  if (isMyEvent) {
-    cardColorClass = 'event-created'
-  } else if (isJoined) {
-    if (isPending) {
-      cardColorClass = 'event-pending'
-    } else if (isRejected) {
-      cardColorClass = 'event-rejected'
-    } else {
-      cardColorClass = 'event-joined'
-    }
-  } else if (event.isPrivate) {
-    cardColorClass = 'event-private'
-  }
+  const cardColorClass = getEventColorClass(event, isMyEvent, isJoined, status)
 
   return (
     <div

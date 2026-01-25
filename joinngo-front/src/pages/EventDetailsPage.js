@@ -11,7 +11,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
-setupLeafletIcon()
+import { getEventColorClass } from '../utils/eventHelpers'
 
 const EventDetailsPage = ({ currentUserId }) => {
   const { id } = useParams()
@@ -254,20 +254,7 @@ const EventDetailsPage = ({ currentUserId }) => {
     )
   }
 
-  let cardColorClass = 'event-public'
-  if (isOrganizer) {
-    cardColorClass = 'event-created'
-  } else if (isJoined) {
-    if (isPending) {
-      cardColorClass = 'event-pending'
-    } else if (isRejected) {
-      cardColorClass = 'event-rejected'
-    } else {
-      cardColorClass = 'event-joined'
-    }
-  } else if (event.isPrivate) {
-    cardColorClass = 'event-private'
-  }
+  const cardColorClass = getEventColorClass(event, isOrganizer, isJoined, userParticipation?.status)
 
   return (
     <div className="main-container">

@@ -37,7 +37,7 @@ public class UserController : ControllerBase
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
-            return BadRequest("Email already exists");
+            return BadRequest("Ten adres email jest już zajęty.");
 
         var user = new User
         {
@@ -103,7 +103,7 @@ public class UserController : ControllerBase
 
     if (!user.EmailConfirmed)
     {
-        return Unauthorized("Email not confirmed. Please check your inbox and confirm your email address.");
+        return Unauthorized("Email nie został potwierdzony. Sprawdź swoją skrzynkę odbiorczą i potwierdź adres email.");
     }
 
     var token = GenerateJwtToken(user);
@@ -133,31 +133,16 @@ public class UserController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            return BadRequest("Invalid token");
+            return BadRequest("Nieprawidłowy token.");
         }
-
-        Console.WriteLine($"[DEBUG] ConfirmEmail endpoint called with token: '{token}'");
 
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.EmailConfirmationToken == token);
 
         if (user == null)
         {
-            Console.WriteLine($"[DEBUG] ERROR: User NOT found for token: '{token}'");
-            
-            // Print all tokens in DB to allow comparison (for debugging purposes only)
-            var existingTokens = await _context.Users
-                .Where(u => u.EmailConfirmationToken != null)
-                .Select(u => $"{u.Email}:{u.EmailConfirmationToken}")
-                .ToListAsync();
-            
-            Console.WriteLine($"[DEBUG] Available tokens in DB ({existingTokens.Count}):");
-            foreach(var t in existingTokens) Console.WriteLine($" - {t}");
-
-            return BadRequest("Invalid or expired confirmation token");
+            return BadRequest("Token nieprawidłowy lub wygasł.");
         }
-        
-        Console.WriteLine($"[DEBUG] User found: {user.Email}, ID: {user.Id}");
 
         if (user.EmailConfirmed)
         {
@@ -295,7 +280,7 @@ public class UserController : ControllerBase
 
         var userId = int.Parse(userIdClaim.Value);
         var user = await _context.Users.FindAsync(userId);
-        if (user == null) return NotFound("User not found");
+        if (user == null) return NotFound("Nie znaleziono użytkownika.");
 
         if (!string.IsNullOrWhiteSpace(dto.Username))
         {
@@ -327,7 +312,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> SetUserRole([FromBody] SetRoleDto dto)
     {
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == dto.Email);
-        if (user == null) return NotFound("User not found");
+        if (user == null) return NotFound("Nie znaleziono użytkownika.");
 
         user.Role = dto.Role;
         await _context.SaveChangesAsync();
@@ -349,7 +334,7 @@ public class UserController : ControllerBase
         }
 
         var user = await _context.Users.FindAsync(id);
-        if (user == null) return NotFound("User not found");
+        if (user == null) return NotFound("Nie znaleziono użytkownika.");
 
         var userEvents = _context.Events.Where(e => e.CreatorId == id);
         _context.Events.RemoveRange(userEvents);
@@ -376,7 +361,7 @@ public class UserController : ControllerBase
 
         int userId = int.Parse(userIdClaim.Value);
         var user = await _context.Users.FindAsync(userId);
-        if (user == null) return NotFound("User not found");
+        if (user == null) return NotFound("Nie znaleziono użytkownika.");
 
         var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.CurrentPassword);
         bool isCurrentPasswordValid = false;
@@ -396,7 +381,7 @@ public class UserController : ControllerBase
 
         if (!isCurrentPasswordValid)
         {
-            return BadRequest(new { message = "Current password is incorrect" });
+            return BadRequest(new { message = "Obecne hasło jest nieprawidłowe." });
         }
 
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
@@ -422,7 +407,7 @@ public class UserController : ControllerBase
         }
 
         var user = await _context.Users.FindAsync(id);
-        if (user == null) return NotFound("User not found");
+        if (user == null) return NotFound("Nie znaleziono użytkownika.");
 
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != id))
         {

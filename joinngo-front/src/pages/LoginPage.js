@@ -144,7 +144,7 @@ function LoginPage({ onLogin }) {
             style={{ width: '100%' }}
             disabled={isLoading}
           >
-            {isLoading ? 'Prosze czekac...' : isLoginMode ? 'Zaloguj się' : 'Zarejestruj się'}
+            {isLoading ? 'Proszę czekać...' : isLoginMode ? 'Zaloguj się' : 'Zarejestruj się'}
           </button>
         </form>
 
