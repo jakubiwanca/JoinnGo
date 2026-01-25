@@ -207,19 +207,27 @@ function Home({ role, currentUserId, refreshTrigger }) {
     const event = events.find((e) => e.id === eventId)
     const myParticipant = event?.participants?.find((p) => p.userId === currentUserId)
     const isPending = myParticipant?.status === 'Interested'
+    const isRejected = myParticipant?.status === 'Rejected'
 
-    const title = isPending ? 'Anuluj prośbę' : 'Opuść wydarzenie'
-    const message = isPending
-      ? 'Czy na pewno chcesz anulować prośbę o dołączenie do wydarzenia?'
-      : 'Czy na pewno chcesz zrezygnować z udziału w tym wydarzeniu?'
+    let title = 'Opuść wydarzenie'
+    let message = 'Czy na pewno chcesz zrezygnować z udziału w tym wydarzeniu?'
+
+    if (isPending) {
+      title = 'Anuluj prośbę'
+      message = 'Czy na pewno chcesz anulować prośbę o dołączenie do wydarzenia?'
+    } else if (isRejected) {
+      title = 'Usuń powiadomienie'
+      message = 'Czy chcesz usunąć to wydarzenie z listy odrzuconych?'
+    }
 
     showConfirm(title, message, async () => {
       hideConfirm()
       try {
         await leaveEvent(eventId)
-        const successMsg = isPending
-          ? 'Anulowano prośbę o dołączenie.'
-          : 'Pomyślnie opuszczono wydarzenie.'
+        let successMsg = 'Pomyślnie opuszczono wydarzenie.'
+        if (isPending) successMsg = 'Anulowano prośbę o dołączenie.'
+        if (isRejected) successMsg = 'Usunięto powiadomienie.'
+
         showConfirm('Sukces', successMsg, hideConfirm, false, false)
         fetchEvents()
       } catch (err) {

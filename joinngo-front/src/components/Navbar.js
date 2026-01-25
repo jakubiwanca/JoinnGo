@@ -6,7 +6,7 @@ function Navbar({ user, onLogout, onOpenCreateModal }) {
 
   return (
     <header className="app-header">
-      <div style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+      <div style={{ cursor: 'pointer' }} onClick={() => navigate('/home')}>
         <h2>Join'nGo</h2>
         {user?.username && (
           <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>

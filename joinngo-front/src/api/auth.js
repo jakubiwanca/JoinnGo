@@ -32,3 +32,8 @@ export async function updateProfile(data) {
   const response = await apiClient.put('/User/me', data)
   return response.data
 }
+
+export async function confirmEmail(token) {
+  const response = await apiClient.get(`/User/confirm-email?token=${token}`)
+  return response.data
+}

@@ -504,6 +504,7 @@ public class EventController : ControllerBase
                 Email = ep.User?.Email,
                 Status = ep.Status.ToString()
             }).ToList(),
+            ParticipantsCount = eventItem.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
             Recurrence = eventItem.RecurrenceGroup == null ? null : new
             {
                 eventItem.RecurrenceGroup.Type,
@@ -513,7 +514,8 @@ public class EventController : ControllerBase
                     : null,
                 eventItem.RecurrenceGroup.EndDate,
                 eventItem.RecurrenceGroup.MaxOccurrences
-            }
+            },
+            PendingRequestsCount = eventItem.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested)
         });
     }
 
@@ -555,7 +557,8 @@ public class EventController : ControllerBase
             e.IsPrivate,
             e.MaxParticipants,
             Category = e.Category.ToString(),
-            ParticipantsCount = e.EventParticipants.Count,
+            ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
+            PendingRequestsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),
             IsRecurring = e.RecurrenceGroupId != null,
             Recurrence = e.RecurrenceGroup == null ? null : new
             {
@@ -602,7 +605,7 @@ public class EventController : ControllerBase
                     .Where(ep => ep.UserId == userId)
                     .Select(ep => ep.Status.ToString())
                     .FirstOrDefault(),
-                ParticipantsCount = e.EventParticipants.Count,
+                ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
                 IsRecurring = e.RecurrenceGroupId != null
             })
             .ToListAsync();
@@ -687,6 +690,8 @@ public class EventController : ControllerBase
                 e.CreatorId,
                 Creator = e.Creator != null ? new { e.Creator.Email } : null,
                 Participants = e.EventParticipants.Select(ep => new { ep.UserId, Status = ep.Status.ToString() }).ToList(),
+                ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
+                PendingRequestsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),
                 IsRecurring = e.RecurrenceGroupId != null
             })
             .ToListAsync();

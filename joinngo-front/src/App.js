@@ -12,6 +12,7 @@ import EventDetailsPage from './pages/EventDetailsPage'
 import Navbar from './components/Navbar'
 import CreateEventModal from './components/CreateEventModal'
 import OnboardingModal from './components/OnboardingModal'
+import ConfirmEmailPage from './pages/ConfirmEmailPage'
 
 const AuthenticatedLayout = ({ children, user, handleLogout, setCreateModalOpen }) => {
   return (
@@ -86,8 +87,10 @@ function App() {
     <Router>
       <div className="app-container">
         <Routes>
+          <Route path="/" element={<Navigate to="/home" replace />} />
+
           <Route
-            path="/"
+            path="/home"
             element={
               <ProtectedRoute user={user}>
                 <AuthenticatedLayout
@@ -105,16 +108,16 @@ function App() {
             }
           />
 
-          <Route path="/landing" element={user ? <Navigate to="/" /> : <LandingPage />} />
+          <Route path="/landing" element={user ? <Navigate to="/home" /> : <LandingPage />} />
 
           <Route
             path="/login"
-            element={user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />}
+            element={user ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />}
           />
 
           <Route
             path="/register"
-            element={user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />}
+            element={user ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />}
           />
 
           <Route
@@ -135,7 +138,7 @@ function App() {
                   </AuthenticatedLayout>
                 </ProtectedRoute>
               ) : (
-                <Navigate to="/" />
+                <Navigate to="/home" />
               )
             }
           />
@@ -177,7 +180,9 @@ function App() {
             }
           />
 
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+
+          <Route path="*" element={<Navigate to="/home" />} />
         </Routes>
 
         {user && createModalOpen && (

@@ -555,13 +555,20 @@ function ProfilePage({
       {redirecting &&
         ReactDOM.createPortal(
           <div className="modal-overlay" style={{ zIndex: 3000 }}>
-            <div className="modal-content" style={{ textAlign: 'center', padding: '40px' }}>
-              <h2 style={{ color: '#10b981', marginBottom: '20px' }}>Gotowe! 🚀</h2>
-              <p>Konfiguracja zakończona.</p>
-              <p style={{ marginTop: '10px', color: '#6b7280' }}>
+            <div
+              className="modal-content"
+              style={{ textAlign: 'center', padding: '25px', maxWidth: '350px' }}
+            >
+              <h2
+                style={{ color: '#10b981', marginBottom: '10px', fontSize: '1.5rem', marginTop: 0 }}
+              >
+                Gotowe! 🚀
+              </h2>
+              <p style={{ margin: '5px 0' }}>Konfiguracja zakończona.</p>
+              <p style={{ margin: '5px 0', color: '#6b7280', fontSize: '0.9rem' }}>
                 Przekierowywanie na stronę główną...
               </p>
-              <div className="spinner" style={{ margin: '20px auto' }}></div>
+              <div className="spinner" style={{ margin: '15px auto 0' }}></div>
             </div>
           </div>,
           document.body,

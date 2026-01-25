@@ -97,19 +97,28 @@ const EventDetailsPage = ({ currentUserId }) => {
 
   const handleLeave = () => {
     const isPending = userParticipation?.status === 'Interested'
-    const title = isPending ? 'Anuluj prośbę' : 'Opuść wydarzenie'
-    const message = isPending
-      ? 'Czy na pewno chcesz anulować prośbę o dołączenie do wydarzenia?'
-      : 'Czy na pewno chcesz zrezygnować z udziału?'
+    const isRejected = userParticipation?.status === 'Rejected'
+
+    let title = 'Opuść wydarzenie'
+    let message = 'Czy na pewno chcesz zrezygnować z udziału?'
+
+    if (isPending) {
+      title = 'Anuluj prośbę'
+      message = 'Czy na pewno chcesz anulować prośbę o dołączenie do wydarzenia?'
+    } else if (isRejected) {
+      title = 'Usuń powiadomienie'
+      message = 'Czy chcesz usunąć to wydarzenie z listy odrzuconych?'
+    }
 
     showConfirm(title, message, async () => {
       hideConfirm()
       setActionLoading(true)
       try {
         await leaveEvent(id)
-        const successMsg = isPending
-          ? 'Anulowano prośbę o dołączenie.'
-          : 'Pomyślnie opuszczono wydarzenie.'
+        let successMsg = 'Pomyślnie opuszczono wydarzenie.'
+        if (isPending) successMsg = 'Anulowano prośbę o dołączenie.'
+        if (isRejected) successMsg = 'Usunięto powiadomienie.'
+
         showConfirm('Sukces', successMsg, hideConfirm, false, false)
         fetchEvent()
       } catch (err) {
@@ -131,7 +140,7 @@ const EventDetailsPage = ({ currentUserId }) => {
           await deleteEvent(id)
           showConfirm('Sukces', 'Wydarzenie zostało usunięte.', () => {
             hideConfirm()
-            navigate('/')
+            navigate('/home')
           })
         } catch (err) {
           showConfirm('Błąd', err.response?.data || 'Błąd podczas usuwania', hideConfirm)
@@ -176,6 +185,7 @@ const EventDetailsPage = ({ currentUserId }) => {
   const userParticipation = getUserParticipation(event)
   const isJoined = !!userParticipation
   const isConfirmed = userParticipation?.status === 'Confirmed'
+  const isRejected = userParticipation?.status === 'Rejected'
   const isPending = userParticipation?.status === 'Interested'
   const isFull = event.maxParticipants > 0 && participantsList.length >= event.maxParticipants
 
@@ -190,18 +200,43 @@ const EventDetailsPage = ({ currentUserId }) => {
           style={{ padding: '10px 25px' }}
         >
           ⚙️ Zarządzaj uczestnikami
+          {event.pendingRequestsCount > 0 && (
+            <span
+              style={{
+                backgroundColor: '#ef4444',
+                color: 'white',
+                borderRadius: '50%',
+                padding: '2px 8px',
+                fontSize: '0.8rem',
+                marginLeft: '8px',
+                fontWeight: 'bold',
+              }}
+            >
+              {event.pendingRequestsCount}
+            </span>
+          )}
         </button>
       </div>
     )
   } else if (isJoined) {
+    let buttonText = 'Opuść wydarzenie'
+    let buttonClass = 'btn-secondary'
+
+    if (isPending) {
+      buttonText = 'Anuluj prośbę'
+    } else if (isRejected) {
+      buttonText = 'Usuń powiadomienie'
+      buttonClass = 'btn-danger'
+    }
+
     actionButton = (
       <button
-        className="btn-secondary"
+        className={buttonClass}
         onClick={handleLeave}
         disabled={actionLoading}
         style={{ padding: '10px 25px' }}
       >
-        {actionLoading ? 'Przetwarzanie...' : isPending ? 'Anuluj prośbę' : 'Opuść wydarzenie'}
+        {actionLoading ? 'Przetwarzanie...' : buttonText}
       </button>
     )
   } else {
@@ -406,6 +441,7 @@ const EventDetailsPage = ({ currentUserId }) => {
       {isParticipantsModalOpen && (
         <ParticipantsModal
           eventId={event.id}
+          creatorId={event.creatorId}
           onClose={() => setIsParticipantsModalOpen(false)}
           onStatusChange={fetchEvent}
         />

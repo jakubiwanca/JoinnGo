@@ -10,6 +10,7 @@ function LoginPage({ onLogin }) {
   const [isLoginMode, setIsLoginMode] = useState(true)
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
@@ -24,6 +25,7 @@ function LoginPage({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setIsLoading(true)
 
     // Walidacja dla rejestracji
     if (!isLoginMode) {
@@ -44,26 +46,37 @@ function LoginPage({ onLogin }) {
         const data = await login(formData.email, formData.password)
         onLogin(data.token, data.role)
       } else {
-        await register(formData.email, formData.password)
+        const response = await register(formData.email, formData.password)
+        setIsLoading(false)
         showConfirm(
-          'Sukces',
-          'Rejestracja udana! Możesz się teraz zalogować.',
+          'Sprawdź swoją skrzynkę email',
+          `Wysłaliśmy link potwierdzający na adres ${formData.email}.\n\nKliknij w link, aby aktywować konto i móc się zalogować.`,
           hideConfirm,
           false,
           false,
         )
-        navigate('/login')
       }
     } catch (err) {
       console.error(err)
-      setError('Wystąpił błąd. Sprawdź dane lub spróbuj ponownie.')
+      setIsLoading(false)
+      const errorMessage = err.response?.data || 'Wystąpił błąd. Sprawdź dane lub spróbuj ponownie.'
+
+      if (errorMessage.includes('Email not confirmed') || errorMessage.includes('not confirmed')) {
+        setError(
+          'Musisz potwierdzić swój adres email przed zalogowaniem. Sprawdź swoją skrzynkę odbiorczą.',
+        )
+      } else if (errorMessage.includes('Email already exists')) {
+        setError('Ten adres email jest już zarejestrowany. Spróbuj się zalogować.')
+      } else {
+        setError(errorMessage)
+      }
     }
   }
 
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h2>{isLoginMode ? 'Witaj ponownie 👋' : "Dołącz do Join'nGo 🚀"}</h2>
+        <h2>{isLoginMode ? 'Zaloguj się' : "Dołącz do Join'nGo"}</h2>
 
         {error && (
           <div style={{ color: 'red', marginBottom: '15px', fontSize: '0.9rem' }}>{error}</div>
@@ -91,8 +104,13 @@ function LoginPage({ onLogin }) {
             />
           </div>
 
-          <button className="btn-primary" type="submit" style={{ width: '100%' }}>
-            {isLoginMode ? 'Zaloguj się' : 'Zarejestruj się'}
+          <button
+            className="btn-primary"
+            type="submit"
+            style={{ width: '100%' }}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Prosze czekac...' : isLoginMode ? 'Zaloguj się' : 'Zarejestruj się'}
           </button>
         </form>
 

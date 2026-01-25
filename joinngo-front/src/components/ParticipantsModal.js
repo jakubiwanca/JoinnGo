@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import apiClient from '../api/axiosClient'
 import ConfirmModal from './ConfirmModal'
 
-function ParticipantsModal({ eventId, onClose, onStatusChange }) {
+function ParticipantsModal({ eventId, creatorId, onClose, onStatusChange }) {
   const [participants, setParticipants] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -160,7 +160,7 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
                           }}
                           onClick={() => handleAccept(p.userId)}
                         >
-                          Zatwierdź
+                          Akceptuj
                         </button>
                         <button
                           className="btn-danger"
@@ -199,17 +199,29 @@ function ParticipantsModal({ eventId, onClose, onStatusChange }) {
                       <div>
                         <strong>{p.email}</strong>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{ color: 'green', fontSize: '1.2em', marginRight: '5px' }}>
-                          ✅
-                        </span>
-                        <button
-                          className="btn-danger"
-                          style={{ padding: '5px 10px', fontSize: '0.8em' }}
-                          onClick={() => handleRemove(p.userId, p.email)}
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span
+                          style={{
+                            color: '#059669', // darker green
+                            fontSize: '0.9em',
+                            marginRight: '10px',
+                            fontWeight: '600',
+                            backgroundColor: '#d1fae5',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                          }}
                         >
-                          Usuń
-                        </button>
+                          Potwierdzony
+                        </span>
+                        {p.userId !== creatorId && (
+                          <button
+                            className="btn-danger"
+                            style={{ padding: '5px 10px', fontSize: '0.8em' }}
+                            onClick={() => handleRemove(p.userId, p.email)}
+                          >
+                            Usuń
+                          </button>
+                        )}
                       </div>
                     </li>
                   ))}

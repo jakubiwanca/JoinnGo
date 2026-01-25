@@ -11,6 +11,10 @@ namespace JoinnGoApp.Models
 
         public string Role { get; set; } = "User";
 
+        public bool EmailConfirmed { get; set; } = false;
+        public string? EmailConfirmationToken { get; set; }
+        public DateTime? EmailConfirmationTokenExpiry { get; set; }
+
         public List<EventParticipant> EventParticipants { get; set; } = new List<EventParticipant>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }

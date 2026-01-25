@@ -108,6 +108,23 @@ const EventCard = ({
             ? event.participantsCount
             : event.participants?.length || 0}
           {event.maxParticipants > 0 ? ` / ${event.maxParticipants}` : ''}
+          {isMyEvent && event.pendingRequestsCount > 0 && (
+            <span
+              style={{
+                backgroundColor: '#ef4444',
+                color: 'white',
+                borderRadius: '50%',
+                padding: '2px 6px',
+                fontSize: '0.75rem',
+                marginLeft: '8px',
+                fontWeight: 'bold',
+                verticalAlign: 'middle',
+              }}
+              title={`${event.pendingRequestsCount} oczekujących próśb`}
+            >
+              +{event.pendingRequestsCount}
+            </span>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -174,19 +191,31 @@ const EventCard = ({
               >
                 {event.isPrivate ? 'Wyślij prośbę' : 'Dołącz'}
               </button>
-            ) : (
-              !isRejected && (
+            ) : isRejected ? (
+              !isJoinedList ? (
                 <button
-                  className="btn-secondary"
+                  className="btn-danger"
                   style={{ padding: '6px 12px', fontSize: '0.9rem' }}
                   onClick={(e) => {
                     e.stopPropagation()
                     if (onLeave) onLeave(event.id)
                   }}
+                  title="Usuń powiadomienie"
                 >
-                  {isConfirmed ? 'Opuść' : 'Anuluj'}
+                  Usuń
                 </button>
-              )
+              ) : null
+            ) : (
+              <button
+                className="btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.9rem' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (onLeave) onLeave(event.id)
+                }}
+              >
+                {isConfirmed ? 'Opuść' : 'Anuluj'}
+              </button>
             ))}
         </div>
       </div>

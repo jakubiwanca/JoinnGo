@@ -21,12 +21,14 @@ public class UserController : ControllerBase
     private readonly MyDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly PasswordHasher<User> _passwordHasher;
+    private readonly JoinnGoApp.Services.IEmailService _emailService;
 
-    public UserController(MyDbContext context, IConfiguration configuration)
+    public UserController(MyDbContext context, IConfiguration configuration, JoinnGoApp.Services.IEmailService emailService)
     {
         _context = context;
         _configuration = configuration;
         _passwordHasher = new PasswordHasher<User>();
+        _emailService = emailService;
     }
 
     [HttpPost("register")]
@@ -40,7 +42,10 @@ public class UserController : ControllerBase
         var user = new User
         {
             Email = dto.Email,
-            Role = "User"
+            Role = "User",
+            EmailConfirmed = false,
+            EmailConfirmationToken = Guid.NewGuid().ToString(),
+            EmailConfirmationTokenExpiry = DateTime.UtcNow.AddHours(24)
         };
 
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
@@ -48,7 +53,16 @@ public class UserController : ControllerBase
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        return Ok("User registered successfully");
+        try
+        {
+            await _emailService.SendEmailConfirmationAsync(user.Email, user.EmailConfirmationToken);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send email: {ex.Message}");
+        }
+
+        return Ok("Registration successful. Please check your email to confirm your account.");
     }
 
     [HttpPost("login")]
@@ -83,11 +97,16 @@ public class UserController : ControllerBase
         }
 
         if (!isPasswordValid)
-        {
-            return Unauthorized("Invalid email or password");
-        }
+    {
+        return Unauthorized("Invalid email or password");
+    }
 
-        var token = GenerateJwtToken(user);
+    if (!user.EmailConfirmed)
+    {
+        return Unauthorized("Email not confirmed. Please check your inbox and confirm your email address.");
+    }
+
+    var token = GenerateJwtToken(user);
 
         var cookieOptions = new CookieOptions
         {
@@ -107,6 +126,58 @@ public class UserController : ControllerBase
     {
         Response.Cookies.Delete("jwt");
         return Ok(new { message = "Logged out" });
+    }
+
+    [HttpGet("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return BadRequest("Invalid token");
+        }
+
+        Console.WriteLine($"[DEBUG] ConfirmEmail endpoint called with token: '{token}'");
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.EmailConfirmationToken == token);
+
+        if (user == null)
+        {
+            Console.WriteLine($"[DEBUG] ERROR: User NOT found for token: '{token}'");
+            
+            // Print all tokens in DB to allow comparison (for debugging purposes only)
+            var existingTokens = await _context.Users
+                .Where(u => u.EmailConfirmationToken != null)
+                .Select(u => $"{u.Email}:{u.EmailConfirmationToken}")
+                .ToListAsync();
+            
+            Console.WriteLine($"[DEBUG] Available tokens in DB ({existingTokens.Count}):");
+            foreach(var t in existingTokens) Console.WriteLine($" - {t}");
+
+            return BadRequest("Invalid or expired confirmation token");
+        }
+        
+        Console.WriteLine($"[DEBUG] User found: {user.Email}, ID: {user.Id}");
+
+        if (user.EmailConfirmed)
+        {
+            return Ok("Email potwierdzony. Możesz się zalogować.");
+        }
+
+        if (user.EmailConfirmationTokenExpiry == null || 
+            user.EmailConfirmationTokenExpiry < DateTime.UtcNow)
+        {
+            return BadRequest("Token wygasł. Poproszę o ponowne potwierdzenie.");
+        }
+
+        user.EmailConfirmed = true;
+        // We do NOT clear the token here to allow for idempotent checks (double clicks, browser pre-fetching)
+        // user.EmailConfirmationToken = null; 
+        // user.EmailConfirmationTokenExpiry = null;
+
+        await _context.SaveChangesAsync();
+
+        return Ok("Email potwierdzony. Możesz się zalogować.");
     }
 
     private string GenerateJwtToken(User user)

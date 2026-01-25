@@ -12,6 +12,7 @@ builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<JoinnGoApp.Services.RecurrenceService>();
+builder.Services.AddTransient<JoinnGoApp.Services.IEmailService, JoinnGoApp.Services.EmailService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);
