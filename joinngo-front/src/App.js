@@ -13,6 +13,7 @@ import Navbar from './components/Navbar'
 import CreateEventModal from './components/CreateEventModal'
 import OnboardingModal from './components/OnboardingModal'
 import ConfirmEmailPage from './pages/ConfirmEmailPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 const AuthenticatedLayout = ({ children, user, handleLogout, setCreateModalOpen }) => {
   return (
@@ -181,6 +182,7 @@ function App() {
           />
 
           <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route path="*" element={<Navigate to="/home" />} />
         </Routes>

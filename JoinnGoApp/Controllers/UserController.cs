@@ -71,7 +71,7 @@ public class UserController : ControllerBase
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == dto.Email);
-        if (user == null) return Unauthorized("Invalid email or password");
+        if (user == null) return Unauthorized("Niepoprawny email lub hasło");
 
         var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
         bool isPasswordValid = false;
@@ -98,7 +98,7 @@ public class UserController : ControllerBase
 
         if (!isPasswordValid)
     {
-        return Unauthorized("Invalid email or password");
+        return Unauthorized("Niepoprawny email lub hasło");
     }
 
     if (!user.EmailConfirmed)
@@ -171,13 +171,62 @@ public class UserController : ControllerBase
         }
 
         user.EmailConfirmed = true;
-        // We do NOT clear the token here to allow for idempotent checks (double clicks, browser pre-fetching)
-        // user.EmailConfirmationToken = null; 
-        // user.EmailConfirmationTokenExpiry = null;
 
         await _context.SaveChangesAsync();
 
         return Ok("Email potwierdzony. Możesz się zalogować.");
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == dto.Email);
+        
+        if (user == null) 
+        {
+            await Task.Delay(500); 
+            return Ok("Jeśli podany email istnieje w naszej bazie, wysłaliśmy na niego instrukcję resetowania hasła.");
+        }
+
+        var resetToken = Guid.NewGuid().ToString();
+        user.PasswordResetToken = resetToken;
+        user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
+
+        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _emailService.SendPasswordResetAsync(user.Email, resetToken);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending password reset email: {ex.Message}");
+        }
+
+        return Ok("Jeśli podany email istnieje w naszej bazie, wysłaliśmy na niego instrukcję resetowania hasła.");
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var user = await _context.Users.SingleOrDefaultAsync(u => u.PasswordResetToken == dto.Token);
+
+        if (user == null || user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry < DateTime.UtcNow)
+        {
+            return BadRequest("Token jest nieprawidłowy lub wygasł.");
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiry = null;
+
+        await _context.SaveChangesAsync();
+
+        return Ok("Hasło zostało pomyślnie zmienione. Możesz się teraz zalogować.");
     }
 
     private string GenerateJwtToken(User user)
@@ -250,7 +299,6 @@ public class UserController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(dto.Username))
         {
-             // Check uniqueness if desired, enforcing specific username rules
              if (await _context.Users.AnyAsync(u => u.Username == dto.Username && u.Id != userId))
              {
                  return BadRequest("Ta nazwa użytkownika jest już zajęta.");
@@ -438,4 +486,21 @@ public class LoginDto
     public string Email { get; set; }
     [Required]
     public string Password { get; set; }
+}
+
+public class ForgotPasswordDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; }
+}
+
+public class ResetPasswordDto
+{
+    [Required]
+    public string Token { get; set; }
+    
+    [Required]
+    [MinLength(6)]
+    public string NewPassword { get; set; }
 }

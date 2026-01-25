@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { login, register } from '../api/auth'
 import { useConfirm } from '../hooks/useConfirm'
 import ConfirmModal from '../components/ConfirmModal'
+import ForgotPasswordModal from '../components/ForgotPasswordModal'
 
 function LoginPage({ onLogin }) {
   const location = useLocation()
@@ -11,6 +12,7 @@ function LoginPage({ onLogin }) {
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
@@ -27,16 +29,25 @@ function LoginPage({ onLogin }) {
     setError('')
     setIsLoading(true)
 
+    // Walidacja dla logowania i rejestracji
+    if (!formData.email || !formData.password) {
+      setError('Wszystkie pola są wymagane.')
+      setIsLoading(false)
+      return
+    }
+
     // Walidacja dla rejestracji
     if (!isLoginMode) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(formData.email)) {
         setError('Proszę podać poprawny adres email.')
+        setIsLoading(false)
         return
       }
 
       if (formData.password.length < 6) {
         setError('Hasło musi mieć co najmniej 6 znaków.')
+        setIsLoading(false)
         return
       }
     }
@@ -59,7 +70,16 @@ function LoginPage({ onLogin }) {
     } catch (err) {
       console.error(err)
       setIsLoading(false)
-      const errorMessage = err.response?.data || 'Wystąpił błąd. Sprawdź dane lub spróbuj ponownie.'
+
+      let errorMessage = 'Wystąpił błąd. Sprawdź dane lub spróbuj ponownie.'
+
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data
+        } else if (typeof err.response.data === 'object') {
+          errorMessage = JSON.stringify(err.response.data)
+        }
+      }
 
       if (errorMessage.includes('Email not confirmed') || errorMessage.includes('not confirmed')) {
         setError(
@@ -68,7 +88,11 @@ function LoginPage({ onLogin }) {
       } else if (errorMessage.includes('Email already exists')) {
         setError('Ten adres email jest już zarejestrowany. Spróbuj się zalogować.')
       } else {
-        setError(errorMessage)
+        if (errorMessage.startsWith('{')) {
+          setError('Nieprawidłowe dane logowania.')
+        } else {
+          setError(errorMessage)
+        }
       }
     }
   }
@@ -102,6 +126,16 @@ function LoginPage({ onLogin }) {
               onChange={handleChange}
               required
             />
+            {isLoginMode && (
+              <div style={{ textAlign: 'right', marginTop: '5px' }}>
+                <span
+                  style={{ color: '#4f46e5', fontSize: '0.85rem', cursor: 'pointer' }}
+                  onClick={() => setShowForgotPassword(true)}
+                >
+                  Nie pamiętasz hasła?
+                </span>
+              </div>
+            )}
           </div>
 
           <button
@@ -134,6 +168,8 @@ function LoginPage({ onLogin }) {
         showCancel={confirmModal.showCancel}
         danger={confirmModal.danger}
       />
+
+      {showForgotPassword && <ForgotPasswordModal onClose={() => setShowForgotPassword(false)} />}
     </div>
   )
 }

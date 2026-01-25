@@ -254,6 +254,21 @@ const EventDetailsPage = ({ currentUserId }) => {
     )
   }
 
+  let cardColorClass = 'event-public'
+  if (isOrganizer) {
+    cardColorClass = 'event-created'
+  } else if (isJoined) {
+    if (isPending) {
+      cardColorClass = 'event-pending'
+    } else if (isRejected) {
+      cardColorClass = 'event-rejected'
+    } else {
+      cardColorClass = 'event-joined'
+    }
+  } else if (event.isPrivate) {
+    cardColorClass = 'event-private'
+  }
+
   return (
     <div className="main-container">
       <div
@@ -271,7 +286,10 @@ const EventDetailsPage = ({ currentUserId }) => {
         <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>Szczegóły Wydarzenia</h2>
       </div>
 
-      <div className="event-card" style={{ margin: '0 auto', cursor: 'default' }}>
+      <div
+        className={`event-card ${cardColorClass}`}
+        style={{ margin: '0 auto', cursor: 'default' }}
+      >
         <div className="category-badge">{event.category || 'Inne'}</div>
 
         <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>

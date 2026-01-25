@@ -15,6 +15,9 @@ namespace JoinnGoApp.Models
         public string? EmailConfirmationToken { get; set; }
         public DateTime? EmailConfirmationTokenExpiry { get; set; }
 
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiry { get; set; }
+
         public List<EventParticipant> EventParticipants { get; set; } = new List<EventParticipant>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }

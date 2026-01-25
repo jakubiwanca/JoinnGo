@@ -37,3 +37,16 @@ export async function confirmEmail(token) {
   const response = await apiClient.get(`/User/confirm-email?token=${token}`)
   return response.data
 }
+
+export async function forgotPassword(email) {
+  const response = await apiClient.post('/User/forgot-password', { email })
+  return response.data
+}
+
+export async function resetPassword(token, newPassword) {
+  const response = await apiClient.post('/User/reset-password', {
+    token,
+    newPassword,
+  })
+  return response.data
+}
