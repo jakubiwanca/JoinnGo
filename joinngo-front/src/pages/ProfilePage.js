@@ -22,6 +22,12 @@ function ProfilePage({
   const [activeTab, setActiveTab] = useState(currentUserUsername ? 'events' : 'settings')
 
   const [editingEvent, setEditingEvent] = useState(null)
+  const [collapsedSections, setCollapsedSections] = useState({
+    created: false,
+    confirmed: false,
+    pending: false,
+    rejected: false,
+  })
 
   const [usernameForm, setUsernameForm] = useState(currentUserUsername || '')
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' })
@@ -37,6 +43,53 @@ function ProfilePage({
   const [passwordLoading, setPasswordLoading] = useState(false)
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
+
+  const toggleSection = (section) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }))
+  }
+
+  const renderSectionHeader = (title, count, color, section) => {
+    const isCollapsed = collapsedSections[section]
+    return (
+      <h3
+        onClick={() => toggleSection(section)}
+        style={{
+          borderBottom: '2px solid #e5e7eb',
+          paddingBottom: '10px',
+          marginBottom: '20px',
+          color: color,
+          marginTop: 0,
+          cursor: 'pointer',
+          userSelect: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          transition: 'color 0.2s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = '0.8'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = '1'
+        }}
+      >
+        <span
+          style={{
+            fontSize: '18px',
+            transition: 'transform 0.3s ease',
+            display: 'inline-block',
+            transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+          }}
+        >
+          ▼
+        </span>
+        {title} ({count})
+      </h3>
+    )
+  }
 
   useEffect(() => {
     if (currentUserUsername) setUsernameForm(currentUserUsername)
@@ -262,66 +315,46 @@ function ProfilePage({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
         {/* Utworzone */}
         <section>
-          <h3
-            style={{
-              borderBottom: '2px solid #e5e7eb',
-              paddingBottom: '10px',
-              marginBottom: '20px',
-              color: '#4f46e5',
-              marginTop: 0,
-            }}
-          >
-            Wydarzenia utworzone przeze mnie ({createdEvents.length})
-          </h3>
-          {renderEventList(createdEvents)}
+          {renderSectionHeader(
+            'Wydarzenia utworzone przeze mnie',
+            createdEvents.length,
+            '#4f46e5',
+            'created',
+          )}
+          {!collapsedSections.created && renderEventList(createdEvents)}
         </section>
 
         {/* Potwierdzone */}
         <section>
-          <h3
-            style={{
-              borderBottom: '2px solid #e5e7eb',
-              paddingBottom: '10px',
-              marginBottom: '20px',
-              color: '#10b981',
-              marginTop: 0,
-            }}
-          >
-            Wydarzenia, w których biorę udział ({confirmedEvents.length})
-          </h3>
-          {renderEventList(confirmedEvents, true)}
+          {renderSectionHeader(
+            'Wydarzenia, w których biorę udział',
+            confirmedEvents.length,
+            '#10b981',
+            'confirmed',
+          )}
+          {!collapsedSections.confirmed && renderEventList(confirmedEvents, true)}
         </section>
 
         {/* Oczekujące */}
         <section>
-          <h3
-            style={{
-              borderBottom: '2px solid #e5e7eb',
-              paddingBottom: '10px',
-              marginBottom: '20px',
-              color: '#f59e0b',
-              marginTop: 0,
-            }}
-          >
-            Wydarzenia oczekujące na akceptację ({pendingEvents.length})
-          </h3>
-          {renderEventList(pendingEvents, true)}
+          {renderSectionHeader(
+            'Wydarzenia oczekujące na akceptację',
+            pendingEvents.length,
+            '#f59e0b',
+            'pending',
+          )}
+          {!collapsedSections.pending && renderEventList(pendingEvents, true)}
         </section>
 
         {/* Odrzucone */}
         <section>
-          <h3
-            style={{
-              borderBottom: '2px solid #e5e7eb',
-              paddingBottom: '10px',
-              marginBottom: '20px',
-              color: '#ef4444',
-              marginTop: 0,
-            }}
-          >
-            Odrzucone zgłoszenia ({rejectedEvents.length})
-          </h3>
-          {renderEventList(rejectedEvents, true)}
+          {renderSectionHeader(
+            'Odrzucone zgłoszenia',
+            rejectedEvents.length,
+            '#ef4444',
+            'rejected',
+          )}
+          {!collapsedSections.rejected && renderEventList(rejectedEvents, true)}
         </section>
       </div>
     )

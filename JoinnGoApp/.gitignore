@@ -1,0 +1,21 @@
+# Build output
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Sensitive config
+appsettings.Development.json
+appsettings.Production.json
+.env
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
