@@ -23,6 +23,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false)
+  const [participantsModalMode, setParticipantsModalMode] = useState('view')
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
@@ -189,69 +190,75 @@ const EventDetailsPage = ({ currentUserId, role }) => {
   const isPending = userParticipation?.status === 'Interested'
   const isFull = event.maxParticipants > 0 && participantsList.length >= event.maxParticipants
 
-  let actionButton
+  let manageButton = null
+  let participationButton = null
 
-  if (isOrganizer) {
-    actionButton = (
-      <div style={{ display: 'flex', gap: '10px' }}>
+  if (isOrganizer || role === 'Admin') {
+    manageButton = (
+      <button
+        className="btn-secondary"
+        onClick={() => {
+          setParticipantsModalMode('manage')
+          setIsParticipantsModalOpen(true)
+        }}
+        style={{ padding: '10px 25px' }}
+      >
+        ⚙️ Zarządzaj uczestnikami
+        {event.pendingRequestsCount > 0 && (
+          <span
+            style={{
+              backgroundColor: '#ef4444',
+              color: 'white',
+              borderRadius: '50%',
+              padding: '2px 8px',
+              fontSize: '0.8rem',
+              marginLeft: '8px',
+              fontWeight: 'bold',
+            }}
+          >
+            {event.pendingRequestsCount}
+          </span>
+        )}
+      </button>
+    )
+  }
+
+  if (!isOrganizer) {
+    if (isJoined) {
+      let buttonText = 'Opuść wydarzenie'
+      let buttonClass = 'btn-secondary'
+
+      if (isPending) {
+        buttonText = 'Anuluj prośbę'
+      } else if (isRejected) {
+        buttonText = 'Usuń powiadomienie'
+        buttonClass = 'btn-danger'
+      }
+
+      participationButton = (
         <button
-          className="btn-secondary"
-          onClick={() => setIsParticipantsModalOpen(true)}
+          className={buttonClass}
+          onClick={handleLeave}
+          disabled={actionLoading}
           style={{ padding: '10px 25px' }}
         >
-          ⚙️ Zarządzaj uczestnikami
-          {event.pendingRequestsCount > 0 && (
-            <span
-              style={{
-                backgroundColor: '#ef4444',
-                color: 'white',
-                borderRadius: '50%',
-                padding: '2px 8px',
-                fontSize: '0.8rem',
-                marginLeft: '8px',
-                fontWeight: 'bold',
-              }}
-            >
-              {event.pendingRequestsCount}
-            </span>
-          )}
+          {actionLoading ? 'Przetwarzanie...' : buttonText}
         </button>
-      </div>
-    )
-  } else if (isJoined) {
-    let buttonText = 'Opuść wydarzenie'
-    let buttonClass = 'btn-secondary'
+      )
+    } else {
+      const buttonText = event.isPrivate ? 'Wyślij prośbę' : 'Dołącz do wydarzenia'
 
-    if (isPending) {
-      buttonText = 'Anuluj prośbę'
-    } else if (isRejected) {
-      buttonText = 'Usuń powiadomienie'
-      buttonClass = 'btn-danger'
+      participationButton = (
+        <button
+          className="btn-primary"
+          disabled={isFull || actionLoading}
+          onClick={handleJoin}
+          style={{ padding: '10px 25px' }}
+        >
+          {actionLoading ? 'Przetwarzanie...' : isFull ? 'Brak miejsc' : buttonText}
+        </button>
+      )
     }
-
-    actionButton = (
-      <button
-        className={buttonClass}
-        onClick={handleLeave}
-        disabled={actionLoading}
-        style={{ padding: '10px 25px' }}
-      >
-        {actionLoading ? 'Przetwarzanie...' : buttonText}
-      </button>
-    )
-  } else {
-    const buttonText = event.isPrivate ? 'Wyślij prośbę' : 'Dołącz do wydarzenia'
-
-    actionButton = (
-      <button
-        className="btn-primary"
-        disabled={isFull || actionLoading}
-        onClick={handleJoin}
-        style={{ padding: '10px 25px' }}
-      >
-        {actionLoading ? 'Przetwarzanie...' : isFull ? 'Brak miejsc' : buttonText}
-      </button>
-    )
   }
 
   const cardColorClass = getEventColorClass(event, isOrganizer, isJoined, userParticipation?.status)
@@ -268,9 +275,34 @@ const EventDetailsPage = ({ currentUserId, role }) => {
           border: '1px solid #e5e7eb',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>Szczegóły Wydarzenia</h2>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            color: '#6b7280',
+            padding: '5px 10px',
+            borderRadius: '8px',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#f3f4f6'
+            e.currentTarget.style.color = '#1f2937'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent'
+            e.currentTarget.style.color = '#6b7280'
+          }}
+          title="Wróć"
+        >
+          ✕
+        </button>
       </div>
 
       <div
@@ -307,7 +339,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
             >
               🔗 {copied ? 'Skopiowano link' : 'Udostępnij'}
             </button>
-            {isOrganizer && (
+            {(role === 'Admin' || (isOrganizer && !event.isExpired)) && (
               <button
                 onClick={handleDelete}
                 className="btn-danger"
@@ -425,12 +457,23 @@ const EventDetailsPage = ({ currentUserId, role }) => {
           className="card-footer"
           style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}
         >
-          <div className="participants-info" style={{ fontSize: '1.1rem' }}>
+          <div
+            className="participants-info"
+            style={{ fontSize: '1.1rem', cursor: 'pointer' }}
+            onClick={() => {
+              setParticipantsModalMode('view')
+              setIsParticipantsModalOpen(true)
+            }}
+            title="Kliknij, aby zobaczyć uczestników"
+          >
             👥 <b>Uczestnicy:</b> {participantsList.length}
             {event.maxParticipants > 0 ? ` / ${event.maxParticipants}` : ''}
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>{actionButton}</div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {manageButton}
+            {participationButton}
+          </div>
         </div>
 
         {(isConfirmed || role === 'Admin') && (
@@ -449,6 +492,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
         <ParticipantsModal
           eventId={event.id}
           creatorId={event.creatorId}
+          isOwner={participantsModalMode === 'manage' && (isOrganizer || role === 'Admin')}
           onClose={() => setIsParticipantsModalOpen(false)}
           onStatusChange={fetchEvent}
         />

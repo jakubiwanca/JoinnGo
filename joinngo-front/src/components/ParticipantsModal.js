@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import apiClient from '../api/axiosClient'
 import ConfirmModal from './ConfirmModal'
 
-function ParticipantsModal({ eventId, creatorId, onClose, onStatusChange }) {
+function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChange }) {
   const [participants, setParticipants] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -129,7 +129,7 @@ function ParticipantsModal({ eventId, creatorId, onClose, onStatusChange }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* PENDING / OCZEKUJĄCE */}
-            {pendingParticipants.length > 0 && (
+            {isOwner && pendingParticipants.length > 0 && (
               <div>
                 <h4 style={{ margin: '0 0 10px 0', color: '#f59e0b', fontSize: '1rem' }}>
                   Oczekujące zgłoszenia ({pendingParticipants.length})
@@ -213,7 +213,7 @@ function ParticipantsModal({ eventId, creatorId, onClose, onStatusChange }) {
                         >
                           Potwierdzony
                         </span>
-                        {p.userId !== creatorId && (
+                        {isOwner && p.userId !== creatorId && (
                           <button
                             className="btn-danger"
                             style={{ padding: '5px 10px', fontSize: '0.8em' }}

@@ -100,6 +100,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
   const [loading, setLoading] = useState(false)
 
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const lastAutoSelectedDayRef = React.useRef(null)
 
@@ -146,24 +147,43 @@ function CreateEventModal({ onClose, onEventCreated }) {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setFieldErrors({})
+
+    const errors = {}
+
+    if (!formData.title || formData.title.trim() === '') {
+      errors.title = 'Proszę wpisać tytuł wydarzenia.'
+    }
+
+    if (formData.category === '' || formData.category === null) {
+      errors.category = 'Proszę wybrać kategorię.'
+    }
+
+    if (!formData.description || formData.description.trim() === '') {
+      errors.description = 'Proszę wpisać opis wydarzenia.'
+    }
+
+    if (!formData.date) {
+      errors.date = 'Proszę wybrać datę i godzinę.'
+    }
+
+    if (!formData.city || formData.city.trim() === '') {
+      errors.city = 'Proszę wpisać miasto.'
+    }
+
+    if (!formData.location || formData.location.trim() === '') {
+      errors.location = 'Proszę wpisać dokładne miejsce.'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setLoading(false)
+      if (modalTopRef.current)
+        modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
 
     try {
-      if (!formData.date) {
-        setError('Proszę wybrać datę i godzinę.')
-        setLoading(false)
-        if (modalTopRef.current)
-          modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        return
-      }
-
-      if (formData.category === '' || formData.category === null) {
-        setError('Proszę wybrać kategorię.')
-        setLoading(false)
-        if (modalTopRef.current)
-          modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        return
-      }
-
       const isoDate = formData.date.toISOString()
 
       const payload = {
@@ -237,12 +257,14 @@ function CreateEventModal({ onClose, onEventCreated }) {
             <input
               type="text"
               name="title"
-              required
               value={formData.title}
               onChange={handleChange}
               placeholder="Np. Mecz piłki nożnej"
-              style={{ width: '100%', marginBottom: '10px' }}
+              style={{ width: '100%', marginBottom: fieldErrors.title ? '4px' : '10px' }}
             />
+            {fieldErrors.title && (
+              <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.title}</span>
+            )}
           </div>
 
           {/* --- WYBÓR KATEGORII --- */}
@@ -257,7 +279,6 @@ function CreateEventModal({ onClose, onEventCreated }) {
                 marginBottom: '10px',
                 color: formData.category === '' ? '#6b7280' : 'var(--text-dark)',
               }}
-              required
             >
               <option value="" disabled>
                 Wybierz kategorię
@@ -268,18 +289,29 @@ function CreateEventModal({ onClose, onEventCreated }) {
                 </option>
               ))}
             </select>
+            {fieldErrors.category && (
+              <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.category}</span>
+            )}
           </div>
 
           <div className="form-group">
             <label>Opis:</label>
             <textarea
               name="description"
-              required
               value={formData.description}
               onChange={handleChange}
               placeholder="Opisz szczegóły..."
-              style={{ width: '100%', minHeight: '60px', marginBottom: '10px' }}
+              style={{
+                width: '100%',
+                minHeight: '60px',
+                marginBottom: fieldErrors.description ? '4px' : '10px',
+              }}
             />
+            {fieldErrors.description && (
+              <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>
+                {fieldErrors.description}
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -306,8 +338,10 @@ function CreateEventModal({ onClose, onEventCreated }) {
                 }
                 return true
               }}
-              required
             />
+            {fieldErrors.date && (
+              <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.date}</span>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '15px' }}>
@@ -326,8 +360,10 @@ function CreateEventModal({ onClose, onEventCreated }) {
                   }))
                 }}
                 placeholder="Wybierz lub wpisz..."
-                required
               />
+              {fieldErrors.city && (
+                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.city}</span>
+              )}
             </div>
 
             <div className="form-group" style={{ flex: 1 }}>
@@ -345,9 +381,13 @@ function CreateEventModal({ onClose, onEventCreated }) {
                   }))
                 }}
                 placeholder="Np. ul. Prosta 51"
-                required
                 contextQuery={formData.city}
               />
+              {fieldErrors.location && (
+                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>
+                  {fieldErrors.location}
+                </span>
+              )}
             </div>
           </div>
 
@@ -490,7 +530,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
               <div className="form-group">
                 <label>Zakończenie:</label>
                 <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
                     <input
                       type="radio"
                       name="endType"
@@ -502,7 +542,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
                     />
                     Nigdy
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
                     <input
                       type="radio"
                       name="endType"

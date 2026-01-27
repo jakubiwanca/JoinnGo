@@ -381,16 +381,24 @@ public class EventController : ControllerBase
         var eventItem = await _context.Events.FindAsync(eventId);
         if (eventItem == null) return NotFound();
 
-        if (eventItem.CreatorId != userId)
-            return Forbid();
+        var isAdmin = User.IsInRole("Admin");
+        var isCreator = eventItem.CreatorId == userId;
 
-        var participants = await _context.EventParticipants
+        var query = _context.EventParticipants
             .Where(ep => ep.EventId == eventId)
             .Include(ep => ep.User)
+            .AsQueryable();
+
+        if (!isCreator && !isAdmin)
+        {
+            query = query.Where(ep => ep.Status == ParticipantStatus.Confirmed);
+        }
+
+        var participants = await query
             .Select(ep => new
             {
                 ep.UserId,
-                Email = ep.User.Email,
+                Email = (isCreator || isAdmin) ? ep.User.Email : null,
                 Username = ep.User.Username,
                 Status = ep.Status.ToString()
             })
@@ -407,8 +415,9 @@ public class EventController : ControllerBase
         var userId = int.Parse(userIdClaim.Value);
 
         var eventItem = await _context.Events.FindAsync(eventId);
-        if (eventItem == null || eventItem.CreatorId != userId)
-            return Forbid("Nie jesteś organizatorem tego wydarzenia.");
+        bool isAdmin = User.IsInRole("Admin");
+        if (eventItem == null || (eventItem.CreatorId != userId && !isAdmin))
+            return Forbid("Nie jesteś organizatorem tego wydarzenia ani administratorem.");
 
         var participant = await _context.EventParticipants
             .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == participantId);
@@ -639,12 +648,12 @@ public class EventController : ControllerBase
         {
             var now = DateTime.UtcNow;
             query = query.Where(e =>
-                e.RecurrenceGroupId == null ||
-                e.Id == (_context.Events
+                (e.RecurrenceGroupId == null && e.Date >= now) ||
+                (e.RecurrenceGroupId != null && e.Id == (_context.Events
                     .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.Date >= now)
                     .OrderBy(sub => sub.Date)
                     .Select(sub => sub.Id)
-                    .FirstOrDefault())
+                    .FirstOrDefault()))
             );
         }
 

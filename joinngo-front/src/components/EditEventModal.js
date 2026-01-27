@@ -99,6 +99,9 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
+
+  const lastAutoSelectedDayRef = React.useRef(null)
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
@@ -152,6 +155,33 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     }
   }, [eventToEdit])
 
+  useEffect(() => {
+    if (formData.date && isRecurring && recurrence.type === 1) {
+      const dayIndex = formData.date.getDay()
+
+      const prevAutoSelectedDay = lastAutoSelectedDayRef.current
+
+      if (prevAutoSelectedDay !== null && prevAutoSelectedDay !== dayIndex) {
+        setRecurrence((prev) => {
+          let newDays = prev.daysOfWeek.filter((d) => d !== prevAutoSelectedDay)
+          if (!newDays.includes(dayIndex)) {
+            newDays.push(dayIndex)
+          }
+          return { ...prev, daysOfWeek: newDays }
+        })
+      } else {
+        setRecurrence((prev) => {
+          if (!prev.daysOfWeek.includes(dayIndex)) {
+            return { ...prev, daysOfWeek: [...prev.daysOfWeek, dayIndex] }
+          }
+          return prev
+        })
+      }
+
+      lastAutoSelectedDayRef.current = dayIndex
+    }
+  }, [formData.date, isRecurring, recurrence.type])
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     let newValue = value
@@ -165,20 +195,43 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setFieldErrors({})
+
+    const errors = {}
+
+    if (!formData.title || formData.title.trim() === '') {
+      errors.title = 'Proszę wpisać tytuł wydarzenia.'
+    }
+
+    if (formData.category === '' || formData.category === null || formData.category === 0) {
+      errors.category = 'Proszę wybrać kategorię.'
+    }
+
+    if (!formData.description || formData.description.trim() === '') {
+      errors.description = 'Proszę wpisać opis wydarzenia.'
+    }
+
+    if (!formData.date) {
+      errors.date = 'Proszę wybrać datę i godzinę.'
+    }
+
+    if (!formData.city || formData.city.trim() === '') {
+      errors.city = 'Proszę wpisać miasto.'
+    }
+
+    if (!formData.location || formData.location.trim() === '') {
+      errors.location = 'Proszę wpisać dokładne miejsce.'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setLoading(false)
+      if (modalTopRef.current)
+        modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
 
     try {
-      if (!formData.date) {
-        setError('Proszę wybrać datę i godzinę.')
-        setLoading(false)
-        return
-      }
-
-      if (!formData.category) {
-        setError('Proszę wybrać kategorię.')
-        setLoading(false)
-        return
-      }
-
       const isoDate = formData.date.toISOString()
 
       const payload = {
@@ -256,11 +309,17 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
               <input
                 type="text"
                 name="title"
-                required
                 value={formData.title}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  marginBottom: fieldErrors.title ? '4px' : '10px',
+                }}
               />
+              {fieldErrors.title && (
+                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.title}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -277,7 +336,6 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                       ? '#6b7280'
                       : 'var(--text-dark)',
                 }}
-                required
               >
                 <option value="" disabled>
                   Wybierz kategorię
@@ -288,17 +346,30 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                   </option>
                 ))}
               </select>
+              {fieldErrors.category && (
+                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>
+                  {fieldErrors.category}
+                </span>
+              )}
             </div>
 
             <div className="form-group">
               <label>Opis:</label>
               <textarea
                 name="description"
-                required
                 value={formData.description}
                 onChange={handleChange}
-                style={{ width: '100%', minHeight: '60px', marginBottom: '10px' }}
+                style={{
+                  width: '100%',
+                  minHeight: '60px',
+                  marginBottom: fieldErrors.description ? '4px' : '10px',
+                }}
               />
+              {fieldErrors.description && (
+                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>
+                  {fieldErrors.description}
+                </span>
+              )}
             </div>
 
             <div className="form-group">
@@ -316,9 +387,11 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                 className="date-picker-input"
                 wrapperClassName="date-picker-wrapper"
                 popperProps={{ strategy: 'fixed' }}
-                required
                 style={{ width: '100%' }}
               />
+              {fieldErrors.date && (
+                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.date}</span>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '15px' }}>
@@ -337,8 +410,10 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                     }))
                   }}
                   placeholder="Wybierz lub wpisz..."
-                  required
                 />
+                {fieldErrors.city && (
+                  <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.city}</span>
+                )}
               </div>
 
               <div className="form-group" style={{ flex: 1 }}>
@@ -356,9 +431,13 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                     }))
                   }}
                   placeholder="Np. ul. Prosta 51"
-                  required
                   contextQuery={formData.city}
                 />
+                {fieldErrors.location && (
+                  <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>
+                    {fieldErrors.location}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -474,6 +553,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                           <input
                             type="checkbox"
                             checked={recurrence.daysOfWeek.includes(dayObj.value)}
+                            disabled={formData.date && formData.date.getDay() === dayObj.value}
                             onChange={(e) => {
                               const newDays = e.target.checked
                                 ? [...recurrence.daysOfWeek, dayObj.value]
@@ -505,7 +585,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                 <div className="form-group">
                   <label>Zakończenie:</label>
                   <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
                       <input
                         type="radio"
                         name="editEndType"
@@ -521,7 +601,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                       />
                       Nigdy
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
                       <input
                         type="radio"
                         name="editEndType"
