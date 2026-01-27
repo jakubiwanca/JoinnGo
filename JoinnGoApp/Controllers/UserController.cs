@@ -260,13 +260,38 @@ public class UserController : ControllerBase
 
         if (user == null) return NotFound("Użytkownik nie istnieje.");
 
+        var followersCount = await _context.UserLikes.CountAsync(ul => ul.TargetId == userId);
+
         return Ok(new
         {
             Id = userId.ToString(),
             Email = user.Email,
             Role = user.Role,
-            Username = user.Username
+            Username = user.Username,
+            FollowersCount = followersCount
         });
+    }
+
+    [Authorize]
+    [HttpGet("my-followers")]
+    public async Task<IActionResult> GetMyFollowers()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim.Value);
+
+        var followers = await _context.UserLikes
+            .Where(ul => ul.TargetId == userId)
+            .Include(ul => ul.Observer)
+            .Select(ul => new
+            {
+                ul.Observer.Id,
+                ul.Observer.Username,
+                ul.Observer.Email
+            })
+            .ToListAsync();
+
+        return Ok(followers);
     }
 
     [Authorize]
@@ -418,6 +443,62 @@ public class UserController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { Id = user.Id, Email = user.Email, Role = user.Role });
+    }
+    [Authorize]
+    [HttpPost("{id}/follow")]
+    public async Task<IActionResult> ToggleFollow(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var currentUserId = int.Parse(userIdClaim.Value);
+
+        if (id == currentUserId) return BadRequest("Nie możesz obserwować samego siebie.");
+
+        var targetUser = await _context.Users.FindAsync(id);
+        if (targetUser == null) return NotFound("Użytkownik nie istnieje.");
+
+        var existingLike = await _context.UserLikes.FindAsync(currentUserId, id);
+
+        if (existingLike != null)
+        {
+            _context.UserLikes.Remove(existingLike);
+            await _context.SaveChangesAsync();
+            return Ok(new { isLeading = false, message = "Przestałeś obserwować tego użytkownika." });
+        }
+        else
+        {
+            var like = new UserLike
+            {
+                ObserverId = currentUserId,
+                TargetId = id
+            };
+            _context.UserLikes.Add(like);
+            await _context.SaveChangesAsync();
+            return Ok(new { isLeading = true, message = "Zacząłeś obserwować tego użytkownika." });
+        }
+    }
+
+    [Authorize]
+    [HttpGet("{id}/public-profile")]
+    public async Task<IActionResult> GetPublicProfile(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var currentUserId = int.Parse(userIdClaim.Value);
+
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound("Użytkownik nie istnieje.");
+
+        var followersCount = await _context.UserLikes.CountAsync(ul => ul.TargetId == id);
+        var isFollowed = await _context.UserLikes.AnyAsync(ul => ul.ObserverId == currentUserId && ul.TargetId == id);
+
+        return Ok(new
+        {
+            user.Id,
+            user.Username,
+            FollowersCount = followersCount,
+            IsFollowed = isFollowed
+        });
     }
 }
 

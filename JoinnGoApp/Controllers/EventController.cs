@@ -664,6 +664,18 @@ public class EventController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim.Value) : null;
+        List<int> followedIds = new List<int>();
+
+        if (currentUserId.HasValue)
+        {
+            followedIds = await _context.UserLikes
+                .Where(ul => ul.ObserverId == currentUserId.Value)
+                .Select(ul => ul.TargetId)
+                .ToListAsync();
+        }
+
         var query = _context.Events
             .Include(e => e.Creator)
             .Include(e => e.EventParticipants)
@@ -710,7 +722,15 @@ public class EventController : ControllerBase
 
         var totalItems = await query.CountAsync();
 
-        query = query.OrderBy(e => e.Date);
+        if (followedIds.Any())
+        {
+             query = query.OrderBy(e => followedIds.Contains(e.CreatorId) ? 0 : 1)
+                          .ThenBy(e => e.Date);
+        }
+        else
+        {
+             query = query.OrderBy(e => e.Date);
+        }
 
         var events = await query
             .Skip((page - 1) * pageSize)
@@ -733,7 +753,8 @@ public class EventController : ControllerBase
                 Participants = e.EventParticipants.Select(ep => new { ep.UserId, Status = ep.Status.ToString() }).ToList(),
                 ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
                 PendingRequestsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),
-                IsRecurring = e.RecurrenceGroupId != null
+                IsRecurring = e.RecurrenceGroupId != null,
+                IsCreatorFollowed = followedIds.Contains(e.CreatorId)
             })
             .ToListAsync();
 
@@ -745,6 +766,47 @@ public class EventController : ControllerBase
             PageSize = pageSize,
             TotalPages = (int)System.Math.Ceiling(totalItems / (double)pageSize)
         });
+    }
+
+    [HttpGet("user/{userId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetEventsByUser(int userId)
+    {
+        var now = DateTime.UtcNow;
+
+        var events = await _context.Events
+            .Include(e => e.RecurrenceGroup)
+            .Include(e => e.EventParticipants)
+            .Where(e => e.CreatorId == userId)
+            .Where(e => !e.IsPrivate)
+            .Where(e =>
+                e.RecurrenceGroupId == null ||
+                e.Id == (_context.Events
+                    .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.Date >= now)
+                    .OrderBy(sub => sub.Date)
+                    .Select(sub => sub.Id)
+                    .FirstOrDefault())
+            )
+            .Where(e => e.Date >= now.AddDays(-1))
+            .OrderBy(e => e.Date)
+            .ToListAsync();
+
+        var result = events.Select(e => new
+        {
+            e.Id,
+            e.Title,
+            e.Description,
+            e.Date,
+            e.Location,
+            e.City,
+            e.IsPrivate,
+            e.MaxParticipants,
+            Category = e.Category.ToString(),
+            ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
+            IsRecurring = e.RecurrenceGroupId != null
+        });
+
+        return Ok(result);
     }
 
     [Authorize(Roles = "Admin")]
@@ -806,6 +868,8 @@ public class EventController : ControllerBase
     }
     
     private IEnumerable<Event> newList(Event e) { return new List<Event> { e }; }
+    
+    [HttpGet("{eventId}/comments")]
     public async Task<IActionResult> GetComments(int eventId)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);

@@ -7,6 +7,7 @@ import LandingPage from './pages/LandingPage'
 import AdminPanel from './pages/AdminPanel'
 import { getProfile, logout } from './api/auth'
 import ProfilePage from './pages/ProfilePage'
+import PublicProfilePage from './pages/PublicProfilePage'
 import './App.css'
 import EventDetailsPage from './pages/EventDetailsPage'
 import Navbar from './components/Navbar'
@@ -153,6 +154,24 @@ function App() {
           />
 
           <Route
+            path="/profile/:userId"
+            element={
+              <ProtectedRoute user={user}>
+                <AuthenticatedLayout
+                  user={user}
+                  handleLogout={handleLogout}
+                  setCreateModalOpen={setCreateModalOpen}
+                >
+                  <PublicProfilePage
+                    currentUserId={user ? parseInt(user.id, 10) : null}
+                    role={user?.role || 'User'}
+                  />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/admin"
             element={
               user && user.role === 'Admin' ? (
@@ -190,6 +209,7 @@ function App() {
                     role={user?.role || 'User'}
                     refreshTrigger={refreshTrigger}
                     currentUserUsername={user?.username}
+                    followersCount={user?.followersCount || 0}
                     onProfileUpdate={checkSession}
                   />
                 </AuthenticatedLayout>

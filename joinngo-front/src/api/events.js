@@ -88,3 +88,8 @@ export const getAdminAllEvents = async () => {
   const response = await apiClient.get('/Event/admin/all')
   return response.data
 }
+
+export const getEventsByUser = async (userId) => {
+  const response = await apiClient.get(`/Event/user/${userId}`)
+  return response.data
+}

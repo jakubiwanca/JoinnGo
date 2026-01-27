@@ -1,6 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatPolishDateTime } from '../utils/dateFormat'
 import { getEventColorClass } from '../utils/eventHelpers'
+import { toggleFollow } from '../api/users'
 
 const EventCard = ({
   event,
@@ -16,10 +18,37 @@ const EventCard = ({
   isJoinedList = false,
   isOwner,
 }) => {
+  const navigate = useNavigate()
   const isMyEvent =
     isOwner !== undefined ? isOwner : String(currentUserId) === String(event.creatorId)
   const isAdmin = role === 'Admin'
   const canDelete = isMyEvent || isAdmin
+
+  const [isFollowed, setIsFollowed] = useState(event.isCreatorFollowed || false)
+
+  useEffect(() => {
+    setIsFollowed(event.isCreatorFollowed || false)
+  }, [event.isCreatorFollowed])
+
+  const handleStarClick = async (e) => {
+    e.stopPropagation()
+    const newState = !isFollowed
+    setIsFollowed(newState)
+
+    try {
+      await toggleFollow(event.creatorId)
+    } catch (err) {
+      console.error('Failed to toggle follow', err)
+      setIsFollowed(!newState)
+    }
+  }
+
+  const handleOrganizerClick = (e) => {
+    e.stopPropagation()
+    if (event.creatorId) {
+      navigate(`/profile/${event.creatorId}`)
+    }
+  }
 
   let myParticipation = null
   if (event.participants) {
@@ -50,13 +79,39 @@ const EventCard = ({
       >
         <div className="category-badge">{event.category || 'Inne'}</div>
 
-        <div className="card-header">
-          <h4 title={event.title}>
+        <div
+          className="card-header"
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+        >
+          <h4 title={event.title} style={{ margin: 0, paddingRight: '30px', flex: 1 }}>
             {event.title} {event.isPrivate && <span title="Prywatne">🔒</span>}{' '}
             {(event.recurrence || event.isRecurring) && (
               <span title="Wydarzenie cykliczne">🔄</span>
             )}
           </h4>
+          {!isMyEvent && (
+            <div
+              onClick={handleStarClick}
+              title={isFollowed ? 'Obserwujesz tego twórcę' : 'Obserwuj twórcę'}
+              style={{
+                cursor: 'pointer',
+                fontSize: '1.5rem',
+                lineHeight: 1,
+                color: isFollowed ? '#fbbf24' : '#d1d5db',
+                transition: 'color 0.2s',
+                zIndex: 10,
+                marginTop: '30px',
+              }}
+              onMouseEnter={(e) => {
+                if (!isFollowed) e.currentTarget.style.color = '#fbbf24'
+              }}
+              onMouseLeave={(e) => {
+                if (!isFollowed) e.currentTarget.style.color = '#d1d5db'
+              }}
+            >
+              {isFollowed ? '★' : '☆'}
+            </div>
+          )}
         </div>
 
         <div className="card-meta">
@@ -64,13 +119,33 @@ const EventCard = ({
             📍 {event.city}, {event.location}
           </span>
           <span>📅 {formatPolishDateTime(event.date)}</span>
+          <span style={{ fontSize: '0.8rem', marginTop: '2px' }}>
+            Organizator:{' '}
+            <span
+              onClick={handleOrganizerClick}
+              style={{ cursor: 'pointer', fontWeight: '600' }}
+              title="Zobacz profil"
+            >
+              {event.creator?.username ||
+                event.creatorUsername ||
+                event.creator?.email ||
+                event.creatorEmail ||
+                'N/A'}
+            </span>
+          </span>
         </div>
 
         <p className="card-desc">{event.description}</p>
 
         {isJoinedList && (
           <div style={{ marginTop: '5px', marginBottom: '10px', fontSize: '0.9rem' }}>
-            Organizator: <b>{event.creatorUsername || event.creatorEmail}</b>
+            Organizator:{' '}
+            <b
+              onClick={handleOrganizerClick}
+              style={{ cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              {event.creatorUsername || event.creatorEmail}
+            </b>
             <br />
             Twój status:{' '}
             <span

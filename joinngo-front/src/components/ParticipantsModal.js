@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import apiClient from '../api/axiosClient'
 import ConfirmModal from './ConfirmModal'
 
 function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChange }) {
+  const navigate = useNavigate()
   const [participants, setParticipants] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -146,7 +148,19 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
                         borderBottom: '1px solid #eee',
                       }}
                     >
-                      <div>
+                      <div
+                        onClick={() => {
+                          const pid = p.userId || p.UserId || p.id
+                          if (pid) {
+                            onClose()
+                            navigate(`/profile/${pid}`)
+                          } else {
+                            console.error('Brak ID użytkownika', p)
+                          }
+                        }}
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                        title="Zobacz profil"
+                      >
                         <strong>{p.username || p.email}</strong>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -196,13 +210,25 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
                         borderBottom: '1px solid #eee',
                       }}
                     >
-                      <div>
+                      <div
+                        onClick={() => {
+                          const pid = p.userId || p.UserId || p.id
+                          if (pid) {
+                            onClose()
+                            navigate(`/profile/${pid}`)
+                          } else {
+                            console.error('Participant ID missing:', p)
+                          }
+                        }}
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                        title="Zobacz profil"
+                      >
                         <strong>{p.username || p.email}</strong>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span
                           style={{
-                            color: '#059669', // darker green
+                            color: '#059669',
                             fontSize: '0.9em',
                             marginRight: '10px',
                             fontWeight: '600',

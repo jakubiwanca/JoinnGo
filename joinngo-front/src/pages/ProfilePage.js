@@ -15,12 +15,31 @@ function ProfilePage({
   refreshTrigger,
   currentUserUsername,
   onProfileUpdate,
+  followersCount,
 }) {
   const navigate = useNavigate()
   const [createdEvents, setCreatedEvents] = useState([])
   const [joinedEvents, setJoinedEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState(currentUserUsername ? 'events' : 'settings')
+
+  const [showFollowersModal, setShowFollowersModal] = useState(false)
+  const [followersList, setFollowersList] = useState([])
+  const [followersListLoading, setFollowersListLoading] = useState(false)
+
+  const handleOpenFollowers = async () => {
+    setShowFollowersModal(true)
+    setFollowersListLoading(true)
+    try {
+      const list = await import('../api/users').then((module) => module.getMyFollowers())
+      setFollowersList(list)
+    } catch (err) {
+      console.error(err)
+      setFollowersList([])
+    } finally {
+      setFollowersListLoading(false)
+    }
+  }
 
   const [editingEvent, setEditingEvent] = useState(null)
   const [collapsedSections, setCollapsedSections] = useState({
@@ -497,6 +516,21 @@ function ProfilePage({
           }}
         >
           <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>Mój Profil 👤</h2>
+          <button
+            className="btn-secondary"
+            onClick={() => navigate(`/profile/${currentUserId}`)}
+            style={{
+              padding: '8px 16px',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+            title="Zobacz jak inni widzą Twój profil"
+          >
+            <span>Twój profil publiczny</span>
+            <span style={{ fontSize: '1.1rem' }}>👁️</span>
+          </button>
         </div>
         {/* Tabs Navigation */}
         <div className="profile-tabs">
@@ -570,6 +604,93 @@ function ProfilePage({
           </div>,
           document.body,
         )}
+
+      {showFollowersModal && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }}>
+          <div
+            className="modal-content"
+            style={{
+              maxWidth: '400px',
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '15px',
+              }}
+            >
+              <h3>Moi Obserwujący ({followersCount})</h3>
+              <button onClick={() => setShowFollowersModal(false)} className="modal-close-btn">
+                &times;
+              </button>
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {followersListLoading ? (
+                <p>Ładowanie...</p>
+              ) : followersList.length === 0 ? (
+                <p style={{ color: '#6b7280' }}>Nikt Cię jeszcze nie obserwuje.</p>
+              ) : (
+                <ul
+                  style={{
+                    listStyle: 'none',
+                    padding: 0,
+                    margin: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  {followersList.map((f) => (
+                    <li
+                      key={f.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px',
+                        borderBottom: '1px solid #eee',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div
+                          style={{
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: '50%',
+                            background: '#e0e7ff',
+                            color: '#4f46e5',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          {f.username[0].toUpperCase()}
+                        </div>
+                        <strong
+                          onClick={() => {
+                            setShowFollowersModal(false)
+                            navigate(`/profile/${f.id}`)
+                          }}
+                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          {f.username}
+                        </strong>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

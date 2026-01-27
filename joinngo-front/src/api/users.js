@@ -5,6 +5,16 @@ export async function getAllUsers() {
   return response.data
 }
 
+export const getPublicProfile = async (id) => {
+  const response = await apiClient.get(`/User/${id}/public-profile`)
+  return response.data
+}
+
+export const toggleFollow = async (id) => {
+  const response = await apiClient.post(`/User/${id}/follow`, {})
+  return response.data
+}
+
 export async function deleteUser(id) {
   const response = await apiClient.delete(`/User/${id}`)
   return response.data
