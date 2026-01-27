@@ -20,8 +20,10 @@ export const updateEvent = async (id, data) => {
   return response.data
 }
 
-export const deleteEvent = async (id) => {
-  const response = await apiClient.delete(`/Event/${id}`)
+export const deleteEvent = async (id, deleteSeries = false) => {
+  const response = await apiClient.delete(`/Event/${id}`, {
+    params: { deleteSeries },
+  })
   return response.data
 }
 
@@ -79,5 +81,10 @@ export const updateParticipantStatus = async (eventId, userId, status) => {
 
 export const removeParticipant = async (eventId, userId) => {
   const response = await apiClient.delete(`event/${eventId}/participants/${userId}`)
+  return response.data
+}
+
+export const getAdminAllEvents = async () => {
+  const response = await apiClient.get('/Event/admin/all')
   return response.data
 }

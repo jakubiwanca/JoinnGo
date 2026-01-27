@@ -301,7 +301,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _context.Users
-            .Select(u => new { u.Id, u.Email, u.Role, u.Username })
+            .Select(u => new { u.Id, u.Email, u.Role, u.Username, u.EmailConfirmed })
             .ToListAsync();
         return Ok(users);
     }

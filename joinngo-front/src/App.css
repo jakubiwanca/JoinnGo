@@ -50,7 +50,7 @@ button {
 }
 
 .btn-primary:disabled {
-  background-color: #a5b4fc;
+  background-color: #9ca3af;
   cursor: not-allowed;
 }
 

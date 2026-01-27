@@ -339,7 +339,7 @@ public class EventController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteEvent(int id)
+    public async Task<IActionResult> DeleteEvent(int id, [FromQuery] bool deleteSeries = false)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null) return Unauthorized();
@@ -362,14 +362,39 @@ public class EventController : ControllerBase
             return Forbid("Nie masz uprawnień do usunięcia tego wydarzenia.");
         }
 
-        var participants = _context.EventParticipants.Where(ep => ep.EventId == id);
-        _context.EventParticipants.RemoveRange(participants);
+        if (deleteSeries && eventItem.RecurrenceGroupId != null)
+        {
+            var seriesEvents = await _context.Events
+                .Where(e => e.RecurrenceGroupId == eventItem.RecurrenceGroupId)
+                .ToListAsync();
+            
+            foreach (var evt in seriesEvents)
+            {
+                var parts = _context.EventParticipants.Where(ep => ep.EventId == evt.Id);
+                _context.EventParticipants.RemoveRange(parts);
+                
+                 var comments = _context.Comments.Where(c => c.EventId == evt.Id);
+                _context.Comments.RemoveRange(comments);
+            }
 
-        _context.Events.Remove(eventItem);
+            _context.Events.RemoveRange(seriesEvents);
+        }
+        else
+        {
+            var participants = _context.EventParticipants.Where(ep => ep.EventId == id);
+            _context.EventParticipants.RemoveRange(participants);
+
+            var comments = _context.Comments.Where(c => c.EventId == id);
+            _context.Comments.RemoveRange(comments);
+
+            _context.Events.Remove(eventItem);
+        }
+
         await _context.SaveChangesAsync();
-
-        return Ok("Wydarzenie zostało usunięte.");
+        return Ok("Wydarzenie (lub seria) zostało usunięte.");
     }
+
+
 
     [HttpGet("{eventId}/participants")]
     public async Task<IActionResult> GetParticipants(int eventId)
@@ -722,7 +747,65 @@ public class EventController : ControllerBase
         });
     }
 
-    [HttpGet("{eventId}/comments")]
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin/all")]
+    public async Task<IActionResult> GetAdminAllEvents()
+    {
+        var allEvents = await _context.Events
+            .Include(e => e.Creator)
+            .Include(e => e.EventParticipants)
+            .Include(e => e.RecurrenceGroup)
+            .OrderByDescending(e => e.Date)
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+
+        var groupedEvents = allEvents
+            .GroupBy(e => e.RecurrenceGroupId)
+            .SelectMany(g =>
+            {
+                if (g.Key == null)
+                {
+                    return g.Select(e => new { Event = e, LastSeriesDate = (DateTime?)null });
+                }
+                else
+                {
+                    var maxDate = g.Max(e => e.Date);
+                    var future = g.Where(e => e.Date >= now).OrderBy(e => e.Date).FirstOrDefault();
+                    var representative = future ?? g.OrderByDescending(e => e.Date).FirstOrDefault();
+
+                    return representative != null
+                        ? new[] { new { Event = representative, LastSeriesDate = (DateTime?)maxDate } }
+                        : Enumerable.Repeat(new { Event = (Event)null, LastSeriesDate = (DateTime?)null }, 0);
+                }
+            })
+            .OrderByDescending(x => x.Event.Date)
+            .Select(x => new
+            {
+                x.Event.Id,
+                x.Event.Title,
+                x.Event.Description,
+                x.Event.Date,
+                x.Event.Location,
+                x.Event.City,
+                x.Event.IsPrivate,
+                MaxParticipants = x.Event.MaxParticipants,
+                Category = x.Event.Category.ToString(),
+                CreatorEmail = x.Event.Creator != null ? x.Event.Creator.Email : "Deleted User",
+                CreatorId = x.Event.CreatorId,
+                CreatorUsername = x.Event.Creator != null ? x.Event.Creator.Username : null,
+                ParticipantsCount = x.Event.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
+                IsExpired = x.Event.Date < DateTime.UtcNow.AddDays(-7),
+                IsRecurring = x.Event.RecurrenceGroupId != null,
+                RecurrenceGroupId = x.Event.RecurrenceGroupId,
+                RecurrenceEndDate = x.LastSeriesDate 
+            })
+            .ToList();
+
+            return Ok(groupedEvents);
+    }
+    
+    private IEnumerable<Event> newList(Event e) { return new List<Event> { e }; }
     public async Task<IActionResult> GetComments(int eventId)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);

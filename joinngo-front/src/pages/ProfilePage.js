@@ -358,17 +358,6 @@ function ProfilePage({
           )}
           {!collapsedSections.pending && renderEventList(pendingEvents, true)}
         </section>
-
-        {/* Odrzucone */}
-        <section>
-          {renderSectionHeader(
-            'Odrzucone zgłoszenia',
-            rejectedEvents.length,
-            '#ef4444',
-            'rejected',
-          )}
-          {!collapsedSections.rejected && renderEventList(rejectedEvents, true)}
-        </section>
       </div>
     )
   }

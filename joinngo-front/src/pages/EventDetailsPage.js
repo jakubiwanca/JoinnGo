@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { getEvent, joinEvent, leaveEvent, deleteEvent, getEventComments } from '../api/events'
 import { useConfirm } from '../hooks/useConfirm'
 import { setupLeafletIcon } from '../utils/leafletSetup'
@@ -16,6 +16,7 @@ import { getEventColorClass } from '../utils/eventHelpers'
 const EventDetailsPage = ({ currentUserId, role }) => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [event, setEvent] = useState(null)
   const [comments, setComments] = useState([])
@@ -181,7 +182,9 @@ const EventDetailsPage = ({ currentUserId, role }) => {
     )
   if (!event) return null
 
-  const participantsList = event.participants || []
+  const participantsList = (event.participants || []).filter(
+    (p) => p.status === 'Confirmed' || p.status === 1,
+  )
   const isOrganizer = currentUserId === event.creatorId
   const userParticipation = getUserParticipation(event)
   const isJoined = !!userParticipation
@@ -231,8 +234,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
       if (isPending) {
         buttonText = 'Anuluj prośbę'
       } else if (isRejected) {
-        buttonText = 'Usuń powiadomienie'
-        buttonClass = 'btn-danger'
+        return
       }
 
       participationButton = (
@@ -280,7 +282,13 @@ const EventDetailsPage = ({ currentUserId, role }) => {
       >
         <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>Szczegóły Wydarzenia</h2>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (location.state?.fromAdmin) {
+              navigate('/admin', { state: { activeTab: 'events' } })
+            } else {
+              navigate(-1)
+            }
+          }}
           style={{
             background: 'transparent',
             border: 'none',

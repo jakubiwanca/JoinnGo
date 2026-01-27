@@ -9,6 +9,7 @@ import { setupLeafletIcon } from '../utils/leafletSetup'
 import DatePicker, { registerLocale } from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { pl } from 'date-fns/locale/pl'
+import { differenceInCalendarWeeks, differenceInCalendarMonths } from 'date-fns'
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -155,6 +156,33 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     }
   }, [eventToEdit])
 
+  const filterRecurrenceEndDate = (date) => {
+    if (!isRecurring) return true
+
+    if (formData.date && date < formData.date) return false
+
+    const startDate = new Date(formData.date)
+    const interval = recurrence.interval || 1
+
+    if (recurrence.type === 1) {
+      if (recurrence.daysOfWeek.length === 0) return true
+      if (!recurrence.daysOfWeek.includes(date.getDay())) return false
+
+      const diffWeeks = differenceInCalendarWeeks(date, startDate, { locale: pl })
+      return diffWeeks % interval === 0
+    }
+
+    if (recurrence.type === 2) {
+      if (!formData.date) return true
+      if (date.getDate() !== formData.date.getDate()) return false
+
+      const diffMonths = differenceInCalendarMonths(date, startDate)
+      return diffMonths % interval === 0
+    }
+
+    return true
+  }
+
   useEffect(() => {
     if (formData.date && isRecurring && recurrence.type === 1) {
       const dayIndex = formData.date.getDay()
@@ -240,6 +268,62 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
       }
 
       if (isRecurring) {
+        if (recurrence.endDate) {
+          const endD = new Date(recurrence.endDate)
+          const startD = new Date(formData.date)
+
+          if (endD <= startD) {
+            setError('Data zakończenia musi być późniejsza niż data rozpoczęcia.')
+            setLoading(false)
+            if (modalTopRef.current)
+              modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            return
+          }
+
+          const interval = recurrence.interval || 1
+
+          if (recurrence.type === 1) {
+            if (
+              recurrence.daysOfWeek.length > 0 &&
+              !recurrence.daysOfWeek.includes(endD.getDay())
+            ) {
+              setError('Data zakończenia musi wypadać w jeden z wybranych dni powtarzania.')
+              setLoading(false)
+              if (modalTopRef.current)
+                modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              return
+            }
+
+            const diffWeeks = differenceInCalendarWeeks(endD, startD, { locale: pl })
+            if (diffWeeks % interval !== 0) {
+              setError(`Data zakończenia nie pasuje do cyklu (co ${interval} tygodni).`)
+              setLoading(false)
+              if (modalTopRef.current)
+                modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              return
+            }
+          } else if (recurrence.type === 2) {
+            if (endD.getDate() !== startD.getDate()) {
+              setError(
+                `Dla powtarzania miesięcznego data zakończenia musi być tym samym dniem miesiąca co data rozpoczęcia (${startD.getDate()}. dzień).`,
+              )
+              setLoading(false)
+              if (modalTopRef.current)
+                modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              return
+            }
+
+            const diffMonths = differenceInCalendarMonths(endD, startD)
+            if (diffMonths % interval !== 0) {
+              setError(`Data zakończenia nie pasuje do cyklu (co ${interval} miesięcy).`)
+              setLoading(false)
+              if (modalTopRef.current)
+                modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              return
+            }
+          }
+        }
+
         payload.recurrence = {
           type: recurrence.type,
           interval: recurrence.interval,
@@ -633,6 +717,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                       wrapperClassName="date-picker-wrapper"
                       popperProps={{ strategy: 'fixed' }}
                       minDate={new Date()}
+                      filterDate={filterRecurrenceEndDate}
                     />
                   </div>
                 )}

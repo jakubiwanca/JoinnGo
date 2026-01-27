@@ -131,18 +131,7 @@ const EventCard = ({
               </button>
             )}
 
-            {isJoinedList && isRejected && (
-              <button
-                className="btn-danger"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (onDismiss) onDismiss(event.id)
-                }}
-                title="Usuń z listy"
-              >
-                🗑️ Usuń
-              </button>
-            )}
+            {isJoinedList && isRejected && null}
 
             {isMyEvent && onEdit && !event.isExpired && (
               <button
@@ -175,27 +164,27 @@ const EventCard = ({
                 <button
                   className="btn-primary"
                   style={{ padding: '6px 12px', fontSize: '0.9rem' }}
+                  disabled={
+                    (event.maxParticipants > 0 &&
+                      (event.participantsCount || event.participants?.length || 0) >=
+                        event.maxParticipants) ||
+                    (!event.isPrivate && event.isExpired)
+                  }
                   onClick={(e) => {
                     e.stopPropagation()
                     if (onJoin) onJoin(event.id)
                   }}
                 >
-                  {event.isPrivate ? 'Wyślij prośbę' : 'Dołącz'}
+                  {event.maxParticipants > 0 &&
+                  (event.participantsCount || event.participants?.length || 0) >=
+                    event.maxParticipants
+                    ? 'Brak miejsc'
+                    : event.isPrivate
+                      ? 'Wyślij prośbę'
+                      : 'Dołącz'}
                 </button>
               ) : isRejected ? (
-                !isJoinedList ? (
-                  <button
-                    className="btn-danger"
-                    style={{ padding: '6px 12px', fontSize: '0.9rem' }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (onLeave) onLeave(event.id)
-                    }}
-                    title="Usuń powiadomienie"
-                  >
-                    Usuń
-                  </button>
-                ) : null
+                !isJoinedList ? null : null
               ) : (
                 <button
                   className="btn-secondary"

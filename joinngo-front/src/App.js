@@ -14,6 +14,9 @@ import CreateEventModal from './components/CreateEventModal'
 import OnboardingModal from './components/OnboardingModal'
 import ConfirmEmailPage from './pages/ConfirmEmailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import RejectionModal from './components/RejectionModal'
+import apiClient from './api/axiosClient'
+import { leaveEvent } from './api/events'
 
 const AuthenticatedLayout = ({ children, user, handleLogout, setCreateModalOpen }) => {
   return (
@@ -41,6 +44,7 @@ function App() {
 
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [rejectedEvents, setRejectedEvents] = useState([])
 
   useEffect(() => {
     checkSession()
@@ -50,10 +54,37 @@ function App() {
     try {
       const userData = await getProfile()
       setUser(userData)
+      if (userData) {
+        checkRejections()
+      }
     } catch (err) {
       setUser(null)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkRejections = async () => {
+    try {
+      const res = await apiClient.get('event/my-joined')
+      if (res.data) {
+        const rejected = res.data.filter((e) => e.myStatus === 'Rejected' || e.myStatus === 2)
+        if (rejected.length > 0) {
+          setRejectedEvents(rejected)
+        }
+      }
+    } catch (err) {
+      console.error('Błąd sprawdzania odrzuconych:', err)
+    }
+  }
+
+  const handleClearRejections = async () => {
+    try {
+      await Promise.all(rejectedEvents.map((e) => leaveEvent(e.id)))
+      setRejectedEvents([])
+      setRefreshTrigger((prev) => prev + 1)
+    } catch (err) {
+      console.error('Błąd czyszczenia powiadomień:', err)
     }
   }
 
@@ -198,6 +229,14 @@ function App() {
         )}
 
         {user && !user.username && <OnboardingModal />}
+
+        {rejectedEvents.length > 0 && (
+          <RejectionModal
+            rejectedEvents={rejectedEvents}
+            onConfirm={handleClearRejections}
+            onClose={() => {}}
+          />
+        )}
       </div>
     </Router>
   )
