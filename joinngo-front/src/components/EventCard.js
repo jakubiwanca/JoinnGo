@@ -67,7 +67,7 @@ const EventCard = ({
 
       {isJoinedList && (
         <div style={{ marginTop: '5px', marginBottom: '10px', fontSize: '0.9rem' }}>
-          Organizator: <b>{event.creatorEmail}</b>
+          Organizator: <b>{event.creatorUsername || event.creatorEmail}</b>
           <br />
           Twój status:{' '}
           <span

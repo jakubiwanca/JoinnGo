@@ -338,7 +338,8 @@ const EventDetailsPage = ({ currentUserId }) => {
           </span>
           {event.creator && (
             <span>
-              👤 <b>Organizator:</b> {event.creator?.email || event.creatorId}
+              👤 <b>Organizator:</b>{' '}
+              {event.creator?.username || event.creator?.email || event.creatorId}
             </span>
           )}
         </div>
@@ -377,7 +378,7 @@ const EventDetailsPage = ({ currentUserId }) => {
               {event.recurrence.endDate
                 ? `do ${formatPolishDateTime(event.recurrence.endDate)}`
                 : event.recurrence.maxOccurrences
-                  ? `po ${event.recurrence.maxOccurrences} wystąpieniach`
+                  ? `po ${event.recurrence.maxOccurrences} ${event.recurrence.type === 1 ? 'tygodniach' : 'miesiącach'}`
                   : 'Brak daty końcowej'}
             </div>
           </div>

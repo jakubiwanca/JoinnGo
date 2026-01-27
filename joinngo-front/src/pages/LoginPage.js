@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import PasswordInput from '../components/PasswordInput'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { login, register } from '../api/auth'
 import { useConfirm } from '../hooks/useConfirm'
@@ -118,9 +119,8 @@ function LoginPage({ onLogin }) {
             />
           </div>
           <div className="form-group">
-            <input
+            <PasswordInput
               name="password"
-              type="password"
               placeholder="Hasło"
               value={formData.password}
               onChange={handleChange}

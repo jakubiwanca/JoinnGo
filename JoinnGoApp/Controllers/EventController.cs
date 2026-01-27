@@ -497,7 +497,7 @@ public class EventController : ControllerBase
             eventItem.MaxParticipants,
             Category = eventItem.Category.ToString(),
             eventItem.CreatorId,
-            Creator = eventItem.Creator != null ? new { eventItem.Creator.Email } : null,
+            Creator = eventItem.Creator != null ? new { eventItem.Creator.Email, eventItem.Creator.Username } : null,
             Participants = eventItem.EventParticipants.Select(ep => new
             {
                 ep.UserId,
@@ -601,6 +601,7 @@ public class EventController : ControllerBase
                 Category = e.Category.ToString(),
                 CreatorId = e.CreatorId,
                 CreatorEmail = e.Creator != null ? e.Creator.Email : null,
+                CreatorUsername = e.Creator != null ? e.Creator.Username : null,
                 MyStatus = e.EventParticipants
                     .Where(ep => ep.UserId == userId)
                     .Select(ep => ep.Status.ToString())
@@ -688,7 +689,7 @@ public class EventController : ControllerBase
                 e.MaxParticipants,
                 Category = e.Category.ToString(),
                 e.CreatorId,
-                Creator = e.Creator != null ? new { e.Creator.Email } : null,
+                Creator = e.Creator != null ? new { e.Creator.Email, e.Creator.Username } : null,
                 Participants = e.EventParticipants.Select(ep => new { ep.UserId, Status = ep.Status.ToString() }).ToList(),
                 ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
                 PendingRequestsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),

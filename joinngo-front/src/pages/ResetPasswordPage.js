@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import PasswordInput from '../components/PasswordInput'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../api/auth'
 import ConfirmModal from '../components/ConfirmModal'
@@ -78,9 +79,7 @@ function ResetPasswordPage() {
         {token ? (
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Nowe hasło</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Nowe hasło"
@@ -88,9 +87,7 @@ function ResetPasswordPage() {
               />
             </div>
             <div className="form-group">
-              <label>Potwierdź hasło</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Powtórz hasło"

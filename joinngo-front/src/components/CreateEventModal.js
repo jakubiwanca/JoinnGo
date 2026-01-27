@@ -476,7 +476,8 @@ function CreateEventModal({ onClose, onEventCreated }) {
                       }
                       style={{ marginRight: '5px' }}
                     />
-                    Po X wystąpieniach
+                    Po {recurrence.maxOccurrences}{' '}
+                    {recurrence.type === 1 ? 'tygodniach' : 'miesiącach'}
                   </label>
                 </div>
               </div>

@@ -1,34 +1,31 @@
-// Format date to Polish format: DD.MM.YYYY HH:MM
 export const formatPolishDateTime = (dateString) => {
-  const date = new Date(dateString);
-  
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  
-  return `${day}.${month}.${year} ${hours}:${minutes}`;
-};
+  const date = new Date(dateString)
 
-// Format date only: DD.MM.YYYY
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${day}.${month}.${year} ${hours}:${minutes}`
+}
+
 export const formatPolishDate = (dateString) => {
-  const date = new Date(dateString);
-  
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  
-  return `${day}.${month}.${year}`;
-};
+  const date = new Date(dateString)
 
-// Format time only: HH:MM
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+
+  return `${day}.${month}.${year}`
+}
+
 export const formatPolishTime = (dateString) => {
-  const date = new Date(dateString);
-  
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  
-  return `${hours}:${minutes}`;
-};
+  const date = new Date(dateString)
+
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${hours}:${minutes}`
+}

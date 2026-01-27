@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import PasswordInput from '../components/PasswordInput'
 import ReactDOM from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { changePassword, updateProfile } from '../api/auth'
@@ -436,8 +437,7 @@ function ProfilePage({
         <form onSubmit={handlePasswordSubmit} className="password-form-tile">
           <div className="form-group">
             <label>Aktualne hasło</label>
-            <input
-              type="password"
+            <PasswordInput
               name="currentPassword"
               value={passwordForm.currentPassword}
               onChange={handlePasswordChange}
@@ -448,8 +448,7 @@ function ProfilePage({
 
           <div className="form-group">
             <label>Nowe hasło</label>
-            <input
-              type="password"
+            <PasswordInput
               name="newPassword"
               value={passwordForm.newPassword}
               onChange={handlePasswordChange}
@@ -460,8 +459,7 @@ function ProfilePage({
 
           <div className="form-group">
             <label>Potwierdź nowe hasło</label>
-            <input
-              type="password"
+            <PasswordInput
               name="confirmPassword"
               value={passwordForm.confirmPassword}
               onChange={handlePasswordChange}
