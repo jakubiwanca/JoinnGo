@@ -11,6 +11,7 @@ const Comments = ({
   onCommentUpdated,
   onCommentDeleted,
   currentUserId,
+  role,
 }) => {
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -121,13 +122,13 @@ const Comments = ({
               >
                 <div>
                   <strong style={{ color: 'var(--text-dark)', marginRight: '10px' }}>
-                    {comment.userEmail}
+                    {comment.username || comment.userEmail}
                   </strong>
                   <small style={{ color: 'var(--text-secondary)' }}>
                     {formatPolishDateTime(comment.createdAt)}
                   </small>
                 </div>
-                {currentUserId === comment.userId && !editingCommentId && (
+                {(currentUserId === comment.userId || role === 'Admin') && !editingCommentId && (
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button
                       onClick={() => startEdit(comment)}
@@ -137,6 +138,7 @@ const Comments = ({
                         cursor: 'pointer',
                         color: '#4f46e5',
                         fontSize: '0.9rem',
+                        display: currentUserId === comment.userId ? 'inline-block' : 'none',
                       }}
                     >
                       Edytuj

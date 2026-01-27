@@ -175,7 +175,10 @@ function App() {
                   handleLogout={handleLogout}
                   setCreateModalOpen={setCreateModalOpen}
                 >
-                  <EventDetailsPage currentUserId={user ? parseInt(user.id, 10) : null} />
+                  <EventDetailsPage
+                    currentUserId={user ? parseInt(user.id, 10) : null}
+                    role={user?.role || 'User'}
+                  />
                 </AuthenticatedLayout>
               </ProtectedRoute>
             }

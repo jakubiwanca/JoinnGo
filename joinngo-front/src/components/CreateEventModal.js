@@ -87,7 +87,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurrence, setRecurrence] = useState({
-    type: 1, // 1=Weekly, 2=Monthly
+    type: 1, // 1=tygodniowo, 2=miesiecznie
     interval: 1,
     daysOfWeek: [],
     endDate: null,
@@ -100,6 +100,32 @@ function CreateEventModal({ onClose, onEventCreated }) {
   const [loading, setLoading] = useState(false)
 
   const [error, setError] = useState('')
+
+  const lastAutoSelectedDayRef = React.useRef(null)
+
+  useEffect(() => {
+    if (formData.date && isRecurring && recurrence.type === 1) {
+      const dayIndex = formData.date.getDay()
+
+      if (lastAutoSelectedDayRef.current !== null && lastAutoSelectedDayRef.current !== dayIndex) {
+        const prevDay = lastAutoSelectedDayRef.current
+        setRecurrence((prev) => {
+          const newDays = prev.daysOfWeek.filter((d) => d !== prevDay)
+          if (!newDays.includes(dayIndex)) {
+            newDays.push(dayIndex)
+          }
+          return { ...prev, daysOfWeek: newDays }
+        })
+      } else if (!recurrence.daysOfWeek.includes(dayIndex)) {
+        setRecurrence((prev) => ({
+          ...prev,
+          daysOfWeek: [...prev.daysOfWeek, dayIndex],
+        }))
+      }
+
+      lastAutoSelectedDayRef.current = dayIndex
+    }
+  }, [formData.date, isRecurring, recurrence.type])
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
@@ -271,6 +297,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
               className="date-picker-input"
               wrapperClassName="date-picker-wrapper"
               popperProps={{ strategy: 'fixed' }}
+              minDate={new Date()}
               required
             />
           </div>
@@ -423,6 +450,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
                         <input
                           type="checkbox"
                           checked={recurrence.daysOfWeek.includes(dayObj.value)}
+                          disabled={formData.date && formData.date.getDay() === dayObj.value}
                           onChange={(e) => {
                             const newDays = e.target.checked
                               ? [...recurrence.daysOfWeek, dayObj.value]

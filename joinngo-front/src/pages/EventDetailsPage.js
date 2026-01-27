@@ -13,7 +13,7 @@ import L from 'leaflet'
 
 import { getEventColorClass } from '../utils/eventHelpers'
 
-const EventDetailsPage = ({ currentUserId }) => {
+const EventDetailsPage = ({ currentUserId, role }) => {
   const { id } = useParams()
   const navigate = useNavigate()
 
@@ -433,7 +433,7 @@ const EventDetailsPage = ({ currentUserId }) => {
           <div style={{ display: 'flex', gap: '10px' }}>{actionButton}</div>
         </div>
 
-        {isConfirmed && (
+        {(isConfirmed || role === 'Admin') && (
           <Comments
             eventId={id}
             comments={comments}
@@ -441,6 +441,7 @@ const EventDetailsPage = ({ currentUserId }) => {
             onCommentUpdated={handleCommentUpdated}
             onCommentDeleted={handleCommentDeleted}
             currentUserId={currentUserId}
+            role={role}
           />
         )}
       </div>

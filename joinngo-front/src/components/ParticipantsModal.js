@@ -81,10 +81,10 @@ function ParticipantsModal({ eventId, creatorId, onClose, onStatusChange }) {
     }
   }
 
-  const handleRemove = (userId, email) => {
+  const handleRemove = (userId, name) => {
     showConfirm(
       'Usuń uczestnika',
-      `Czy na pewno chcesz usunąć uczestnika ${email} z tego wydarzenia?`,
+      `Czy na pewno chcesz usunąć uczestnika ${name} z tego wydarzenia?`,
       async () => {
         hideConfirm()
         try {
@@ -147,7 +147,7 @@ function ParticipantsModal({ eventId, creatorId, onClose, onStatusChange }) {
                       }}
                     >
                       <div>
-                        <strong>{p.email}</strong>
+                        <strong>{p.username || p.email}</strong>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button
@@ -197,7 +197,7 @@ function ParticipantsModal({ eventId, creatorId, onClose, onStatusChange }) {
                       }}
                     >
                       <div>
-                        <strong>{p.email}</strong>
+                        <strong>{p.username || p.email}</strong>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span
@@ -217,7 +217,7 @@ function ParticipantsModal({ eventId, creatorId, onClose, onStatusChange }) {
                           <button
                             className="btn-danger"
                             style={{ padding: '5px 10px', fontSize: '0.8em' }}
-                            onClick={() => handleRemove(p.userId, p.email)}
+                            onClick={() => handleRemove(p.userId, p.username || p.email)}
                           >
                             Usuń
                           </button>

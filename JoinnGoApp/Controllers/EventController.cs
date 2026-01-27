@@ -391,6 +391,7 @@ public class EventController : ControllerBase
             {
                 ep.UserId,
                 Email = ep.User.Email,
+                Username = ep.User.Username,
                 Status = ep.Status.ToString()
             })
             .ToListAsync();
@@ -502,6 +503,7 @@ public class EventController : ControllerBase
             {
                 ep.UserId,
                 Email = ep.User?.Email,
+                Username = ep.User?.Username,
                 Status = ep.Status.ToString()
             }).ToList(),
             ParticipantsCount = eventItem.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
@@ -717,7 +719,7 @@ public class EventController : ControllerBase
         var isParticipant = await _context.EventParticipants
             .AnyAsync(ep => ep.EventId == eventId && ep.UserId == userId);
 
-        if (!isParticipant)
+        if (!isParticipant && !User.IsInRole("Admin"))
         {
             return Forbid("Tylko uczestnicy mogą przeglądać komentarze.");
         }
@@ -732,7 +734,8 @@ public class EventController : ControllerBase
                 c.Content,
                 c.CreatedAt,
                 c.UserId,
-                UserEmail = c.User != null ? c.User.Email : "Użytkownik usunięty"
+                UserEmail = c.User != null ? c.User.Email : "Użytkownik usunięty",
+                Username = c.User != null ? c.User.Username : "Nieznany"
             })
             .ToListAsync();
 
@@ -770,7 +773,8 @@ public class EventController : ControllerBase
             comment.Content,
             comment.CreatedAt,
             comment.UserId,
-            UserEmail = (await _context.Users.FindAsync(userId))?.Email
+            UserEmail = (await _context.Users.FindAsync(userId))?.Email,
+            Username = (await _context.Users.FindAsync(userId))?.Username
         };
 
         return CreatedAtAction(nameof(GetComments), new { eventId = eventId }, commentToReturn);
@@ -807,7 +811,7 @@ public class EventController : ControllerBase
         var comment = await _context.Comments.FindAsync(commentId);
         if (comment == null) return NotFound("Komentarz nie istnieje.");
 
-        if (comment.UserId != userId)
+        if (comment.UserId != userId && !User.IsInRole("Admin"))
         {
             return Forbid("Nie możesz usunąć cudzych komentarzy.");
         }

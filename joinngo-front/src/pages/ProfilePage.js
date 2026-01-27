@@ -363,7 +363,6 @@ function ProfilePage({
 
   const renderSettingsTab = () => (
     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-      {/* Messages Area - Full Width */}
       {(profileMessage.text || passwordError || passwordSuccess) && (
         <div style={{ width: '100%' }}>
           {profileMessage.text && (
@@ -396,10 +395,9 @@ function ProfilePage({
           border: '1px solid #e5e7eb',
         }}
       >
-        <h3 style={{ marginBottom: '20px', color: '#1f2937', marginTop: 0 }}>Dane Użytkownika</h3>
+        <h3 style={{ marginBottom: '20px', color: '#1f2937', marginTop: 0 }}>Nazwa użytkownika</h3>
         <form onSubmit={handleProfileSubmit}>
           <div className="form-group">
-            <label>Nazwa użytkownika</label>
             <input
               type="text"
               name="username"
@@ -407,7 +405,7 @@ function ProfilePage({
               onChange={(e) => setUsernameForm(e.target.value)}
               required
               minLength={3}
-              placeholder="Twój widoczny nick"
+              placeholder="Twoja nazwa użytkownika"
               style={{ width: '100%' }}
             />
           </div>
@@ -436,9 +434,9 @@ function ProfilePage({
         <h3 style={{ marginBottom: '20px', color: '#1f2937', marginTop: 0 }}>Zmiana Hasła</h3>
         <form onSubmit={handlePasswordSubmit} className="password-form-tile">
           <div className="form-group">
-            <label>Aktualne hasło</label>
             <PasswordInput
               name="currentPassword"
+              placeholder="Aktualne hasło"
               value={passwordForm.currentPassword}
               onChange={handlePasswordChange}
               required
@@ -447,9 +445,9 @@ function ProfilePage({
           </div>
 
           <div className="form-group">
-            <label>Nowe hasło</label>
             <PasswordInput
               name="newPassword"
+              placeholder="Nowe hasło"
               value={passwordForm.newPassword}
               onChange={handlePasswordChange}
               required
@@ -458,9 +456,9 @@ function ProfilePage({
           </div>
 
           <div className="form-group">
-            <label>Potwierdź nowe hasło</label>
             <PasswordInput
               name="confirmPassword"
+              placeholder="Potwierdź nowe hasło"
               value={passwordForm.confirmPassword}
               onChange={handlePasswordChange}
               required

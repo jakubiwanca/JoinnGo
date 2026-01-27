@@ -10,7 +10,7 @@ function LoginPage({ onLogin }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [isLoginMode, setIsLoginMode] = useState(true)
-  const [formData, setFormData] = useState({ email: '', password: '' })
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
@@ -48,6 +48,12 @@ function LoginPage({ onLogin }) {
 
       if (formData.password.length < 6) {
         setError('Hasło musi mieć co najmniej 6 znaków.')
+        setIsLoading(false)
+        return
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        setError('Hasła nie są identyczne.')
         setIsLoading(false)
         return
       }
@@ -137,6 +143,18 @@ function LoginPage({ onLogin }) {
               </div>
             )}
           </div>
+
+          {!isLoginMode && (
+            <div className="form-group">
+              <PasswordInput
+                name="confirmPassword"
+                placeholder="Potwierdź hasło"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          )}
 
           <button
             className="btn-primary"
