@@ -305,6 +305,10 @@ label {
   border-left-color: #ef4444; /* czerwony - odrzucone */
 }
 
+.event-card.event-expired {
+  border-left-color: #6b7280; /* szary - wygasłe */
+}
+
 .category-badge {
   position: absolute;
   top: 15px;

@@ -6,6 +6,10 @@
  * @returns {string} Nazwa klasy CSS dla karty wydarzenia
  */
 export const getEventColorClass = (event, isOrganizer, isJoined, participationStatus) => {
+  if (event?.isExpired) {
+    return 'event-expired'
+  }
+
   let cardColorClass = 'event-public'
 
   const isPending =

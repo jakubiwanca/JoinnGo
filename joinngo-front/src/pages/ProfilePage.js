@@ -25,6 +25,7 @@ function ProfilePage({
   const [editingEvent, setEditingEvent] = useState(null)
   const [collapsedSections, setCollapsedSections] = useState({
     created: false,
+    expired: false,
     confirmed: false,
     pending: false,
     rejected: false,
@@ -314,15 +315,15 @@ function ProfilePage({
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-        {/* Utworzone */}
+        {/* Utworzone (nie wygasłe) */}
         <section>
           {renderSectionHeader(
             'Wydarzenia utworzone przeze mnie',
-            createdEvents.length,
+            createdEvents.filter((e) => !e.isExpired).length,
             '#4f46e5',
             'created',
           )}
-          {!collapsedSections.created && renderEventList(createdEvents)}
+          {!collapsedSections.created && renderEventList(createdEvents.filter((e) => !e.isExpired))}
         </section>
 
         {/* Potwierdzone */}
@@ -334,6 +335,17 @@ function ProfilePage({
             'confirmed',
           )}
           {!collapsedSections.confirmed && renderEventList(confirmedEvents, true)}
+        </section>
+
+        {/* Wygasłe */}
+        <section>
+          {renderSectionHeader(
+            'Wygasłe wydarzenia',
+            createdEvents.filter((e) => e.isExpired).length,
+            '#6b7280',
+            'expired',
+          )}
+          {!collapsedSections.expired && renderEventList(createdEvents.filter((e) => e.isExpired))}
         </section>
 
         {/* Oczekujące */}

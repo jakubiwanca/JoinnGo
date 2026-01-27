@@ -298,6 +298,14 @@ function CreateEventModal({ onClose, onEventCreated }) {
               wrapperClassName="date-picker-wrapper"
               popperProps={{ strategy: 'fixed' }}
               minDate={new Date()}
+              filterTime={(time) => {
+                const now = new Date()
+                const selectedDate = formData.date || new Date()
+                if (selectedDate.toDateString() === now.toDateString()) {
+                  return time.getTime() >= now.getTime()
+                }
+                return true
+              }}
               required
             />
           </div>
@@ -486,6 +494,18 @@ function CreateEventModal({ onClose, onEventCreated }) {
                     <input
                       type="radio"
                       name="endType"
+                      checked={recurrence.endDate === null}
+                      onChange={() =>
+                        setRecurrence({ ...recurrence, endDate: null, maxOccurrences: null })
+                      }
+                      style={{ marginRight: '5px' }}
+                    />
+                    Nigdy
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      name="endType"
                       checked={recurrence.endDate !== null}
                       onChange={() =>
                         setRecurrence({ ...recurrence, endDate: new Date(), maxOccurrences: null })
@@ -493,19 +513,6 @@ function CreateEventModal({ onClose, onEventCreated }) {
                       style={{ marginRight: '5px' }}
                     />
                     Do daty
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center' }}>
-                    <input
-                      type="radio"
-                      name="endType"
-                      checked={recurrence.maxOccurrences !== null}
-                      onChange={() =>
-                        setRecurrence({ ...recurrence, endDate: null, maxOccurrences: 10 })
-                      }
-                      style={{ marginRight: '5px' }}
-                    />
-                    Po {recurrence.maxOccurrences}{' '}
-                    {recurrence.type === 1 ? 'tygodniach' : 'miesiącach'}
                   </label>
                 </div>
               </div>
@@ -523,24 +530,6 @@ function CreateEventModal({ onClose, onEventCreated }) {
                     wrapperClassName="date-picker-wrapper"
                     popperProps={{ strategy: 'fixed' }}
                     minDate={new Date()}
-                  />
-                </div>
-              )}
-
-              {recurrence.maxOccurrences !== null && (
-                <div className="form-group">
-                  <label>Liczba wystąpień:</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={recurrence.maxOccurrences}
-                    onChange={(e) =>
-                      setRecurrence({
-                        ...recurrence,
-                        maxOccurrences: parseInt(e.target.value) || 1,
-                      })
-                    }
-                    style={{ width: '100%', padding: '8px' }}
                   />
                 </div>
               )}

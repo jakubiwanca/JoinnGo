@@ -542,9 +542,12 @@ public class EventController : ControllerBase
                     .Select(sub => sub.Id)
                     .FirstOrDefault())
             )
+            .Where(e => e.Date >= now.AddDays(-7))
             .OrderByDescending(e => e.Date)
             .ToListAsync();
 
+        var oneWeekAgo = now.AddDays(-7);
+        
         var result = events.Select(e => new
         {
             e.Id,
@@ -562,6 +565,7 @@ public class EventController : ControllerBase
             ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
             PendingRequestsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),
             IsRecurring = e.RecurrenceGroupId != null,
+            IsExpired = e.Date < now,
             Recurrence = e.RecurrenceGroup == null ? null : new
             {
                 e.RecurrenceGroup.Type,

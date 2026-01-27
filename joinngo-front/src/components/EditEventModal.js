@@ -509,6 +509,22 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                       <input
                         type="radio"
                         name="editEndType"
+                        checked={recurrence.endDate === null}
+                        onChange={() =>
+                          setRecurrence({
+                            ...recurrence,
+                            endDate: null,
+                            maxOccurrences: null,
+                          })
+                        }
+                        style={{ marginRight: '5px' }}
+                      />
+                      Nigdy
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center' }}>
+                      <input
+                        type="radio"
+                        name="editEndType"
                         checked={recurrence.endDate !== null}
                         onChange={() =>
                           setRecurrence({
@@ -520,22 +536,6 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                         style={{ marginRight: '5px' }}
                       />
                       Do daty
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center' }}>
-                      <input
-                        type="radio"
-                        name="editEndType"
-                        checked={recurrence.maxOccurrences !== null}
-                        onChange={() =>
-                          setRecurrence({
-                            ...recurrence,
-                            endDate: null,
-                            maxOccurrences: 10,
-                          })
-                        }
-                        style={{ marginRight: '5px' }}
-                      />
-                      Po X wystąpieniach
                     </label>
                   </div>
                 </div>
@@ -553,24 +553,6 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
                       wrapperClassName="date-picker-wrapper"
                       popperProps={{ strategy: 'fixed' }}
                       minDate={new Date()}
-                    />
-                  </div>
-                )}
-
-                {recurrence.maxOccurrences !== null && (
-                  <div className="form-group">
-                    <label>Liczba wystąpień:</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={recurrence.maxOccurrences}
-                      onChange={(e) =>
-                        setRecurrence({
-                          ...recurrence,
-                          maxOccurrences: parseInt(e.target.value) || 1,
-                        })
-                      }
-                      style={{ width: '100%', padding: '8px' }}
                     />
                   </div>
                 )}
