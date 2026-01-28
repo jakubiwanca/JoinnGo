@@ -1,74 +1,29 @@
 import React, { useState, useEffect } from 'react'
 import { createEvent } from '../api/events'
 import ConfirmModal from './ConfirmModal'
-import LocationAutocomplete from './LocationAutocomplete'
-import { EVENT_CATEGORIES } from '../constants/categories'
-import { DAYS_OF_WEEK } from '../constants/common'
 import { useConfirm } from '../hooks/useConfirm'
 import { setupLeafletIcon } from '../utils/leafletSetup'
-import DatePicker, { registerLocale } from 'react-datepicker'
+import { registerLocale } from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { pl } from 'date-fns/locale/pl'
 import { differenceInCalendarWeeks, differenceInCalendarMonths } from 'date-fns'
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+
+import {
+  TitleField,
+  CategoryField,
+  DescriptionField,
+  DateTimeField,
+  LocationFields,
+  MapField,
+  PrivateCheckbox,
+  MaxParticipantsField,
+  RecurringCheckbox,
+  RecurrenceConfig,
+} from './EventFormFields'
 
 registerLocale('pl', pl)
 setupLeafletIcon()
-
-function LocationMarker({ position, setPosition, setFormData }) {
-  useMapEvents({
-    async click(e) {
-      const { lat, lng } = e.latlng
-      setPosition(e.latlng)
-      setFormData((prev) => ({
-        ...prev,
-        latitude: lat,
-        longitude: lng,
-      }))
-
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=pl`,
-        )
-        const data = await response.json()
-
-        if (data && data.address) {
-          const addr = data.address
-          const city = addr.city || addr.town || addr.village || addr.municipality
-
-          let detailedLocation = ''
-          if (addr.road) {
-            detailedLocation += addr.road
-            if (addr.house_number) detailedLocation += ` ${addr.house_number}`
-          } else if (data.name) {
-            detailedLocation = data.name
-          } else {
-            const parts = (data.display_name || '').split(',')
-            if (parts.length > 0) detailedLocation = parts[0]
-          }
-
-          setFormData((prev) => ({
-            ...prev,
-            city: city || prev.city,
-            location: detailedLocation || prev.location,
-          }))
-        }
-      } catch (error) {
-        console.error('Error doing reverse geocoding:', error)
-      }
-    },
-  })
-  return position ? <Marker position={position} /> : null
-}
-
-function MapUpdater({ center }) {
-  const map = useMap()
-  useEffect(() => {
-    if (center) map.setView(center, 13)
-  }, [center, map])
-  return null
-}
 
 function CreateEventModal({ onClose, onEventCreated }) {
   const modalTopRef = React.useRef(null)
@@ -88,18 +43,17 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurrence, setRecurrence] = useState({
-    type: 1, // 1=tygodniowo, 2=miesiecznie
+    type: 1,
     interval: 1,
     daysOfWeek: [],
     endDate: null,
     maxOccurrences: null,
   })
 
-  const [mapCenter, setMapCenter] = useState([52.2297, 21.0122]) // Default: Warszawa
+  const [mapCenter, setMapCenter] = useState([52.2297, 21.0122])
   const [markerPosition, setMarkerPosition] = useState(null)
 
   const [loading, setLoading] = useState(false)
-
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
 
@@ -133,7 +87,6 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
   const filterRecurrenceEndDate = (date) => {
     if (!isRecurring) return true
-
     if (formData.date && date < formData.date) return false
 
     const startDate = new Date(formData.date)
@@ -142,7 +95,6 @@ function CreateEventModal({ onClose, onEventCreated }) {
     if (recurrence.type === 1) {
       if (recurrence.daysOfWeek.length === 0) return true
       if (!recurrence.daysOfWeek.includes(date.getDay())) return false
-
       const diffWeeks = differenceInCalendarWeeks(date, startDate, { locale: pl })
       return diffWeeks % interval === 0
     }
@@ -150,7 +102,6 @@ function CreateEventModal({ onClose, onEventCreated }) {
     if (recurrence.type === 2) {
       if (!formData.date) return true
       if (date.getDate() !== startDate.getDate()) return false
-
       const diffMonths = differenceInCalendarMonths(date, startDate)
       return diffMonths % interval === 0
     }
@@ -160,7 +111,6 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-
     let newValue = value
     if (type === 'checkbox') newValue = checked
     if (name === 'category' || name === 'maxParticipants') newValue = parseInt(value, 10)
@@ -171,6 +121,16 @@ function CreateEventModal({ onClose, onEventCreated }) {
     }))
   }
 
+  const handleLocationSelect = (loc) => {
+    setMapCenter([loc.lat, loc.lon])
+    setMarkerPosition({ lat: loc.lat, lng: loc.lon })
+    setFormData((prev) => ({
+      ...prev,
+      latitude: loc.lat,
+      longitude: loc.lon,
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -178,27 +138,21 @@ function CreateEventModal({ onClose, onEventCreated }) {
     setFieldErrors({})
 
     const errors = {}
-
     if (!formData.title || formData.title.trim() === '') {
       errors.title = 'Proszę wpisać tytuł wydarzenia.'
     }
-
     if (formData.category === '' || formData.category === null) {
       errors.category = 'Proszę wybrać kategorię.'
     }
-
     if (!formData.description || formData.description.trim() === '') {
       errors.description = 'Proszę wpisać opis wydarzenia.'
     }
-
     if (!formData.date) {
       errors.date = 'Proszę wybrać datę i godzinę.'
     }
-
     if (!formData.city || formData.city.trim() === '') {
       errors.city = 'Proszę wpisać miasto.'
     }
-
     if (!formData.location || formData.location.trim() === '') {
       errors.location = 'Proszę wpisać dokładne miejsce.'
     }
@@ -213,11 +167,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
     try {
       const isoDate = formData.date.toISOString()
-
-      const payload = {
-        ...formData,
-        date: isoDate,
-      }
+      const payload = { ...formData, date: isoDate }
 
       if (isRecurring) {
         if (recurrence.endDate) {
@@ -227,8 +177,6 @@ function CreateEventModal({ onClose, onEventCreated }) {
           if (endD <= startD) {
             setError('Data zakończenia musi być późniejsza niż data rozpoczęcia.')
             setLoading(false)
-            if (modalTopRef.current)
-              modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
             return
           }
 
@@ -239,40 +187,28 @@ function CreateEventModal({ onClose, onEventCreated }) {
               recurrence.daysOfWeek.length > 0 &&
               !recurrence.daysOfWeek.includes(endD.getDay())
             ) {
-              setError(
-                'Data zakończenia musi wypadać w jeden z wybranych dni powtarzania (np. jeśli wtorki, to data musi być wtorkiem).',
-              )
+              setError('Data zakończenia musi wypadać w jeden z wybranych dni powtarzania.')
               setLoading(false)
-              if (modalTopRef.current)
-                modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
               return
             }
-
             const diffWeeks = differenceInCalendarWeeks(endD, startD, { locale: pl })
             if (diffWeeks % interval !== 0) {
               setError(`Data zakończenia nie pasuje do cyklu (co ${interval} tygodni).`)
               setLoading(false)
-              if (modalTopRef.current)
-                modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
               return
             }
           } else if (recurrence.type === 2) {
             if (endD.getDate() !== startD.getDate()) {
               setError(
-                `Dla powtarzania miesięcznego data zakończenia musi być tym samym dniem miesiąca co data rozpoczęcia (${startD.getDate()}. dzień).`,
+                `Dla powtarzania miesięcznego data zakończenia musi być tym samym dniem miesiąca.`,
               )
               setLoading(false)
-              if (modalTopRef.current)
-                modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
               return
             }
-
             const diffMonths = differenceInCalendarMonths(endD, startD)
             if (diffMonths % interval !== 0) {
               setError(`Data zakończenia nie pasuje do cyklu (co ${interval} miesięcy).`)
               setLoading(false)
-              if (modalTopRef.current)
-                modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
               return
             }
           }
@@ -306,11 +242,18 @@ function CreateEventModal({ onClose, onEventCreated }) {
           ? err.response.data
           : 'Nie udało się utworzyć wydarzenia. Sprawdź dane.'
       setError(backendError)
-      if (modalTopRef.current)
-        modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     } finally {
       setLoading(false)
     }
+  }
+
+  const filterTime = (time) => {
+    const now = new Date()
+    const selectedDate = formData.date || new Date()
+    if (selectedDate.toDateString() === now.toDateString()) {
+      return time.getTime() >= now.getTime()
+    }
+    return true
   }
 
   return (
@@ -331,6 +274,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
             &times;
           </button>
         </div>
+
         {error && (
           <p className="error-msg" style={{ color: 'red' }}>
             {error}
@@ -338,329 +282,54 @@ function CreateEventModal({ onClose, onEventCreated }) {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Tytuł:</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Np. Mecz piłki nożnej"
-              style={{ width: '100%', marginBottom: fieldErrors.title ? '4px' : '10px' }}
-            />
-            {fieldErrors.title && (
-              <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.title}</span>
-            )}
-          </div>
+          <TitleField value={formData.title} onChange={handleChange} error={fieldErrors.title} />
+          <CategoryField
+            value={formData.category}
+            onChange={handleChange}
+            error={fieldErrors.category}
+          />
+          <DescriptionField
+            value={formData.description}
+            onChange={handleChange}
+            error={fieldErrors.description}
+          />
+          <DateTimeField
+            value={formData.date}
+            onChange={(date) => setFormData((prev) => ({ ...prev, date }))}
+            error={fieldErrors.date}
+            minDate={new Date()}
+            filterTime={filterTime}
+          />
+          <LocationFields
+            city={formData.city}
+            location={formData.location}
+            onCityChange={(val) => setFormData((prev) => ({ ...prev, city: val }))}
+            onLocationChange={(val) => setFormData((prev) => ({ ...prev, location: val }))}
+            onLocationSelect={handleLocationSelect}
+            cityError={fieldErrors.city}
+            locationError={fieldErrors.location}
+          />
+          <MapField
+            mapCenter={mapCenter}
+            markerPosition={markerPosition}
+            setMarkerPosition={setMarkerPosition}
+            setFormData={setFormData}
+          />
+          <PrivateCheckbox checked={formData.isPrivate} onChange={handleChange} />
+          <MaxParticipantsField value={formData.maxParticipants} onChange={handleChange} />
+          <RecurringCheckbox
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.target.checked)}
+          />
 
-          {/* --- WYBÓR KATEGORII --- */}
-          <div className="form-group">
-            <label>Kategoria:</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              style={{
-                width: '100%',
-                marginBottom: '10px',
-                color: formData.category === '' ? '#6b7280' : 'var(--text-dark)',
-              }}
-            >
-              <option value="" disabled>
-                Wybierz kategorię
-              </option>
-              {EVENT_CATEGORIES.map((cat) => (
-                <option key={cat.id} value={cat.id} style={{ color: 'var(--text-dark)' }}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.category && (
-              <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.category}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label>Opis:</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Opisz szczegóły..."
-              style={{
-                width: '100%',
-                minHeight: '60px',
-                marginBottom: fieldErrors.description ? '4px' : '10px',
-              }}
-            />
-            {fieldErrors.description && (
-              <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>
-                {fieldErrors.description}
-              </span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label>Data i godzina:</label>
-            <DatePicker
-              selected={formData.date}
-              onChange={(date) => setFormData((prev) => ({ ...prev, date }))}
-              showTimeSelect
-              timeFormat="HH:mm"
-              timeIntervals={5}
-              timeCaption="Godzina"
-              dateFormat="dd.MM.yyyy HH:mm"
-              locale="pl"
-              placeholderText="Wybierz datę i godzinę"
-              className="date-picker-input"
-              wrapperClassName="date-picker-wrapper"
-              popperProps={{ strategy: 'fixed' }}
-              minDate={new Date()}
-              filterTime={(time) => {
-                const now = new Date()
-                const selectedDate = formData.date || new Date()
-                if (selectedDate.toDateString() === now.toDateString()) {
-                  return time.getTime() >= now.getTime()
-                }
-                return true
-              }}
-            />
-            {fieldErrors.date && (
-              <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.date}</span>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: '15px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Miasto:</label>
-              <LocationAutocomplete
-                value={formData.city}
-                onChange={(val) => setFormData((prev) => ({ ...prev, city: val }))}
-                onLocationSelect={(loc) => {
-                  setMapCenter([loc.lat, loc.lon])
-                  setMarkerPosition({ lat: loc.lat, lng: loc.lon })
-                  setFormData((prev) => ({
-                    ...prev,
-                    latitude: loc.lat,
-                    longitude: loc.lon,
-                  }))
-                }}
-                placeholder="Wybierz lub wpisz..."
-              />
-              {fieldErrors.city && (
-                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{fieldErrors.city}</span>
-              )}
-            </div>
-
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Dokładne miejsce:</label>
-              <LocationAutocomplete
-                value={formData.location}
-                onChange={(val) => setFormData((prev) => ({ ...prev, location: val }))}
-                onLocationSelect={(loc) => {
-                  setMapCenter([loc.lat, loc.lon])
-                  setMarkerPosition({ lat: loc.lat, lng: loc.lon })
-                  setFormData((prev) => ({
-                    ...prev,
-                    latitude: loc.lat,
-                    longitude: loc.lon,
-                  }))
-                }}
-                placeholder="Np. ul. Prosta 51"
-                contextQuery={formData.city}
-              />
-              {fieldErrors.location && (
-                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>
-                  {fieldErrors.location}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '8px' }}>
-              Zaznacz na mapie (opcjonalne):
-            </label>
-            <div
-              style={{
-                height: '300px',
-                width: '100%',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                border: '1px solid #ddd',
-              }}
-            >
-              <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <LocationMarker
-                  position={markerPosition}
-                  setPosition={setMarkerPosition}
-                  setFormData={setFormData}
-                />
-                <MapUpdater center={mapCenter} />
-              </MapContainer>
-            </div>
-            <small style={{ color: '#666' }}>Kliknij na mapę, aby postawić pineskę.</small>
-          </div>
-
-          <div
-            className="form-group checkbox-group"
-            style={{ marginTop: '10px', marginBottom: '20px' }}
-          >
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                name="isPrivate"
-                checked={formData.isPrivate}
-                onChange={handleChange}
-                style={{ marginRight: '8px' }}
-              />
-              Wydarzenie prywatne (wymaga akceptacji)
-            </label>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label>Limit uczestników (0 = brak limitu):</label>
-            <input
-              type="number"
-              name="maxParticipants"
-              min="0"
-              value={formData.maxParticipants}
-              onChange={handleChange}
-              style={{ width: '100%', padding: '8px' }}
-            />
-          </div>
-
-          {/* Recurring Event Checkbox */}
-          <div
-            className="form-group checkbox-group"
-            style={{ marginTop: '10px', marginBottom: '20px' }}
-          >
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={isRecurring}
-                onChange={(e) => setIsRecurring(e.target.checked)}
-                style={{ marginRight: '8px' }}
-              />
-              Wydarzenie cykliczne
-            </label>
-          </div>
-
-          {/* Recurrence Configuration */}
           {isRecurring && (
-            <div
-              style={{
-                padding: '15px',
-                background: '#f9fafb',
-                borderRadius: '8px',
-                marginBottom: '20px',
-              }}
-            >
-              <div className="form-group">
-                <label>Częstotliwość:</label>
-                <select
-                  value={recurrence.type}
-                  onChange={(e) => setRecurrence({ ...recurrence, type: parseInt(e.target.value) })}
-                  style={{ width: '100%', padding: '8px' }}
-                >
-                  <option value={1}>Tygodniowo</option>
-                  <option value={2}>Miesięcznie</option>
-                </select>
-              </div>
-
-              {recurrence.type === 1 && (
-                <div className="form-group">
-                  <label>Dni tygodnia:</label>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {DAYS_OF_WEEK.map((dayObj) => (
-                      <label
-                        key={dayObj.value}
-                        style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={recurrence.daysOfWeek.includes(dayObj.value)}
-                          disabled={formData.date && formData.date.getDay() === dayObj.value}
-                          onChange={(e) => {
-                            const newDays = e.target.checked
-                              ? [...recurrence.daysOfWeek, dayObj.value]
-                              : recurrence.daysOfWeek.filter((d) => d !== dayObj.value)
-                            setRecurrence({ ...recurrence, daysOfWeek: newDays })
-                          }}
-                          style={{ marginRight: '4px' }}
-                        />
-                        {dayObj.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label>Co ile {recurrence.type === 1 ? 'tygodni' : 'miesięcy'}:</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={recurrence.interval}
-                  onChange={(e) =>
-                    setRecurrence({ ...recurrence, interval: parseInt(e.target.value) || 1 })
-                  }
-                  style={{ width: '100%', padding: '8px' }}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Zakończenie:</label>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
-                    <input
-                      type="radio"
-                      name="endType"
-                      checked={recurrence.endDate === null}
-                      onChange={() =>
-                        setRecurrence({ ...recurrence, endDate: null, maxOccurrences: null })
-                      }
-                      style={{ marginRight: '5px' }}
-                    />
-                    Nigdy
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
-                    <input
-                      type="radio"
-                      name="endType"
-                      checked={recurrence.endDate !== null}
-                      onChange={() =>
-                        setRecurrence({ ...recurrence, endDate: new Date(), maxOccurrences: null })
-                      }
-                      style={{ marginRight: '5px' }}
-                    />
-                    Do daty
-                  </label>
-                </div>
-              </div>
-
-              {recurrence.endDate !== null && (
-                <div className="form-group">
-                  <label>Data zakończenia:</label>
-                  <DatePicker
-                    selected={recurrence.endDate}
-                    onChange={(date) => setRecurrence({ ...recurrence, endDate: date })}
-                    dateFormat="dd.MM.yyyy"
-                    locale="pl"
-                    placeholderText="Wybierz datę zakończenia"
-                    className="date-picker-input"
-                    wrapperClassName="date-picker-wrapper"
-                    popperProps={{ strategy: 'fixed' }}
-                    minDate={new Date()}
-                    filterDate={filterRecurrenceEndDate}
-                  />
-                </div>
-              )}
-            </div>
+            <RecurrenceConfig
+              recurrence={recurrence}
+              setRecurrence={setRecurrence}
+              formDate={formData.date}
+              filterRecurrenceEndDate={filterRecurrenceEndDate}
+              radioName="endType"
+            />
           )}
 
           <div

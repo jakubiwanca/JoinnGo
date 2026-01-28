@@ -156,8 +156,6 @@ function ProfilePage({
         ? 'Pomyślnie dodano nazwę użytkownika!'
         : 'Pomyślnie zaktualizowano nazwę użytkownika!'
 
-      console.log('Profile update: isFirstTime=', isFirstTime)
-
       showConfirm(
         'Sukces',
         msg,
