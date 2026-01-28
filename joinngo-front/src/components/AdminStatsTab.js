@@ -31,16 +31,23 @@ const AdminStatsTab = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getAllUsers(), getAdminAllEvents()])
-      .then(([users, events]) => {
+    Promise.all([getAllUsers(1, 1), getAdminAllEvents(1, 10000)])
+      .then(([usersData, eventsData]) => {
+        const totalUsers = usersData?.totalItems || 0
+        const totalEvents = eventsData?.totalItems || 0
+        const allEventsList = eventsData?.data || []
+
         setStats({
-          users: users.length,
-          events: events.length,
-          activeEvents: events.filter((e) => !e.isExpired).length,
-          expiredEvents: events.filter((e) => e.isExpired).length,
+          users: totalUsers,
+          events: totalEvents,
+          activeEvents: allEventsList.filter((e) => !e.isExpired).length,
+          expiredEvents: allEventsList.filter((e) => e.isExpired).length,
         })
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error('Błąd pobierania statystyk:', err)
+        setLoading(false)
+      })
       .finally(() => setLoading(false))
   }, [])
 

@@ -551,7 +551,9 @@ public class EventController : ControllerBase
                 eventItem.RecurrenceGroup.EndDate,
                 eventItem.RecurrenceGroup.MaxOccurrences
             },
-            PendingRequestsCount = eventItem.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested)
+
+            PendingRequestsCount = eventItem.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),
+            IsExpired = eventItem.Date < DateTime.UtcNow
         });
     }
 
@@ -565,6 +567,7 @@ public class EventController : ControllerBase
         var now = DateTime.UtcNow;
 
         var events = await _context.Events
+            .Include(e => e.Creator)
             .Include(e => e.RecurrenceGroup)
             .Include(e => e.EventParticipants)
             .Where(e => e.CreatorId == userId)
@@ -586,7 +589,9 @@ public class EventController : ControllerBase
         {
             e.Id,
             e.Title,
-            e.CreatorId, // Add this line
+            e.CreatorId,
+            CreatorEmail = e.Creator != null ? e.Creator.Email : null,
+            CreatorUsername = e.Creator != null ? e.Creator.Username : null,
             e.Description,
             e.Date,
             e.Location,
@@ -777,8 +782,8 @@ public class EventController : ControllerBase
         var events = await _context.Events
             .Include(e => e.RecurrenceGroup)
             .Include(e => e.EventParticipants)
+            .Include(e => e.Creator)
             .Where(e => e.CreatorId == userId)
-            .Where(e => !e.IsPrivate)
             .Where(e =>
                 e.RecurrenceGroupId == null ||
                 e.Id == (_context.Events
@@ -787,7 +792,7 @@ public class EventController : ControllerBase
                     .Select(sub => sub.Id)
                     .FirstOrDefault())
             )
-            .Where(e => e.Date >= now.AddDays(-1))
+            .Where(e => e.Date >= now)
             .OrderBy(e => e.Date)
             .ToListAsync();
 
@@ -803,7 +808,10 @@ public class EventController : ControllerBase
             e.MaxParticipants,
             Category = e.Category.ToString(),
             ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
-            IsRecurring = e.RecurrenceGroupId != null
+            IsRecurring = e.RecurrenceGroupId != null,
+            CreatorUsername = e.Creator?.Username,
+            CreatorEmail = e.Creator?.Email,
+            Participants = e.EventParticipants.Select(ep => new { ep.UserId, Status = ep.Status.ToString() }).ToList()
         });
 
         return Ok(result);
@@ -811,7 +819,7 @@ public class EventController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpGet("admin/all")]
-    public async Task<IActionResult> GetAdminAllEvents()
+    public async Task<IActionResult> GetAdminAllEvents([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var allEvents = await _context.Events
             .Include(e => e.Creator)
@@ -842,6 +850,14 @@ public class EventController : ControllerBase
                 }
             })
             .OrderByDescending(x => x.Event.Date)
+            .ToList();
+
+        var totalItems = groupedEvents.Count;
+        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+        var paginatedEvents = groupedEvents
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(x => new
             {
                 x.Event.Id,
@@ -857,14 +873,21 @@ public class EventController : ControllerBase
                 CreatorId = x.Event.CreatorId,
                 CreatorUsername = x.Event.Creator != null ? x.Event.Creator.Username : null,
                 ParticipantsCount = x.Event.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
-                IsExpired = x.Event.Date < DateTime.UtcNow.AddDays(-7),
+                IsExpired = x.Event.Date < DateTime.UtcNow,
                 IsRecurring = x.Event.RecurrenceGroupId != null,
                 RecurrenceGroupId = x.Event.RecurrenceGroupId,
                 RecurrenceEndDate = x.LastSeriesDate 
             })
             .ToList();
 
-            return Ok(groupedEvents);
+         return Ok(new
+        {
+            Data = paginatedEvents,
+            TotalItems = totalItems,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = totalPages
+        });
     }
     
     private IEnumerable<Event> newList(Event e) { return new List<Event> { e }; }

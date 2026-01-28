@@ -63,6 +63,8 @@ function LoginPage({ onLogin }) {
       if (isLoginMode) {
         const data = await login(formData.email, formData.password)
         onLogin(data.token, data.role)
+        const origin = location.state?.from?.pathname || '/home'
+        navigate(origin)
       } else {
         const response = await register(formData.email, formData.password)
         setIsLoading(false)

@@ -86,8 +86,8 @@ const PublicProfilePage = ({ currentUserId, role }) => {
 
   const handleJoin = async (eventId) => {
     try {
-      await joinEvent(eventId)
-      showConfirm('Sukces', 'Dołączono do wydarzenia!', hideConfirm, false, false)
+      const response = await joinEvent(eventId)
+      showConfirm('Sukces', response || 'Dołączono do wydarzenia!', hideConfirm, false, false)
       fetchProfileAndEvents()
     } catch (err) {
       showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm)
@@ -218,6 +218,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
               event={event}
               currentUserId={currentUserId}
               role={role}
+              isOwner={isMe}
               onJoin={handleJoin}
               onLeave={handleLeave}
               onCardClick={(id) => navigate(`/event/${id}`)}

@@ -84,8 +84,10 @@ export const removeParticipant = async (eventId, userId) => {
   return response.data
 }
 
-export const getAdminAllEvents = async () => {
-  const response = await apiClient.get('/Event/admin/all')
+export const getAdminAllEvents = async (page = 1, pageSize = 10) => {
+  const response = await apiClient.get('/Event/admin/all', {
+    params: { page, pageSize },
+  })
   return response.data
 }
 

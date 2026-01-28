@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 
 import Home from './pages/Home'
 import LoginPage from './pages/LoginPage'
@@ -33,8 +33,9 @@ const AuthenticatedLayout = ({ children, user, handleLogout, setCreateModalOpen 
 }
 
 const ProtectedRoute = ({ children, user }) => {
+  const location = useLocation()
   if (!user) {
-    return <Navigate to="/landing" replace />
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
   return children
 }
@@ -46,6 +47,8 @@ function App() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [rejectedEvents, setRejectedEvents] = useState([])
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     checkSession()
@@ -101,6 +104,7 @@ function App() {
       console.error('Błąd wylogowania', e)
     } finally {
       setUser(null)
+      window.location.href = '/login'
     }
   }
 
@@ -117,148 +121,146 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="app-container">
-        <Routes>
-          <Route path="/" element={<Navigate to="/home" replace />} />
+    <div className="app-container">
+      <Routes>
+        <Route path="/" element={<Navigate to="/home" replace />} />
 
-          <Route
-            path="/home"
-            element={
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute user={user}>
+              <AuthenticatedLayout
+                user={user}
+                handleLogout={handleLogout}
+                setCreateModalOpen={setCreateModalOpen}
+              >
+                <Home
+                  currentUserId={user ? parseInt(user.id, 10) : null}
+                  role={user?.role || 'User'}
+                  refreshTrigger={refreshTrigger}
+                />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/landing" element={user ? <Navigate to="/home" /> : <LandingPage />} />
+
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />}
+        />
+
+        <Route
+          path="/register"
+          element={user ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />}
+        />
+
+        <Route
+          path="/profile/:userId"
+          element={
+            <ProtectedRoute user={user}>
+              <AuthenticatedLayout
+                user={user}
+                handleLogout={handleLogout}
+                setCreateModalOpen={setCreateModalOpen}
+              >
+                <PublicProfilePage
+                  currentUserId={user ? parseInt(user.id, 10) : null}
+                  role={user?.role || 'User'}
+                />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            user && user.role === 'Admin' ? (
               <ProtectedRoute user={user}>
                 <AuthenticatedLayout
                   user={user}
                   handleLogout={handleLogout}
                   setCreateModalOpen={setCreateModalOpen}
                 >
-                  <Home
-                    currentUserId={user ? parseInt(user.id, 10) : null}
-                    role={user?.role || 'User'}
-                    refreshTrigger={refreshTrigger}
+                  <AdminPanel
+                    token={null}
+                    currentUserId={parseInt(user.id, 10)}
+                    onLogout={handleLogout}
                   />
                 </AuthenticatedLayout>
               </ProtectedRoute>
-            }
-          />
+            ) : (
+              <Navigate to="/home" />
+            )
+          }
+        />
 
-          <Route path="/landing" element={user ? <Navigate to="/home" /> : <LandingPage />} />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute user={user}>
+              <AuthenticatedLayout
+                user={user}
+                handleLogout={handleLogout}
+                setCreateModalOpen={setCreateModalOpen}
+              >
+                <ProfilePage
+                  currentUserEmail={user?.email}
+                  currentUserId={user ? parseInt(user.id, 10) : null}
+                  role={user?.role || 'User'}
+                  refreshTrigger={refreshTrigger}
+                  currentUserUsername={user?.username}
+                  followersCount={user?.followersCount || 0}
+                  onProfileUpdate={checkSession}
+                />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/login"
-            element={user ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />}
-          />
+        <Route
+          path="/event/:id"
+          element={
+            <ProtectedRoute user={user}>
+              <AuthenticatedLayout
+                user={user}
+                handleLogout={handleLogout}
+                setCreateModalOpen={setCreateModalOpen}
+              >
+                <EventDetailsPage
+                  currentUserId={user ? parseInt(user.id, 10) : null}
+                  role={user?.role || 'User'}
+                />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/register"
-            element={user ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />}
-          />
+        <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          <Route
-            path="/profile/:userId"
-            element={
-              <ProtectedRoute user={user}>
-                <AuthenticatedLayout
-                  user={user}
-                  handleLogout={handleLogout}
-                  setCreateModalOpen={setCreateModalOpen}
-                >
-                  <PublicProfilePage
-                    currentUserId={user ? parseInt(user.id, 10) : null}
-                    role={user?.role || 'User'}
-                  />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
+        <Route path="*" element={<Navigate to="/home" />} />
+      </Routes>
 
-          <Route
-            path="/admin"
-            element={
-              user && user.role === 'Admin' ? (
-                <ProtectedRoute user={user}>
-                  <AuthenticatedLayout
-                    user={user}
-                    handleLogout={handleLogout}
-                    setCreateModalOpen={setCreateModalOpen}
-                  >
-                    <AdminPanel
-                      token={null}
-                      currentUserId={parseInt(user.id, 10)}
-                      onLogout={handleLogout}
-                    />
-                  </AuthenticatedLayout>
-                </ProtectedRoute>
-              ) : (
-                <Navigate to="/home" />
-              )
-            }
-          />
+      {user && createModalOpen && (
+        <CreateEventModal
+          onClose={() => setCreateModalOpen(false)}
+          onEventCreated={handleEventCreated}
+        />
+      )}
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute user={user}>
-                <AuthenticatedLayout
-                  user={user}
-                  handleLogout={handleLogout}
-                  setCreateModalOpen={setCreateModalOpen}
-                >
-                  <ProfilePage
-                    currentUserEmail={user?.email}
-                    currentUserId={user ? parseInt(user.id, 10) : null}
-                    role={user?.role || 'User'}
-                    refreshTrigger={refreshTrigger}
-                    currentUserUsername={user?.username}
-                    followersCount={user?.followersCount || 0}
-                    onProfileUpdate={checkSession}
-                  />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
+      {user && !user.username && <OnboardingModal />}
 
-          <Route
-            path="/event/:id"
-            element={
-              <ProtectedRoute user={user}>
-                <AuthenticatedLayout
-                  user={user}
-                  handleLogout={handleLogout}
-                  setCreateModalOpen={setCreateModalOpen}
-                >
-                  <EventDetailsPage
-                    currentUserId={user ? parseInt(user.id, 10) : null}
-                    role={user?.role || 'User'}
-                  />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="/confirm-email" element={<ConfirmEmailPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-          <Route path="*" element={<Navigate to="/home" />} />
-        </Routes>
-
-        {user && createModalOpen && (
-          <CreateEventModal
-            onClose={() => setCreateModalOpen(false)}
-            onEventCreated={handleEventCreated}
-          />
-        )}
-
-        {user && !user.username && <OnboardingModal />}
-
-        {rejectedEvents.length > 0 && (
-          <RejectionModal
-            rejectedEvents={rejectedEvents}
-            onConfirm={handleClearRejections}
-            onClose={() => {}}
-          />
-        )}
-      </div>
-    </Router>
+      {rejectedEvents.length > 0 && (
+        <RejectionModal
+          rejectedEvents={rejectedEvents}
+          onConfirm={handleClearRejections}
+          onClose={() => {}}
+        />
+      )}
+    </div>
   )
 }
 

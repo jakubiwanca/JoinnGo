@@ -323,12 +323,27 @@ public class UserController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpGet("all")]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var users = await _context.Users
+        var query = _context.Users.AsQueryable();
+        var totalItems = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+        var users = await query
+            .OrderBy(u => u.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(u => new { u.Id, u.Email, u.Role, u.Username, u.EmailConfirmed })
             .ToListAsync();
-        return Ok(users);
+
+         return Ok(new
+        {
+            Data = users,
+            TotalItems = totalItems,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = totalPages
+        });
     }
 
 

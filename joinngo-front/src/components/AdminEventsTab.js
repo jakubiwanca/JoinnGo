@@ -8,6 +8,8 @@ const AdminEventsTab = ({ onEventDeleted }) => {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [participantsModal, setParticipantsModal] = useState({
     isOpen: false,
     eventId: null,
@@ -16,14 +18,21 @@ const AdminEventsTab = ({ onEventDeleted }) => {
 
   useEffect(() => {
     fetchEvents()
-  }, [])
+  }, [page])
 
   const fetchEvents = async () => {
     try {
-      const data = await getAdminAllEvents()
-      setEvents(data)
+      setLoading(true)
+      const data = await getAdminAllEvents(page)
+      if (data && data.data) {
+        setEvents(data.data)
+        setTotalPages(data.totalPages)
+      } else {
+        setEvents([])
+      }
     } catch (err) {
       console.error('Nie udalo sie pobrac wydarzen', err)
+      setEvents([])
     } finally {
       setLoading(false)
     }
@@ -164,6 +173,31 @@ const AdminEventsTab = ({ onEventDeleted }) => {
           onClose={() => setParticipantsModal({ isOpen: false, eventId: null, creatorId: null })}
           onStatusChange={fetchEvents}
         />
+      )}
+
+      {totalPages > 1 && (
+        <div
+          className="pagination"
+          style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}
+        >
+          <button
+            className="btn-secondary"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            &laquo; Poprzednia
+          </button>
+          <span style={{ alignSelf: 'center' }}>
+            Strona {page} z {totalPages}
+          </span>
+          <button
+            className="btn-secondary"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Następna &raquo;
+          </button>
+        </div>
       )}
     </div>
   )

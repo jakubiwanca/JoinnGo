@@ -1,7 +1,9 @@
 import apiClient from './axiosClient'
 
-export async function getAllUsers() {
-  const response = await apiClient.get('/User/all')
+export async function getAllUsers(page = 1, pageSize = 10) {
+  const response = await apiClient.get('/User/all', {
+    params: { page, pageSize },
+  })
   return response.data
 }
 

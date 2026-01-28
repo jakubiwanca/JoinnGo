@@ -137,36 +137,6 @@ const EventCard = ({
 
         <p className="card-desc">{event.description}</p>
 
-        {isJoinedList && (
-          <div style={{ marginTop: '5px', marginBottom: '10px', fontSize: '0.9rem' }}>
-            Organizator:{' '}
-            <b
-              onClick={handleOrganizerClick}
-              style={{ cursor: 'pointer', textDecoration: 'underline' }}
-            >
-              {event.creatorUsername || event.creatorEmail}
-            </b>
-            <br />
-            Twój status:{' '}
-            <span
-              style={{
-                color:
-                  status === 'Confirmed' || status === 1
-                    ? 'green'
-                    : status === 'Rejected' || status === 2
-                      ? 'red'
-                      : 'orange',
-              }}
-            >
-              {status === 'Confirmed' || status === 1
-                ? 'Potwierdzony'
-                : status === 'Rejected' || status === 2
-                  ? 'Odrzucony'
-                  : 'Oczekuje na akceptację'}
-            </span>
-          </div>
-        )}
-
         <div className="card-footer">
           <div className="participants-info" title="Dostępne miejsca">
             👥{' '}

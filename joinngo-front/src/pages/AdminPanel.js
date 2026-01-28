@@ -13,17 +13,30 @@ function AdminPanel({ currentUserId, onLogout }) {
   const [error, setError] = useState('')
   const [editingUser, setEditingUser] = useState(null)
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'stats')
+  const [userPage, setUserPage] = useState(1)
+  const [userTotalPages, setUserTotalPages] = useState(1)
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
-  useEffect(() => {
-    getAllUsers()
-      .then((users) => setUsers(users.filter((u) => u.email)))
+  const fetchUsers = () => {
+    getAllUsers(userPage)
+      .then((data) => {
+        if (data && data.data) {
+          setUsers(data.data.filter((u) => u.email))
+          setUserTotalPages(data.totalPages)
+        } else {
+          setUsers([])
+        }
+      })
       .catch((err) => {
         console.error('getAllUsers error:', err)
         setError(err.message || 'Błąd podczas ładowania użytkowników')
       })
-  }, [])
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [userPage])
 
   const handleDelete = (id) => {
     showConfirm(
@@ -55,12 +68,7 @@ function AdminPanel({ currentUserId, onLogout }) {
 
   const handleUserUpdated = () => {
     setEditingUser(null)
-    getAllUsers()
-      .then((users) => setUsers(users.filter((u) => u.email)))
-      .catch((err) => {
-        console.error('getAllUsers error:', err)
-        setError(err.message || 'Błąd podczas ładowania użytkowników')
-      })
+    fetchUsers()
   }
 
   return (
@@ -128,117 +136,149 @@ function AdminPanel({ currentUserId, onLogout }) {
             {users.length === 0 ? (
               <p style={{ color: '#6b7280' }}>Brak użytkowników lub trwa ładowanie...</p>
             ) : (
-              <div style={{ display: 'grid', gap: '10px' }}>
-                {users.map((u) => {
-                  let statusColor = '#10b981' // Zielony (Aktywny)
-                  let statusTitle = 'Aktywny'
-                  if (!u.emailConfirmed) {
-                    statusColor = '#ef4444' // Czerwony (Niepotwierdzony email)
-                    statusTitle = 'Niepotwierdzony email'
-                  } else if (!u.username) {
-                    statusColor = '#f59e0b' // Żółty (Brak nazwy użytkownika)
-                    statusTitle = 'Brak nazwy użytkownika'
-                  }
+              <>
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  {users.map((u) => {
+                    let statusColor = '#10b981' // Zielony (Aktywny)
+                    let statusTitle = 'Aktywny'
+                    if (!u.emailConfirmed) {
+                      statusColor = '#ef4444' // Czerwony (Niepotwierdzony email)
+                      statusTitle = 'Niepotwierdzony email'
+                    } else if (!u.username) {
+                      statusColor = '#f59e0b' // Żółty (Brak nazwy użytkownika)
+                      statusTitle = 'Brak nazwy użytkownika'
+                    }
 
-                  return (
-                    <div
-                      key={u.id}
-                      style={{
-                        background: 'var(--card-bg)',
-                        padding: '15px 20px',
-                        borderRadius: '12px',
-                        boxShadow: 'var(--shadow-sm)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        border: '1px solid #f3f4f6',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div style={{ position: 'relative' }}>
-                          <div
-                            style={{
-                              width: '42px',
-                              height: '42px',
-                              borderRadius: '50%',
-                              background: '#e0e7ff',
-                              color: 'var(--primary-color)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 'bold',
-                              fontSize: '1.1rem',
-                            }}
-                          >
-                            {u.email && u.email[0] ? u.email[0].toUpperCase() : '?'}
-                          </div>
-                          <div
-                            title={statusTitle}
-                            style={{
-                              position: 'absolute',
-                              bottom: '-2px',
-                              right: '-2px',
-                              width: '14px',
-                              height: '14px',
-                              borderRadius: '50%',
-                              backgroundColor: statusColor,
-                              border: '2px solid white',
-                            }}
-                          />
-                        </div>
-
-                        <div>
-                          <div style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
-                            {u.email}
-                          </div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                            ID: {u.id} • Rola:{' '}
-                            <span
+                    return (
+                      <div
+                        key={u.id}
+                        style={{
+                          background: 'var(--card-bg)',
+                          padding: '15px 20px',
+                          borderRadius: '12px',
+                          boxShadow: 'var(--shadow-sm)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          border: '1px solid #f3f4f6',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                          <div style={{ position: 'relative' }}>
+                            <div
                               style={{
-                                fontWeight: '500',
-                                color: u.role === 'Admin' ? 'var(--primary-color)' : 'inherit',
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '50%',
+                                background: '#e0e7ff',
+                                color: 'var(--primary-color)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 'bold',
+                                fontSize: '1.1rem',
                               }}
                             >
-                              {u.role}
-                            </span>
+                              {u.email && u.email[0] ? u.email[0].toUpperCase() : '?'}
+                            </div>
+                            <div
+                              title={statusTitle}
+                              style={{
+                                position: 'absolute',
+                                bottom: '-2px',
+                                right: '-2px',
+                                width: '14px',
+                                height: '14px',
+                                borderRadius: '50%',
+                                backgroundColor: statusColor,
+                                border: '2px solid white',
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <div style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
+                              {u.email}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                              ID: {u.id} • Rola:{' '}
+                              <span
+                                style={{
+                                  fontWeight: '500',
+                                  color: u.role === 'Admin' ? 'var(--primary-color)' : 'inherit',
+                                }}
+                              >
+                                {u.role}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        {String(u.id) !== String(currentUserId) ? (
-                          <>
-                            <button
-                              onClick={() => handleEdit(u)}
-                              className="btn-secondary"
-                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                              title="Edytuj użytkownika"
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          {String(u.id) !== String(currentUserId) ? (
+                            <>
+                              <button
+                                onClick={() => handleEdit(u)}
+                                className="btn-secondary"
+                                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                                title="Edytuj użytkownika"
+                              >
+                                ⚙️
+                              </button>
+                              <button onClick={() => handleDelete(u.id)} className="btn-danger">
+                                Usuń konto
+                              </button>
+                            </>
+                          ) : (
+                            <span
+                              style={{
+                                fontSize: '0.85rem',
+                                color: '#10b981',
+                                fontWeight: '600',
+                                padding: '6px 12px',
+                                background: '#d1fae5',
+                                borderRadius: '8px',
+                              }}
                             >
-                              ⚙️
-                            </button>
-                            <button onClick={() => handleDelete(u.id)} className="btn-danger">
-                              Usuń konto
-                            </button>
-                          </>
-                        ) : (
-                          <span
-                            style={{
-                              fontSize: '0.85rem',
-                              color: '#10b981',
-                              fontWeight: '600',
-                              padding: '6px 12px',
-                              background: '#d1fae5',
-                              borderRadius: '8px',
-                            }}
-                          >
-                            (zalogowany)
-                          </span>
-                        )}
+                              (zalogowany)
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+
+                {userTotalPages > 1 && (
+                  <div
+                    className="pagination"
+                    style={{
+                      marginTop: '20px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    <button
+                      className="btn-secondary"
+                      disabled={userPage <= 1}
+                      onClick={() => setUserPage((p) => p - 1)}
+                    >
+                      &laquo; Poprzednia
+                    </button>
+                    <span style={{ alignSelf: 'center' }}>
+                      Strona {userPage} z {userTotalPages}
+                    </span>
+                    <button
+                      className="btn-secondary"
+                      disabled={userPage >= userTotalPages}
+                      onClick={() => setUserPage((p) => p + 1)}
+                    >
+                      Następna &raquo;
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

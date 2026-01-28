@@ -416,7 +416,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
             <div>
               • Koniec:{' '}
               {event.recurrence.endDate
-                ? `do ${formatPolishDateTime(event.recurrence.endDate)}`
+                ? `${formatPolishDateTime(event.recurrence.endDate)}`
                 : event.recurrence.maxOccurrences
                   ? `po ${event.recurrence.maxOccurrences} ${event.recurrence.type === 1 ? 'tygodniach' : 'miesiącach'}`
                   : 'Brak daty końcowej'}
