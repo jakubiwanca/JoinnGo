@@ -5,8 +5,26 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+using DotNetEnv;
+
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+    ["ConnectionStrings:DefaultConnection"] = $"Host={Env.GetString("DB_HOST", "localhost")};Port={Env.GetString("DB_PORT", "5432")};Database={Env.GetString("DB_NAME", "JoinnGoDb")};Username={Env.GetString("DB_USERNAME", "postgres")};Password={Env.GetString("DB_PASSWORD", "postgres")}",
+    ["Email:SmtpHost"] = Env.GetString("SMTP_HOST", "smtp.gmail.com"),
+    ["Email:SmtpPort"] = Env.GetString("SMTP_PORT", "587"),
+    ["Email:SmtpUsername"] = Env.GetString("SMTP_USERNAME", ""),
+    ["Email:SmtpPassword"] = Env.GetString("SMTP_PASSWORD", ""),
+    ["Email:SenderEmail"] = Env.GetString("SENDER_EMAIL", ""),
+    ["Email:SenderName"] = Env.GetString("SENDER_NAME", "Join'nGo"),
+    ["Jwt:Key"] = Env.GetString("JWT_KEY", "default_jwt_key_32_characters_min"),
+    ["Jwt:Issuer"] = Env.GetString("JWT_ISSUER", "JoinnGoApp"),
+    ["Jwt:Audience"] = Env.GetString("JWT_AUDIENCE", "JoinnGoAppUsers"),
+    ["Jwt:ExpiresInMinutes"] = Env.GetString("JWT_EXPIRES_MINUTES", "60"),
+    ["Frontend:BaseUrl"] = Env.GetString("FRONTEND_URL", "http://localhost:3000"),
+});
 
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

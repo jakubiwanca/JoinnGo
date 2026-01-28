@@ -577,9 +577,20 @@ public class EventController : ControllerBase
                     .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.Date >= now)
                     .OrderBy(sub => sub.Date)
                     .Select(sub => sub.Id)
+                    .FirstOrDefault()) ||
+                e.Id == (_context.Events
+                    .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId)
+                    .OrderByDescending(sub => sub.Date)
+                    .Select(sub => sub.Id)
                     .FirstOrDefault())
             )
-            .Where(e => e.Date >= now.AddDays(-7))
+            .Where(e => 
+                e.RecurrenceGroupId == null 
+                    ? e.Date >= now.AddDays(-7)
+                    : _context.Events
+                        .Where(ev => ev.RecurrenceGroupId == e.RecurrenceGroupId)
+                        .Max(ev => ev.Date) >= now.AddDays(-7)
+            )
             .OrderByDescending(e => e.Date)
             .ToListAsync();
 
@@ -604,7 +615,11 @@ public class EventController : ControllerBase
             ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
             PendingRequestsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),
             IsRecurring = e.RecurrenceGroupId != null,
-            IsExpired = e.Date < now,
+            IsExpired = e.RecurrenceGroupId == null 
+                ? e.Date < now 
+                : _context.Events
+                    .Where(ev => ev.RecurrenceGroupId == e.RecurrenceGroupId)
+                    .Max(ev => ev.Date) < now,
             Recurrence = e.RecurrenceGroup == null ? null : new
             {
                 e.RecurrenceGroup.Type,

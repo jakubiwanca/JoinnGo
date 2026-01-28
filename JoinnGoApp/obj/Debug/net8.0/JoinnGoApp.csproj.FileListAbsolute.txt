@@ -142,3 +142,5 @@
 /home/kuba/Desktop/ProjektInz/JoinnGoApp/obj/Debug/net8.0/JoinnGoApp.pdb
 /home/kuba/Desktop/ProjektInz/JoinnGoApp/obj/Debug/net8.0/JoinnGoApp.genruntimeconfig.cache
 /home/kuba/Desktop/ProjektInz/JoinnGoApp/obj/Debug/net8.0/ref/JoinnGoApp.dll
+/home/kuba/Desktop/ProjektInz/JoinnGoApp/bin/Debug/net8.0/DotNetEnv.dll
+/home/kuba/Desktop/ProjektInz/JoinnGoApp/bin/Debug/net8.0/Sprache.dll

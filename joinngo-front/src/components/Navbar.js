@@ -6,13 +6,28 @@ function Navbar({ user, onLogout, onOpenCreateModal }) {
 
   return (
     <header className="app-header">
-      <div style={{ cursor: 'pointer' }} onClick={() => navigate('/home')}>
-        <h2>Join'nGo</h2>
-        {user?.username && (
-          <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-            Zalogowany jako: <b>{user.username}</b>
-          </span>
-        )}
+      <div
+        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+        onClick={() => navigate('/home')}
+      >
+        <img
+          src="/logo.png"
+          alt="Join'nGo Logo"
+          style={{
+            height: '45px',
+            width: '45px',
+            borderRadius: '50%',
+            objectFit: 'cover',
+          }}
+        />
+        <div>
+          <h2 style={{ margin: 0 }}>Join'nGo</h2>
+          {user?.username && (
+            <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+              Zalogowany jako: <b>{user.username}</b>
+            </span>
+          )}
+        </div>
       </div>
       <div className="header-actions">
         <button

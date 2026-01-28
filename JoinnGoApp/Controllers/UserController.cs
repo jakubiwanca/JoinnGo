@@ -36,8 +36,13 @@ public class UserController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
+        const string successMessage = "Jeśli podany adres email nie był wcześniej zarejestrowany, wysłaliśmy na niego link aktywacyjny.";
+
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
-            return BadRequest("Ten adres email jest już zajęty.");
+        {
+            await Task.Delay(Random.Shared.Next(500, 1500));
+            return Ok(successMessage);
+        }
 
         var user = new User
         {
@@ -62,7 +67,7 @@ public class UserController : ControllerBase
             Console.WriteLine($"Failed to send email: {ex.Message}");
         }
 
-        return Ok("Registration successful. Please check your email to confirm your account.");
+        return Ok(successMessage);
     }
 
     [HttpPost("login")]

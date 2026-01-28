@@ -109,6 +109,18 @@ function LoginPage({ onLogin }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <img
+          src="/logo.png"
+          alt="Join'nGo Logo"
+          style={{
+            width: '100px',
+            height: '100px',
+            borderRadius: '50%',
+            objectFit: 'cover',
+            display: 'block',
+            margin: '0 auto 20px auto',
+          }}
+        />
         <h2>{isLoginMode ? 'Zaloguj się' : "Dołącz do Join'nGo"}</h2>
 
         {error && (
