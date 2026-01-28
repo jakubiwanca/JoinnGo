@@ -7,9 +7,6 @@ import { LocationMarker, MapUpdater } from './MapComponents'
 import { EVENT_CATEGORIES } from '../constants/categories'
 import { DAYS_OF_WEEK } from '../constants/common'
 
-/**
- * Wspólne pole tytułu wydarzenia
- */
 export function TitleField({ value, onChange, error }) {
   return (
     <div className="form-group">
@@ -27,9 +24,6 @@ export function TitleField({ value, onChange, error }) {
   )
 }
 
-/**
- * Wspólne pole kategorii
- */
 export function CategoryField({ value, onChange, error }) {
   return (
     <div className="form-group">
@@ -58,9 +52,6 @@ export function CategoryField({ value, onChange, error }) {
   )
 }
 
-/**
- * Wspólne pole opisu
- */
 export function DescriptionField({ value, onChange, error }) {
   return (
     <div className="form-group">
@@ -81,9 +72,6 @@ export function DescriptionField({ value, onChange, error }) {
   )
 }
 
-/**
- * Wspólne pole daty i godziny
- */
 export function DateTimeField({ value, onChange, error, minDate, filterTime }) {
   return (
     <div className="form-group">
@@ -109,9 +97,6 @@ export function DateTimeField({ value, onChange, error, minDate, filterTime }) {
   )
 }
 
-/**
- * Wspólne pola lokalizacji (miasto + dokładne miejsce)
- */
 export function LocationFields({
   city,
   location,
@@ -151,9 +136,6 @@ export function LocationFields({
   )
 }
 
-/**
- * Wspólny komponent mapy
- */
 export function MapField({ mapCenter, markerPosition, setMarkerPosition, setFormData }) {
   return (
     <div className="form-group" style={{ marginBottom: '15px' }}>
@@ -187,9 +169,6 @@ export function MapField({ mapCenter, markerPosition, setMarkerPosition, setForm
   )
 }
 
-/**
- * Wspólny checkbox prywatności
- */
 export function PrivateCheckbox({ checked, onChange }) {
   return (
     <div className="form-group checkbox-group" style={{ marginTop: '10px', marginBottom: '20px' }}>
@@ -207,9 +186,6 @@ export function PrivateCheckbox({ checked, onChange }) {
   )
 }
 
-/**
- * Wspólne pole limitu uczestników
- */
 export function MaxParticipantsField({ value, onChange }) {
   return (
     <div className="form-group" style={{ marginBottom: '20px' }}>
@@ -226,9 +202,6 @@ export function MaxParticipantsField({ value, onChange }) {
   )
 }
 
-/**
- * Wspólny checkbox wydarzenia cyklicznego
- */
 export function RecurringCheckbox({ checked, onChange }) {
   return (
     <div className="form-group checkbox-group" style={{ marginTop: '10px', marginBottom: '20px' }}>
@@ -245,9 +218,6 @@ export function RecurringCheckbox({ checked, onChange }) {
   )
 }
 
-/**
- * Wspólna konfiguracja powtarzalności
- */
 export function RecurrenceConfig({
   recurrence,
   setRecurrence,

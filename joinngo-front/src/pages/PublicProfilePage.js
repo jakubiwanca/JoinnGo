@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getPublicProfile, toggleFollow } from '../api/users'
 import { getEventsByUser, joinEvent, leaveEvent } from '../api/events'
 import EventCard from '../components/EventCard'
+import EditEventModal from '../components/EditEventModal'
 import { useConfirm } from '../hooks/useConfirm'
 import ConfirmModal from '../components/ConfirmModal'
 
@@ -13,6 +14,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [followLoading, setFollowLoading] = useState(false)
+  const [editingEvent, setEditingEvent] = useState(null)
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
   useEffect(() => {
@@ -105,6 +107,15 @@ const PublicProfilePage = ({ currentUserId, role }) => {
         showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm)
       }
     })
+  }
+
+  const handleEditClick = (event) => {
+    setEditingEvent(event)
+  }
+
+  const handleEditSuccess = () => {
+    setEditingEvent(null)
+    fetchProfileAndEvents()
   }
 
   if (loading) return <div className="main-container">Ładowanie profilu...</div>
@@ -219,6 +230,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
               currentUserId={currentUserId}
               role={role}
               isOwner={isMe}
+              onEdit={isMe ? handleEditClick : undefined}
               onJoin={handleJoin}
               onLeave={handleLeave}
               onCardClick={(id) => navigate(`/event/${id}`)}
@@ -236,6 +248,14 @@ const PublicProfilePage = ({ currentUserId, role }) => {
         showCancel={confirmModal.showCancel}
         danger={confirmModal.danger}
       />
+
+      {editingEvent && (
+        <EditEventModal
+          eventToEdit={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onEventUpdated={handleEditSuccess}
+        />
+      )}
 
       {showFollowersModal && (
         <div className="modal-overlay" style={{ zIndex: 2000 }}>
