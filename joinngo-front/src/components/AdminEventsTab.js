@@ -48,7 +48,7 @@ const AdminEventsTab = ({ onEventDeleted }) => {
     if (isRecurring) {
       showConfirm(
         'Usuń wydarzenie cykliczne',
-        'To wydarzenie jest cykliczne. Czy chcesz usunąć CAŁĄ SERIĘ wydarzeń?\n(Tak = cała seria, Nie/Anuluj = przerwij)',
+        'To wydarzenie jest cykliczne. Czy chcesz usunąć całą serię wydarzeń?',
         async () => {
           hideConfirm()
           try {
@@ -60,7 +60,7 @@ const AdminEventsTab = ({ onEventDeleted }) => {
             showConfirm('Błąd', 'Nie udało się usunąć serii.', hideConfirm)
           }
         },
-        true, // danger
+        true,
       )
     } else {
       showConfirm(

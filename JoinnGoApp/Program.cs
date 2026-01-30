@@ -41,6 +41,7 @@ builder.Services.AddDbContext<MyDbContext>(options =>
 
 builder.Services.AddScoped<JoinnGoApp.Services.RecurrenceService>();
 builder.Services.AddTransient<JoinnGoApp.Services.IEmailService, JoinnGoApp.Services.EmailService>();
+builder.Services.AddHttpClient();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import apiClient from '../api/axiosClient'
 
 const LocationAutocomplete = ({
   value,
@@ -38,14 +39,8 @@ const LocationAutocomplete = ({
             searchQuery = `${query}, ${contextQuery}`
           }
 
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&addressdetails=1&limit=10&countrycodes=pl&accept-language=pl`,
-          )
-
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`)
-          }
-          const data = await response.json()
+          const response = await apiClient.get(`/geocoding?q=${encodeURIComponent(searchQuery)}`)
+          const data = response.data
 
           const uniqueCities = new Set()
           const mappedSuggestions = []
