@@ -66,7 +66,7 @@ function LoginPage({ onLogin }) {
         const origin = location.state?.from?.pathname || '/home'
         navigate(origin)
       } else {
-        const response = await register(formData.email, formData.password)
+        await register(formData.email, formData.password)
         setIsLoading(false)
         showConfirm(
           'Sprawdź swoją skrzynkę email',

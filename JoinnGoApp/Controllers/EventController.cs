@@ -699,6 +699,7 @@ public class EventController : ControllerBase
         var query = _context.Events
             .Include(e => e.Creator)
             .Include(e => e.EventParticipants)
+            .Include(e => e.RecurrenceGroup)
             .AsQueryable();
 
         if (!date.HasValue)
@@ -752,31 +753,42 @@ public class EventController : ControllerBase
              query = query.OrderBy(e => e.Date);
         }
 
-        var events = await query
+        var eventEntities = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => new
-            {
-                e.Id,
-                e.Title,
-                e.Description,
-                e.Date,
-                e.Location,
-                e.City,
-                e.Latitude,
-                e.Longitude,
-                e.IsPrivate,
-                e.MaxParticipants,
-                Category = e.Category.ToString(),
-                e.CreatorId,
-                Creator = e.Creator != null ? new { e.Creator.Email, e.Creator.Username } : null,
-                Participants = e.EventParticipants.Select(ep => new { ep.UserId, Status = ep.Status.ToString() }).ToList(),
-                ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
-                PendingRequestsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),
-                IsRecurring = e.RecurrenceGroupId != null,
-                IsCreatorFollowed = followedIds.Contains(e.CreatorId)
-            })
             .ToListAsync();
+
+        var events = eventEntities.Select(e => new
+        {
+            e.Id,
+            e.Title,
+            e.Description,
+            e.Date,
+            e.Location,
+            e.City,
+            e.Latitude,
+            e.Longitude,
+            e.IsPrivate,
+            e.MaxParticipants,
+            Category = e.Category.ToString(),
+            e.CreatorId,
+            Creator = e.Creator != null ? new { e.Creator.Email, e.Creator.Username } : null,
+            Participants = e.EventParticipants.Select(ep => new { ep.UserId, Status = ep.Status.ToString() }).ToList(),
+            ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
+            PendingRequestsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Interested),
+            IsRecurring = e.RecurrenceGroupId != null,
+            Recurrence = e.RecurrenceGroup == null ? null : new
+            {
+                e.RecurrenceGroup.Type,
+                e.RecurrenceGroup.Interval,
+                DaysOfWeek = e.RecurrenceGroup.DaysOfWeek != null
+                    ? System.Text.Json.JsonSerializer.Deserialize<int[]>(e.RecurrenceGroup.DaysOfWeek)
+                    : null,
+                e.RecurrenceGroup.EndDate,
+                e.RecurrenceGroup.MaxOccurrences
+            },
+            IsCreatorFollowed = followedIds.Contains(e.CreatorId)
+        }).ToList();
 
         return Ok(new
         {
@@ -824,6 +836,16 @@ public class EventController : ControllerBase
             Category = e.Category.ToString(),
             ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
             IsRecurring = e.RecurrenceGroupId != null,
+            Recurrence = e.RecurrenceGroup == null ? null : new
+            {
+                e.RecurrenceGroup.Type,
+                e.RecurrenceGroup.Interval,
+                DaysOfWeek = e.RecurrenceGroup.DaysOfWeek != null
+                    ? System.Text.Json.JsonSerializer.Deserialize<int[]>(e.RecurrenceGroup.DaysOfWeek)
+                    : null,
+                e.RecurrenceGroup.EndDate,
+                e.RecurrenceGroup.MaxOccurrences
+            },
             CreatorUsername = e.Creator?.Username,
             CreatorEmail = e.Creator?.Email,
             Participants = e.EventParticipants.Select(ep => new { ep.UserId, Status = ep.Status.ToString() }).ToList()
@@ -891,7 +913,7 @@ public class EventController : ControllerBase
                 IsExpired = x.Event.Date < DateTime.UtcNow,
                 IsRecurring = x.Event.RecurrenceGroupId != null,
                 RecurrenceGroupId = x.Event.RecurrenceGroupId,
-                RecurrenceEndDate = x.LastSeriesDate 
+                RecurrenceEndDate = x.Event.RecurrenceGroup != null ? x.Event.RecurrenceGroup.EndDate : null 
             })
             .ToList();
 

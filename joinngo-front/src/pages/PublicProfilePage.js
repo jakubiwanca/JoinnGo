@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPublicProfile, toggleFollow } from '../api/users'
 import { getEventsByUser, joinEvent, leaveEvent } from '../api/events'
@@ -16,10 +16,6 @@ const PublicProfilePage = ({ currentUserId, role }) => {
   const [followLoading, setFollowLoading] = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
-
-  useEffect(() => {
-    fetchProfileAndEvents()
-  }, [userId])
 
   const [showFollowersModal, setShowFollowersModal] = useState(false)
   const [followersList, setFollowersList] = useState([])
@@ -39,7 +35,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
     }
   }
 
-  const fetchProfileAndEvents = async () => {
+  const fetchProfileAndEvents = useCallback(async () => {
     setLoading(true)
     try {
       const [profileData, eventsData] = await Promise.all([
@@ -62,7 +58,11 @@ const PublicProfilePage = ({ currentUserId, role }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId, showConfirm, hideConfirm])
+
+  useEffect(() => {
+    fetchProfileAndEvents()
+  }, [fetchProfileAndEvents])
 
   const handleToggleFollow = async () => {
     if (!profile) return

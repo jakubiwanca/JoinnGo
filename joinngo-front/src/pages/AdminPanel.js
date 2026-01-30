@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { getAllUsers, deleteUser } from '../api/users'
 import ConfirmModal from '../components/ConfirmModal'
@@ -18,7 +18,7 @@ function AdminPanel({ currentUserId, onLogout }) {
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
-  const fetchUsers = () => {
+  const fetchUsers = useCallback(() => {
     getAllUsers(userPage)
       .then((data) => {
         if (data && data.data) {
@@ -32,11 +32,11 @@ function AdminPanel({ currentUserId, onLogout }) {
         console.error('getAllUsers error:', err)
         setError(err.message || 'Błąd podczas ładowania użytkowników')
       })
-  }
+  }, [userPage])
 
   useEffect(() => {
     fetchUsers()
-  }, [userPage])
+  }, [fetchUsers])
 
   const handleDelete = (id) => {
     showConfirm(

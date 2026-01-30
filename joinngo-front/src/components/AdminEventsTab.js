@@ -115,7 +115,15 @@ const AdminEventsTab = ({ onEventDeleted }) => {
                 </td>
                 <td style={{ padding: '12px' }}>{formatPolishDateTime(e.date)}</td>
                 <td style={{ padding: '12px' }}>
-                  {e.recurrenceEndDate ? formatPolishDateTime(e.recurrenceEndDate) : '-'}
+                  {e.isRecurring ? (
+                    e.recurrenceEndDate ? (
+                      formatPolishDateTime(e.recurrenceEndDate)
+                    ) : (
+                      <span style={{ fontStyle: 'italic', color: '#6b7280' }}>Bezterminowo</span>
+                    )
+                  ) : (
+                    '-'
+                  )}
                 </td>
                 <td style={{ padding: '12px' }}>
                   <div>{e.creatorUsername}</div>

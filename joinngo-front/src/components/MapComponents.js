@@ -15,6 +15,9 @@ export function LocationMarker({ position, setPosition, setFormData }) {
       try {
         const response = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=pl`,
+          {
+            referrerPolicy: 'no-referrer',
+          },
         )
         const data = await response.json()
 

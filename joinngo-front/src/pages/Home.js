@@ -308,8 +308,6 @@ function Home({ role, currentUserId, refreshTrigger }) {
               {events.length === 0 && <p>Brak wydarzeń spełniających kryteria.</p>}
 
               {events.map((event) => {
-                const isMyEvent = currentUserId === event.creatorId
-
                 return (
                   <EventCard
                     key={event.id}

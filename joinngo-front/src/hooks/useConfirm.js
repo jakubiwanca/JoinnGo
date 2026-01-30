@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 export const useConfirm = () => {
   const [confirmModal, setConfirmModal] = useState({
@@ -10,20 +10,23 @@ export const useConfirm = () => {
     danger: false,
   })
 
-  const showConfirm = (title, message, onConfirm, danger = false, showCancel = true) => {
-    setConfirmModal({
-      isOpen: true,
-      title,
-      message,
-      onConfirm,
-      danger,
-      showCancel,
-    })
-  }
+  const showConfirm = useCallback(
+    (title, message, onConfirm, danger = false, showCancel = true) => {
+      setConfirmModal({
+        isOpen: true,
+        title,
+        message,
+        onConfirm,
+        danger,
+        showCancel,
+      })
+    },
+    [],
+  )
 
-  const hideConfirm = () => {
+  const hideConfirm = useCallback(() => {
     setConfirmModal((prev) => ({ ...prev, isOpen: false, onConfirm: null }))
-  }
+  }, [])
 
   return {
     confirmModal,

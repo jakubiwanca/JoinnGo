@@ -2,14 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { getEvent, joinEvent, leaveEvent, deleteEvent, getEventComments } from '../api/events'
 import { useConfirm } from '../hooks/useConfirm'
-import { setupLeafletIcon } from '../utils/leafletSetup'
+
 import ParticipantsModal from '../components/ParticipantsModal'
 import Comments from '../components/Comments'
 import ConfirmModal from '../components/ConfirmModal'
 import { formatPolishDateTime } from '../utils/dateFormat'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
 
 import { getEventColorClass } from '../utils/eventHelpers'
 
