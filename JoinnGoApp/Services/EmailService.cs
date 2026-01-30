@@ -1,5 +1,6 @@
-using System.Net;
-using System.Net.Mail;
+using MimeKit;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 
 namespace JoinnGoApp.Services
 {
@@ -84,32 +85,8 @@ Jeśli nie zakładałeś konta w Join'nGo, zignoruj ten email.
 © 2026 Join'nGo. Wszystkie prawa zastrzeżone.
             ";
 
-            try
-            {
-                using var smtpClient = new SmtpClient(smtpHost, smtpPort)
-                {
-                    EnableSsl = true,
-                    Credentials = new NetworkCredential(smtpUsername, smtpPassword)
-                };
-
-                var mailMessage = new MailMessage
-                {
-                    From = new MailAddress(senderEmail, senderName),
-                    Subject = subject,
-                    Body = htmlContent,
-                    IsBodyHtml = true
-                };
-
-                mailMessage.To.Add(toEmail);
-
-                await smtpClient.SendMailAsync(mailMessage);
-                _logger.LogInformation($"Email confirmation sent successfully to {toEmail}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error sending email confirmation to {toEmail}");
-                throw;
-            }
+            await SendEmailAsync(toEmail, subject, htmlContent, plainTextContent, smtpHost, smtpPort, smtpUsername, smtpPassword, senderEmail, senderName);
+            _logger.LogInformation($"Email confirmation sent successfully to {toEmail}");
         }
 
 
@@ -169,30 +146,51 @@ Jeśli nie zakładałeś konta w Join'nGo, zignoruj ten email.
                 </html>
             ";
 
+            var plainTextContent = $@"
+Resetowanie hasła - Join'nGo
+
+Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta w Join'nGo.
+Aby ustawić nowe hasło, odwiedź poniższy link:
+{resetLink}
+
+Link jest ważny przez 1 godzinę.
+
+Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę wiadomość.
+
+© 2026 Join'nGo. Wszystkie prawa zastrzeżone.
+            ";
+
+            await SendEmailAsync(toEmail, subject, htmlContent, plainTextContent, smtpHost, smtpPort, smtpUsername, smtpPassword, senderEmail, senderName);
+            _logger.LogInformation($"Password reset email sent successfully to {toEmail}");
+        }
+
+        private async Task SendEmailAsync(string to, string subject, string htmlBody, string textBody, string host, int port, string username, string password, string fromEmail, string fromName)
+        {
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(fromName, fromEmail));
+            message.To.Add(MailboxAddress.Parse(to));
+            message.Subject = subject;
+
+            var builder = new BodyBuilder
+            {
+                HtmlBody = htmlBody,
+                TextBody = textBody
+            };
+            message.Body = builder.ToMessageBody();
+
+            using var client = new SmtpClient();
             try
             {
-                using var smtpClient = new SmtpClient(smtpHost, smtpPort)
-                {
-                    EnableSsl = true,
-                    Credentials = new NetworkCredential(smtpUsername, smtpPassword)
-                };
+                await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+                
+                await client.AuthenticateAsync(username, password);
 
-                var mailMessage = new MailMessage
-                {
-                    From = new MailAddress(senderEmail, senderName),
-                    Subject = subject,
-                    Body = htmlContent,
-                    IsBodyHtml = true
-                };
-
-                mailMessage.To.Add(toEmail);
-
-                await smtpClient.SendMailAsync(mailMessage);
-                _logger.LogInformation($"Password reset email sent successfully to {toEmail}");
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending password reset email to {toEmail}");
+                _logger.LogError(ex, $"Error sending email to {to}");
                 throw;
             }
         }
