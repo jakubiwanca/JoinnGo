@@ -7,23 +7,35 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using DotNetEnv;
 
-Env.Load();
+if (File.Exists(".env"))
+{
+    Env.Load();
+}
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Helper function to get environment variable from multiple sources
+string GetEnvVar(string key, string defaultValue = "")
+{
+    // Priority: 1. System environment, 2. DotNetEnv, 3. Default
+    return Environment.GetEnvironmentVariable(key) 
+           ?? Env.GetString(key, defaultValue);
+}
+
 builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 {
-    ["ConnectionStrings:DefaultConnection"] = $"Host={Env.GetString("DB_HOST", "localhost")};Port={Env.GetString("DB_PORT", "5432")};Database={Env.GetString("DB_NAME", "JoinnGoDb")};Username={Env.GetString("DB_USERNAME", "postgres")};Password={Env.GetString("DB_PASSWORD", "postgres")}",
-    ["Email:SmtpHost"] = Env.GetString("SMTP_HOST", "smtp.gmail.com"),
-    ["Email:SmtpPort"] = Env.GetString("SMTP_PORT", "587"),
-    ["Email:SmtpUsername"] = Env.GetString("SMTP_USERNAME", ""),
-    ["Email:SmtpPassword"] = Env.GetString("SMTP_PASSWORD", ""),
-    ["Email:SenderEmail"] = Env.GetString("SENDER_EMAIL", ""),
-    ["Email:SenderName"] = Env.GetString("SENDER_NAME", "Join'nGo"),
-    ["Jwt:Key"] = Env.GetString("JWT_KEY", "default_jwt_key_32_characters_min"),
-    ["Jwt:Issuer"] = Env.GetString("JWT_ISSUER", "JoinnGoApp"),
-    ["Jwt:Audience"] = Env.GetString("JWT_AUDIENCE", "JoinnGoAppUsers"),
-    ["Jwt:ExpiresInMinutes"] = Env.GetString("JWT_EXPIRES_MINUTES", "60"),
-    ["Frontend:BaseUrl"] = Env.GetString("FRONTEND_URL", "http://localhost:3000"),
+    ["ConnectionStrings:DefaultConnection"] = $"Host={GetEnvVar("DB_HOST", "localhost")};Port={GetEnvVar("DB_PORT", "5432")};Database={GetEnvVar("DB_NAME", "JoinnGoDb")};Username={GetEnvVar("DB_USERNAME", "postgres")};Password={GetEnvVar("DB_PASSWORD", "postgres")}",
+    ["Email:SmtpHost"] = GetEnvVar("SMTP_HOST", "smtp.gmail.com"),
+    ["Email:SmtpPort"] = GetEnvVar("SMTP_PORT", "587"),
+    ["Email:SmtpUsername"] = GetEnvVar("SMTP_USERNAME", ""),
+    ["Email:SmtpPassword"] = GetEnvVar("SMTP_PASSWORD", ""),
+    ["Email:SenderEmail"] = GetEnvVar("SENDER_EMAIL", ""),
+    ["Email:SenderName"] = GetEnvVar("SENDER_NAME", "Join'nGo"),
+    ["Jwt:Key"] = GetEnvVar("JWT_KEY", "default_jwt_key_32_characters_min"),
+    ["Jwt:Issuer"] = GetEnvVar("JWT_ISSUER", "JoinnGoApp"),
+    ["Jwt:Audience"] = GetEnvVar("JWT_AUDIENCE", "JoinnGoAppUsers"),
+    ["Jwt:ExpiresInMinutes"] = GetEnvVar("JWT_EXPIRES_MINUTES", "60"),
+    ["Frontend:BaseUrl"] = GetEnvVar("FRONTEND_URL", "http://localhost:3000"),
 });
 
 builder.Services.AddDbContext<MyDbContext>(options =>
@@ -68,11 +80,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+var frontendUrl = builder.Configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy => policy
-            .WithOrigins("http://localhost:3000")
+            .WithOrigins(frontendUrl, "http://localhost:3000")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());

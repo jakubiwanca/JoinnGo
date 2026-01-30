@@ -1,0 +1,24 @@
+# Build artifacts
+bin/
+obj/
+out/
+
+# Environment files
+.env
+.env.*
+
+# IDE
+.vs/
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+README.md
+
+# Temporary files
+*.tmp
+*.log

@@ -10,6 +10,52 @@ services:
       - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - joinngo-network
+
+  backend:
+    build:
+      context: ./JoinnGoApp
+      dockerfile: Dockerfile
+    container_name: JoinnGoApp
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=JoinnGoDb
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_NAME=${SENDER_NAME:-JoinnGo}
+      - JWT_KEY=${JWT_KEY:-UMgkjxEdgj7CzVpefw8V0zaA1ZqqCv7q1OjwnoXc3BY=}
+      - JWT_ISSUER=${JWT_ISSUER:-JoinnGoApp}
+      - JWT_AUDIENCE=${JWT_AUDIENCE:-JoinnGoAppUsers}
+      - JWT_EXPIRES_MINUTES=${JWT_EXPIRES_MINUTES:-60}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+    ports:
+      - '5000:5000'
+    depends_on:
+      - db
+    networks:
+      - joinngo-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./joinngo-front
+      dockerfile: Dockerfile
+    container_name: JoinnGoFront
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+    networks:
+      - joinngo-network
+    restart: unless-stopped
 
   pgadmin:
     image: dpage/pgadmin4
@@ -20,7 +66,13 @@ services:
     ports:
       - '8080:80'
     volumes:
-      - pgadmin_data:/var/lib/pgadmin # zapis konfiguracji pgAdmin
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - joinngo-network
+
+networks:
+  joinngo-network:
+    driver: bridge
 
 volumes:
   postgres_data:
