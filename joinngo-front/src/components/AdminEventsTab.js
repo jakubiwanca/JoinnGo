@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAdminAllEvents, deleteEvent } from '../api/events'
 import { formatPolishDateTime } from '../utils/dateFormat'
@@ -16,11 +16,7 @@ const AdminEventsTab = ({ onEventDeleted }) => {
     creatorId: null,
   })
 
-  useEffect(() => {
-    fetchEvents()
-  }, [page])
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true)
       const data = await getAdminAllEvents(page)
@@ -36,7 +32,11 @@ const AdminEventsTab = ({ onEventDeleted }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page])
+
+  useEffect(() => {
+    fetchEvents()
+  }, [fetchEvents])
 
   const handleDelete = async (event) => {
     const isRecurring = event.isRecurring

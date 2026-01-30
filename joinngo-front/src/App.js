@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 
 import Home from './pages/Home'
 import LoginPage from './pages/LoginPage'
@@ -48,27 +48,7 @@ function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [rejectedEvents, setRejectedEvents] = useState([])
 
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    checkSession()
-  }, [])
-
-  const checkSession = async () => {
-    try {
-      const userData = await getProfile()
-      setUser(userData)
-      if (userData) {
-        checkRejections()
-      }
-    } catch (err) {
-      setUser(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const checkRejections = async () => {
+  const checkRejections = useCallback(async () => {
     try {
       const res = await apiClient.get('event/my-joined')
       if (res.data) {
@@ -80,7 +60,25 @@ function App() {
     } catch (err) {
       console.error('Błąd sprawdzania odrzuconych:', err)
     }
-  }
+  }, [])
+
+  const checkSession = useCallback(async () => {
+    try {
+      const userData = await getProfile()
+      setUser(userData)
+      if (userData) {
+        checkRejections()
+      }
+    } catch (err) {
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [checkRejections])
+
+  useEffect(() => {
+    checkSession()
+  }, [checkSession])
 
   const handleClearRejections = async () => {
     try {

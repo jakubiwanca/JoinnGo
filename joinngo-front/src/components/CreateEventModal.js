@@ -81,7 +81,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
 
       lastAutoSelectedDayRef.current = dayIndex
     }
-  }, [formData.date, isRecurring, recurrence.type])
+  }, [formData.date, isRecurring, recurrence.type, recurrence.daysOfWeek])
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 

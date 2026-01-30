@@ -16,15 +16,15 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
     danger: false,
   })
 
-  const showConfirm = (title, message, onConfirm, danger = false) => {
+  const showConfirm = React.useCallback((title, message, onConfirm, danger = false) => {
     setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
-  }
+  }, [])
 
-  const hideConfirm = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false, onConfirm: null })
-  }
+  const hideConfirm = React.useCallback(() => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false, onConfirm: null }))
+  }, [])
 
-  const fetchParticipants = async () => {
+  const fetchParticipants = React.useCallback(async () => {
     try {
       const response = await apiClient.get(`event/${eventId}/participants`)
       setParticipants(response.data)
@@ -37,11 +37,11 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
     } finally {
       setLoading(false)
     }
-  }
+  }, [eventId, onClose, showConfirm, hideConfirm])
 
   useEffect(() => {
     fetchParticipants()
-  }, [eventId])
+  }, [fetchParticipants])
 
   const handleAccept = async (userId) => {
     try {
@@ -268,19 +268,6 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
       />
     </div>
   )
-}
-
-function getStatusLabel(status) {
-  switch (status) {
-    case 'Interested':
-      return 'Oczekuje na akceptację ⏳'
-    case 'Confirmed':
-      return 'Potwierdzony ✅'
-    case 'Rejected':
-      return 'Odrzucony ❌'
-    default:
-      return status
-  }
 }
 
 export default ParticipantsModal

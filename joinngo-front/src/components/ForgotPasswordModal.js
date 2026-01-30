@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { forgotPassword } from '../api/auth'
-import { useConfirm } from '../hooks/useConfirm'
 
 function ForgotPasswordModal({ onClose }) {
   const [email, setEmail] = useState('')
@@ -26,7 +25,7 @@ function ForgotPasswordModal({ onClose }) {
     setLoading(true)
 
     try {
-      const message = await forgotPassword(email)
+      await forgotPassword(email)
       setSuccess(true)
     } catch (err) {
       console.error(err)

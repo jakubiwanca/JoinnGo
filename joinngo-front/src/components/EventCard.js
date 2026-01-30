@@ -63,7 +63,6 @@ const EventCard = ({
   }
 
   const isConfirmed = status === 1 || status === 'Confirmed'
-  const isPending = status === 0 || status === 'Interested' || status === 'Pending'
   const isRejected = status === 2 || status === 'Rejected'
 
   const cardColorClass = getEventColorClass(event, isMyEvent, isJoined, status)
