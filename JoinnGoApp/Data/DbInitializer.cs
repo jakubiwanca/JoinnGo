@@ -9,21 +9,33 @@ namespace JoinnGoApp.Data
         {
             context.Database.EnsureCreated();
 
-            if (context.Users.Any(u => u.Role == "Admin"))
+            var passwordHasher = new PasswordHasher<User>();
+            if (!context.Users.Any(u => u.Role == "Admin"))
             {
-                return;
+                var adminUser = new User
+                {
+                    Email = "admin@example.com",
+                    Username = "admin",
+                    Role = "Admin",
+                    EmailConfirmed = true
+                };
+                adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "Admin123!");
+                context.Users.Add(adminUser);
             }
 
-            var passwordHasher = new PasswordHasher<User>();
-            var adminUser = new User
+            if (!context.Users.Any(u => u.Email == "jan.kowalski@example.com"))
             {
-                Email = "admin@example.com",
-                Role = "Admin"
-            };
+                var testUser = new User
+                {
+                    Email = "jan.kowalski@example.com",
+                    Username = "",
+                    Role = "User",
+                    EmailConfirmed = true
+                };
+                testUser.PasswordHash = passwordHasher.HashPassword(testUser, "User123!");
+                context.Users.Add(testUser);
+            }
 
-            adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "admin123");
-
-            context.Users.Add(adminUser);
             context.SaveChanges();
         }
     }
