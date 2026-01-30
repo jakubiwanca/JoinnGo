@@ -60,6 +60,7 @@ jest.mock('react-datepicker', () => ({ selected, onChange, placeholderText }) =>
 ))
 
 describe('TitleField', () => {
+  // Sprawdzenie, czy pole tytułu renderuje się z etykietą i placeholderem
   it('renders with label and input', () => {
     const handleChange = jest.fn()
     render(<TitleField value="" onChange={handleChange} />)
@@ -68,12 +69,14 @@ describe('TitleField', () => {
     expect(screen.getByPlaceholderText('Np. Mecz piłki nożnej')).toBeInTheDocument()
   })
 
+  // Sprawdzenie, czy pole wyświetla przekazaną wartość
   it('displays the provided value', () => {
     render(<TitleField value="Test Event" onChange={jest.fn()} />)
 
     expect(screen.getByDisplayValue('Test Event')).toBeInTheDocument()
   })
 
+  // Weryfikacja, czy funkcja onChange jest wywoływana podczas wpisywania tekstu
   it('calls onChange when typing', () => {
     const handleChange = jest.fn()
     render(<TitleField value="" onChange={handleChange} />)
@@ -84,12 +87,14 @@ describe('TitleField', () => {
     expect(handleChange).toHaveBeenCalled()
   })
 
+  // Sprawdzenie wyświetlania komunikatu o błędzie dla tytułu
   it('displays error message when provided', () => {
     render(<TitleField value="" onChange={jest.fn()} error="Tytuł jest wymagany" />)
 
     expect(screen.getByText('Tytuł jest wymagany')).toBeInTheDocument()
   })
 
+  // Upewnia się, że błąd nie jest wyświetlany, gdy pole jest poprawne
   it('does not display error when not provided', () => {
     render(<TitleField value="" onChange={jest.fn()} />)
 
@@ -98,6 +103,7 @@ describe('TitleField', () => {
 })
 
 describe('CategoryField', () => {
+  // Sprawdzenie, czy selektor kategorii renderuje się z etykietą i opcją domyślną
   it('renders with label and select', () => {
     render(<CategoryField value="" onChange={jest.fn()} />)
 
@@ -105,6 +111,7 @@ describe('CategoryField', () => {
     expect(screen.getByText('Wybierz kategorię')).toBeInTheDocument()
   })
 
+  // Sprawdzenie, czy wszystkie zdefiniowane kategorie są dostępne na liście
   it('renders all category options', () => {
     render(<CategoryField value="" onChange={jest.fn()} />)
 
@@ -113,6 +120,7 @@ describe('CategoryField', () => {
     expect(screen.getByText('Rozrywka')).toBeInTheDocument()
   })
 
+  // Sprawdzenie, czy zmiana kategorii wywołuje funkcję onChange
   it('calls onChange when selecting a category', () => {
     const handleChange = jest.fn()
     render(<CategoryField value="" onChange={handleChange} />)
@@ -123,6 +131,7 @@ describe('CategoryField', () => {
     expect(handleChange).toHaveBeenCalled()
   })
 
+  // Sprawdzenie wyświetlania błędu dla kategorii
   it('displays error message when provided', () => {
     render(<CategoryField value="" onChange={jest.fn()} error="Wybierz kategorię" />)
 
@@ -131,6 +140,7 @@ describe('CategoryField', () => {
 })
 
 describe('DescriptionField', () => {
+  // Sprawdzenie, czy pole opisu (textarea) renderuje się poprawnie
   it('renders with label and textarea', () => {
     render(<DescriptionField value="" onChange={jest.fn()} />)
 
@@ -138,12 +148,14 @@ describe('DescriptionField', () => {
     expect(screen.getByPlaceholderText('Opisz szczegóły...')).toBeInTheDocument()
   })
 
+  // Sprawdzenie, czy przekazany opis jest widoczny w polu
   it('displays the provided value', () => {
     render(<DescriptionField value="Event description" onChange={jest.fn()} />)
 
     expect(screen.getByDisplayValue('Event description')).toBeInTheDocument()
   })
 
+  // Weryfikacja wywołania onChange podczas edycji opisu
   it('calls onChange when typing', () => {
     const handleChange = jest.fn()
     render(<DescriptionField value="" onChange={handleChange} />)
@@ -154,6 +166,7 @@ describe('DescriptionField', () => {
     expect(handleChange).toHaveBeenCalled()
   })
 
+  // Sprawdzenie wyświetlania komunikatu o błędzie dla opisu
   it('displays error message when provided', () => {
     render(<DescriptionField value="" onChange={jest.fn()} error="Opis jest wymagany" />)
 
@@ -162,6 +175,7 @@ describe('DescriptionField', () => {
 })
 
 describe('PrivateCheckbox', () => {
+  // Sprawdzenie renderowania etykiety checkboxa prywatności
   it('renders with label', () => {
     render(<PrivateCheckbox checked={false} onChange={jest.fn()} />)
 
@@ -182,6 +196,7 @@ describe('PrivateCheckbox', () => {
     expect(checkbox).toBeChecked()
   })
 
+  // Weryfikacja zmiany stanu checkboxa po kliknięciu
   it('calls onChange when clicked', () => {
     const handleChange = jest.fn()
     render(<PrivateCheckbox checked={false} onChange={handleChange} />)
@@ -194,6 +209,7 @@ describe('PrivateCheckbox', () => {
 })
 
 describe('MaxParticipantsField', () => {
+  // Sprawdzenie renderowania pola limitu uczestników
   it('renders with label', () => {
     render(<MaxParticipantsField value={0} onChange={jest.fn()} />)
 
@@ -206,6 +222,7 @@ describe('MaxParticipantsField', () => {
     expect(screen.getByDisplayValue('10')).toBeInTheDocument()
   })
 
+  // Weryfikacja wywołania onChange przy zmianie liczby uczestników
   it('calls onChange when value changes', () => {
     const handleChange = jest.fn()
     render(<MaxParticipantsField value={0} onChange={handleChange} />)
@@ -225,6 +242,7 @@ describe('MaxParticipantsField', () => {
 })
 
 describe('RecurringCheckbox', () => {
+  // Sprawdzenie renderowania etykiety checkboxa wydarzenia cyklicznego
   it('renders with label', () => {
     render(<RecurringCheckbox checked={false} onChange={jest.fn()} />)
 
@@ -245,6 +263,7 @@ describe('RecurringCheckbox', () => {
     expect(checkbox).toBeChecked()
   })
 
+  // Weryfikacja wywołania onChange po kliknięciu w checkbox cykliczności
   it('calls onChange when clicked', () => {
     const handleChange = jest.fn()
     render(<RecurringCheckbox checked={false} onChange={handleChange} />)
@@ -265,6 +284,7 @@ describe('RecurrenceConfig', () => {
     maxOccurrences: null,
   }
 
+  // Sprawdzenie obecności selektora częstotliwości (tygodniowo/miesięcznie)
   it('renders frequency selector', () => {
     render(
       <RecurrenceConfig
@@ -280,6 +300,7 @@ describe('RecurrenceConfig', () => {
     expect(screen.getByText('Miesięcznie')).toBeInTheDocument()
   })
 
+  // Sprawdzenie listy dni tygodnia przy wyborze cyklu tygodniowego
   it('renders day of week checkboxes for weekly recurrence', () => {
     render(
       <RecurrenceConfig
@@ -295,6 +316,7 @@ describe('RecurrenceConfig', () => {
     expect(screen.getByText('Wt')).toBeInTheDocument()
   })
 
+  // Sprawdzenie, że dni tygodnia nie są widoczne przy cyklu miesięcznym
   it('does not render day of week checkboxes for monthly recurrence', () => {
     render(
       <RecurrenceConfig
@@ -308,6 +330,7 @@ describe('RecurrenceConfig', () => {
     expect(screen.queryByText('Dni tygodnia:')).not.toBeInTheDocument()
   })
 
+  // Weryfikacja poprawnej etykiety interwału dla cyklu tygodniowego
   it('renders interval input with correct label for weekly', () => {
     render(
       <RecurrenceConfig
@@ -321,6 +344,7 @@ describe('RecurrenceConfig', () => {
     expect(screen.getByText('Co ile tygodni:')).toBeInTheDocument()
   })
 
+  // Weryfikacja poprawnej etykiety interwału dla cyklu miesięcznego
   it('renders interval input with correct label for monthly', () => {
     render(
       <RecurrenceConfig
@@ -334,6 +358,7 @@ describe('RecurrenceConfig', () => {
     expect(screen.getByText('Co ile miesięcy:')).toBeInTheDocument()
   })
 
+  // Sprawdzenie opcji zakończenia cyklu (Nigdy / Do daty)
   it('renders end date options', () => {
     render(
       <RecurrenceConfig
@@ -349,6 +374,7 @@ describe('RecurrenceConfig', () => {
     expect(screen.getByText('Do daty')).toBeInTheDocument()
   })
 
+  // Weryfikacja aktualizacji stanu przy zmianie częstotliwości
   it('calls setRecurrence when frequency changes', () => {
     const setRecurrence = jest.fn()
     render(
@@ -366,6 +392,7 @@ describe('RecurrenceConfig', () => {
     expect(setRecurrence).toHaveBeenCalledWith({ ...defaultRecurrence, type: 2 })
   })
 
+  // Weryfikacja aktualizacji interwału czasowego w stanie
   it('calls setRecurrence when interval changes', () => {
     const setRecurrence = jest.fn()
     render(
@@ -383,6 +410,7 @@ describe('RecurrenceConfig', () => {
     expect(setRecurrence).toHaveBeenCalledWith({ ...defaultRecurrence, interval: 2 })
   })
 
+  // Sprawdzenie, czy opcja "Nigdy" jest zaznaczona przy braku daty końcowej
   it('shows "Nigdy" radio as checked when endDate is null', () => {
     render(
       <RecurrenceConfig
