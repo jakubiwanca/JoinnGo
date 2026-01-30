@@ -7,7 +7,11 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using DotNetEnv;
 
-if (File.Exists(".env"))
+if (File.Exists("/etc/secrets/.env"))
+{
+    Env.Load("/etc/secrets/.env");
+}
+else if (File.Exists(".env"))
 {
     Env.Load();
 }
