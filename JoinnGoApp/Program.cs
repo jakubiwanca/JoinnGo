@@ -22,7 +22,8 @@ string GetEnvVar(string key, string defaultValue = "")
 
 builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 {
-    ["ConnectionStrings:DefaultConnection"] = $"Host={GetEnvVar("DB_HOST", "localhost")};Port={GetEnvVar("DB_PORT", "5432")};Database={GetEnvVar("DB_NAME", "JoinnGoDb")};Username={GetEnvVar("DB_USERNAME", "postgres")};Password={GetEnvVar("DB_PASSWORD", "postgres")}",
+    ["ConnectionStrings:DefaultConnection"] = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+                                              ?? $"Host={GetEnvVar("DB_HOST", "localhost")};Port={GetEnvVar("DB_PORT", "5432")};Database={GetEnvVar("DB_NAME", "JoinnGoDb")};Username={GetEnvVar("DB_USERNAME", "postgres")};Password={GetEnvVar("DB_PASSWORD", "postgres")}",
     ["Email:SmtpHost"] = GetEnvVar("SMTP_HOST", "smtp.gmail.com"),
     ["Email:SmtpPort"] = GetEnvVar("SMTP_PORT", "587"),
     ["Email:SmtpUsername"] = GetEnvVar("SMTP_USERNAME", ""),
