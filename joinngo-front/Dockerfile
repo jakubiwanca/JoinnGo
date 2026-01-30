@@ -12,6 +12,7 @@ RUN npm ci --only=production
 COPY . ./
 
 # Build the application
+ENV CI=false
 RUN npm run build
 
 # Production stage with nginx

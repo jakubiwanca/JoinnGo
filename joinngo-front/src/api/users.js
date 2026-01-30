@@ -26,3 +26,8 @@ export async function updateUser(id, data) {
   const response = await apiClient.put(`/User/${id}`, data)
   return response.data
 }
+
+export async function getMyFollowers() {
+  const response = await apiClient.get('/User/my-followers')
+  return response.data
+}

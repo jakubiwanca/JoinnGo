@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPublicProfile, toggleFollow } from '../api/users'
+import { getPublicProfile, toggleFollow, getMyFollowers } from '../api/users'
 import { getEventsByUser, joinEvent, leaveEvent } from '../api/events'
 import EventCard from '../components/EventCard'
 import EditEventModal from '../components/EditEventModal'
@@ -25,7 +25,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
     setShowFollowersModal(true)
     setFollowersListLoading(true)
     try {
-      const list = await import('../api/users').then((module) => module.getMyFollowers())
+      const list = await getMyFollowers()
       setFollowersList(list)
     } catch (err) {
       console.error(err)
