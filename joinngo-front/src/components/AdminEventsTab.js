@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { getAdminAllEvents, deleteEvent } from '../api/events'
 import { formatPolishDateTime } from '../utils/dateFormat'
 import ParticipantsModal from './ParticipantsModal'
+import ConfirmModal from './ConfirmModal'
+import { useConfirm } from '../hooks/useConfirm'
 
 const AdminEventsTab = ({ onEventDeleted }) => {
   const navigate = useNavigate()
@@ -15,6 +17,8 @@ const AdminEventsTab = ({ onEventDeleted }) => {
     eventId: null,
     creatorId: null,
   })
+
+  const { confirmModal, showConfirm, hideConfirm } = useConfirm()
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -40,29 +44,41 @@ const AdminEventsTab = ({ onEventDeleted }) => {
 
   const handleDelete = async (event) => {
     const isRecurring = event.isRecurring
-    let deleteSeries = false
 
     if (isRecurring) {
-      if (
-        window.confirm(
-          `To wydarzenie jest cykliczne. Czy chcesz usunąć CAŁĄ SERIĘ wydarzeń?\n(Kliknij OK, aby usunąć serię. Kliknij Anuluj, aby przerwać)`,
-        )
-      ) {
-        deleteSeries = true
-      } else {
-        return
-      }
+      showConfirm(
+        'Usuń wydarzenie cykliczne',
+        'To wydarzenie jest cykliczne. Czy chcesz usunąć CAŁĄ SERIĘ wydarzeń?\n(Tak = cała seria, Nie/Anuluj = przerwij)',
+        async () => {
+          hideConfirm()
+          try {
+            await deleteEvent(event.id, true)
+            setEvents((prev) => prev.filter((e) => e.id !== event.id))
+            if (onEventDeleted) onEventDeleted()
+          } catch (err) {
+            console.error(err)
+            showConfirm('Błąd', 'Nie udało się usunąć serii.', hideConfirm)
+          }
+        },
+        true, // danger
+      )
     } else {
-      if (!window.confirm('Czy na pewno chcesz usunąć to wydarzenie?')) return
-    }
-
-    try {
-      await deleteEvent(event.id, deleteSeries)
-      setEvents((prev) => prev.filter((e) => e.id !== event.id))
-      if (onEventDeleted) onEventDeleted()
-    } catch (err) {
-      alert('Nie udało się usunąć wydarzenia.')
-      console.error(err)
+      showConfirm(
+        'Usuń wydarzenie',
+        'Czy na pewno chcesz usunąć to wydarzenie?',
+        async () => {
+          hideConfirm()
+          try {
+            await deleteEvent(event.id, false)
+            setEvents((prev) => prev.filter((e) => e.id !== event.id))
+            if (onEventDeleted) onEventDeleted()
+          } catch (err) {
+            console.error(err)
+            showConfirm('Błąd', 'Nie udało się usunąć wydarzenia.', hideConfirm)
+          }
+        },
+        true,
+      )
     }
   }
 
@@ -182,6 +198,16 @@ const AdminEventsTab = ({ onEventDeleted }) => {
           onStatusChange={fetchEvents}
         />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={hideConfirm}
+        showCancel={confirmModal.showCancel}
+        danger={confirmModal.danger}
+      />
 
       {totalPages > 1 && (
         <div
