@@ -218,9 +218,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
       </h3>
 
       {events.length === 0 ? (
-        <p style={{ color: '#6b7280' }}>
-          Ten użytkownik nie utworzył jeszcze żadnych publicznych wydarzeń.
-        </p>
+        <p style={{ color: '#6b7280' }}>Ten użytkownik nie utworzył jeszcze żadnych wydarzeń.</p>
       ) : (
         <div className="events-grid">
           {events.map((event) => (
