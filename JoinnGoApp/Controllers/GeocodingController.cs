@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[AllowAnonymous]
 public class GeocodingController : ControllerBase
 {
     private readonly IHttpClientFactory _httpClientFactory;
@@ -21,7 +21,10 @@ public class GeocodingController : ControllerBase
 
         var client = _httpClientFactory.CreateClient();
         
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("JoinnGoApp/1.0 (contact: [EMAIL_ADDRESS])");
+        client.DefaultRequestHeaders.UserAgent.Clear();
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 JoinnGoApp/1.0");
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.Add("Referer", "https://github.com/jakubiwanca/JoinnGo");
         client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("pl"));
 
         var url = $"https://nominatim.openstreetmap.org/search?format=json&q={Uri.EscapeDataString(q)}&addressdetails=1&limit=10&countrycodes=pl";

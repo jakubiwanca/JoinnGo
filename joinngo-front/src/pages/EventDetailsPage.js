@@ -195,7 +195,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
   let manageButton = null
   let participationButton = null
 
-  if (isOrganizer || role === 'Admin') {
+  if ((isOrganizer || role === 'Admin') && !event.isExpired) {
     manageButton = (
       <button
         className="btn-secondary"
@@ -246,7 +246,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
           {actionLoading ? 'Przetwarzanie...' : buttonText}
         </button>
       )
-    } else {
+    } else if (!event.isExpired) {
       const buttonText = event.isPrivate ? 'Wyślij prośbę' : 'Dołącz do wydarzenia'
 
       participationButton = (
@@ -492,6 +492,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
             onCommentDeleted={handleCommentDeleted}
             currentUserId={currentUserId}
             role={role}
+            isExpired={event.isExpired}
           />
         )}
       </div>

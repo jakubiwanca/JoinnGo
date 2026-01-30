@@ -444,6 +444,9 @@ public class EventController : ControllerBase
         if (eventItem == null || (eventItem.CreatorId != userId && !isAdmin))
             return Forbid("Nie jesteś organizatorem tego wydarzenia ani administratorem.");
 
+        if (eventItem.Date < DateTime.UtcNow)
+            return BadRequest("Nie można zarządzać uczestnikami wygasłego wydarzenia.");
+
         var participant = await _context.EventParticipants
             .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == participantId);
 
@@ -474,6 +477,9 @@ public class EventController : ControllerBase
         {
             return Forbid("Nie masz uprawnień do usuwania uczestników z tego wydarzenia.");
         }
+
+        if (eventItem.Date < DateTime.UtcNow)
+            return BadRequest("Nie można usuwać uczestników z wygasłego wydarzenia.");
 
         var participant = await _context.EventParticipants
             .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == participantId);
@@ -578,11 +584,11 @@ public class EventController : ControllerBase
                     .OrderBy(sub => sub.Date)
                     .Select(sub => sub.Id)
                     .FirstOrDefault()) ||
-                e.Id == (_context.Events
+                (e.Id == (_context.Events
                     .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId)
                     .OrderByDescending(sub => sub.Date)
                     .Select(sub => sub.Id)
-                    .FirstOrDefault())
+                    .FirstOrDefault()) && !_context.Events.Any(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.Date >= now))
             )
             .Where(e => 
                 e.RecurrenceGroupId == null 
@@ -642,8 +648,23 @@ public class EventController : ControllerBase
         if (userIdClaim == null) return Unauthorized();
         var userId = int.Parse(userIdClaim.Value);
 
+        var now = DateTime.UtcNow;
+
         var events = await _context.Events
             .Where(e => e.CreatorId != userId && e.EventParticipants.Any(ep => ep.UserId == userId))
+            .Where(e =>
+                e.RecurrenceGroupId == null ||
+                e.Id == (_context.Events
+                    .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.Date >= now && sub.EventParticipants.Any(ep => ep.UserId == userId))
+                    .OrderBy(sub => sub.Date)
+                    .Select(sub => sub.Id)
+                    .FirstOrDefault()) ||
+                (e.Id == (_context.Events
+                    .Where(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.EventParticipants.Any(ep => ep.UserId == userId))
+                    .OrderByDescending(sub => sub.Date)
+                    .Select(sub => sub.Id)
+                    .FirstOrDefault()) && !_context.Events.Any(sub => sub.RecurrenceGroupId == e.RecurrenceGroupId && sub.Date >= now && sub.EventParticipants.Any(ep => ep.UserId == userId)))
+            )
             .Include(e => e.Creator)
             .OrderByDescending(e => e.Date)
             .Select(e => new
@@ -667,7 +688,12 @@ public class EventController : ControllerBase
                     .Select(ep => ep.Status.ToString())
                     .FirstOrDefault(),
                 ParticipantsCount = e.EventParticipants.Count(ep => ep.Status == ParticipantStatus.Confirmed),
-                IsRecurring = e.RecurrenceGroupId != null
+                IsRecurring = e.RecurrenceGroupId != null,
+                IsExpired = e.RecurrenceGroupId == null 
+                    ? e.Date < now 
+                    : _context.Events
+                        .Where(ev => ev.RecurrenceGroupId == e.RecurrenceGroupId)
+                        .Max(ev => ev.Date) < now
             })
             .ToListAsync();
 
@@ -968,6 +994,12 @@ public class EventController : ControllerBase
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null) return Unauthorized();
         var userId = int.Parse(userIdClaim.Value);
+
+        var eventItem = await _context.Events.FindAsync(eventId);
+        if (eventItem != null && eventItem.Date < DateTime.UtcNow)
+        {
+            return BadRequest("Nie można dodawać komentarzy do wygasłego wydarzenia.");
+        }
 
         var participant = await _context.EventParticipants
             .FirstOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == userId);

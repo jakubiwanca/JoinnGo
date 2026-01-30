@@ -157,6 +157,22 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     return true
   }
 
+  const filterTime = (time) => {
+    const now = new Date()
+    const selectedDate = formData.date || now
+    if (selectedDate.toDateString() === now.toDateString()) {
+      const nowHours = now.getHours()
+      const nowMinutes = now.getMinutes()
+      const timeHours = time.getHours()
+      const timeMinutes = time.getMinutes()
+
+      if (timeHours > nowHours) return true
+      if (timeHours === nowHours) return timeMinutes >= nowMinutes
+      return false
+    }
+    return true
+  }
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     let newValue = value
@@ -200,6 +216,9 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     }
     if (!formData.location || formData.location.trim() === '') {
       errors.location = 'Proszę wpisać dokładne miejsce.'
+    }
+    if (formData.date && formData.date < new Date()) {
+      errors.date = 'Data wydarzenia nie może być z przeszłości.'
     }
 
     if (Object.keys(errors).length > 0) {
@@ -335,6 +354,8 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
               value={formData.date}
               onChange={(date) => setFormData((prev) => ({ ...prev, date }))}
               error={fieldErrors.date}
+              minDate={new Date()}
+              filterTime={filterTime}
             />
             <LocationFields
               city={formData.city}

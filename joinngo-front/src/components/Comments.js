@@ -12,6 +12,7 @@ const Comments = ({
   onCommentDeleted,
   currentUserId,
   role,
+  isExpired,
 }) => {
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -197,27 +198,33 @@ const Comments = ({
           ))
         )}
       </div>
-      <div className="comment-form">
-        <form onSubmit={handleSubmit}>
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Napisz komentarz..."
-            required
-            style={{
-              width: '100%',
-              minHeight: '80px',
-              padding: '10px',
-              marginBottom: '10px',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-            }}
-          />
-          <button type="submit" className="btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? 'Publikowanie...' : 'Opublikuj'}
-          </button>
-        </form>
-      </div>
+      {!isExpired ? (
+        <div className="comment-form">
+          <form onSubmit={handleSubmit}>
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Napisz komentarz..."
+              required
+              style={{
+                width: '100%',
+                minHeight: '80px',
+                padding: '10px',
+                marginBottom: '10px',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+              }}
+            />
+            <button type="submit" className="btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Publikowanie...' : 'Opublikuj'}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <p style={{ color: '#6b7280', fontStyle: 'italic', textAlign: 'center' }}>
+          Nie można dodawać komentarzy do wygasłego wydarzenia.
+        </p>
+      )}
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}
