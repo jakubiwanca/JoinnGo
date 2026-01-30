@@ -118,6 +118,21 @@ docker-compose logs -f frontend
 - Zaloguj się
 - Utwórz wydarzenie
 
+### 4.4 Domyślne konta testowe
+
+Po pierwszym uruchomieniu aplikacja utworzy dwóch użytkowników:
+
+1.  **Administrator**:
+    - Email: `admin@example.com`
+    - Hasło: `admin123`
+    - Rola: Admin
+
+2.  **Użytkownik Testowy**:
+    - Email: `jan.kowalski@example.com`
+    - Hasło: `user123`
+    - Rola: User
+    - _Uwaga: Po pierwszym zalogowaniu należy uzupełnić nazwę użytkownika w profilu._
+
 ## Krok 5: Zatrzymanie aplikacji
 
 ```bash

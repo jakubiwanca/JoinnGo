@@ -7,7 +7,7 @@ Aplikacja do zarządzania i dołączania do wydarzeń.
 Aby uruchomić projekt, upewnij się, że masz zainstalowane:
 
 1.  **Git** - do pobrania repozytorium.
-2.  **.NET SDK** (wersja 7.0 lub nowsza) - do uruchomienia backendu.
+2.  **.NET SDK** (wersja 8.0 lub nowsza) - do uruchomienia backendu.
     - Możesz sprawdzić wersję wpisując: `dotnet --version`
 3.  **Node.js** (wersja 16+ lub nowsza) oraz **npm** - do uruchomienia frontendu.
     - Sprawdź: `node -v` oraz `npm -v`
@@ -24,7 +24,7 @@ Projekt korzysta z bazy danych **PostgreSQL**. Najłatwiej uruchomić ją przez 
 2.  Uruchom kontener z bazą danych:
 
     ```bash
-    docker-compose up -d
+    docker-compose up -d db
     ```
 
     - To uruchomi bazę danych dostępną na porcie `5433` (wg konfiguracji w `docker-compose.yaml` i `JoinnGoApp/appsettings.json`).

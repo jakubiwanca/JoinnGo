@@ -14,10 +14,8 @@ if (File.Exists(".env"))
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Helper function to get environment variable from multiple sources
 string GetEnvVar(string key, string defaultValue = "")
 {
-    // Priority: 1. System environment, 2. DotNetEnv, 3. Default
     return Environment.GetEnvironmentVariable(key) 
            ?? Env.GetString(key, defaultValue);
 }
@@ -151,14 +149,36 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<MyDbContext>();
-        JoinnGoApp.Data.DbInitializer.Initialize(context);
+        int retries = 5;
+        while (retries > 0)
+        {
+            try 
+            {
+                JoinnGoApp.Data.DbInitializer.Initialize(context);
+                break; 
+            }
+            catch (Npgsql.PostgresException) 
+            {
+                retries--;
+                if (retries == 0) throw;
+                logger.LogWarning($"Database not ready yet. Retrying in 2 seconds... ({5-retries}/5)");
+                System.Threading.Thread.Sleep(2000);
+            }
+            catch (System.Net.Sockets.SocketException) 
+            {
+                retries--;
+                if (retries == 0) throw;
+                logger.LogWarning($"Database connection refused. Retrying in 2 seconds... ({5-retries}/5)");
+                System.Threading.Thread.Sleep(2000);
+            }
+        }
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred creating the DB.");
     }
 }

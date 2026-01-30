@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
+
 using System.Text;
 using System.Threading.Tasks;
 using JoinnGoApp.Data;
@@ -86,16 +86,6 @@ public class UserController : ControllerBase
             isPasswordValid = true;
             if (verify == PasswordVerificationResult.SuccessRehashNeeded)
             {
-                user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
-                await _context.SaveChangesAsync();
-            }
-        }
-        else 
-        {
-            var sha = HashSha256(dto.Password);
-            if (sha == user.PasswordHash)
-            {
-                isPasswordValid = true;
                 user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
                 await _context.SaveChangesAsync();
             }
@@ -245,13 +235,7 @@ public class UserController : ControllerBase
         return tokenHandler.WriteToken(token);
     }
 
-    private string HashSha256(string password)
-    {
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(password);
-        var hash = sha256.ComputeHash(bytes);
-        return Convert.ToBase64String(hash);
-    }
+
 
     [Authorize]
     [HttpGet("profile")]
@@ -415,14 +399,7 @@ public class UserController : ControllerBase
         {
             isCurrentPasswordValid = true;
         }
-        else 
-        {
-            var sha = HashSha256(dto.CurrentPassword);
-            if (sha == user.PasswordHash)
-            {
-                isCurrentPasswordValid = true;
-            }
-        }
+
 
         if (!isCurrentPasswordValid)
         {

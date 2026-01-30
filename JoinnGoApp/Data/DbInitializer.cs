@@ -19,7 +19,7 @@ namespace JoinnGoApp.Data
                     Role = "Admin",
                     EmailConfirmed = true
                 };
-                adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "Admin123!");
+                adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "admin123");
                 context.Users.Add(adminUser);
             }
 
@@ -32,7 +32,7 @@ namespace JoinnGoApp.Data
                     Role = "User",
                     EmailConfirmed = true
                 };
-                testUser.PasswordHash = passwordHasher.HashPassword(testUser, "User123!");
+                testUser.PasswordHash = passwordHasher.HashPassword(testUser, "user123");
                 context.Users.Add(testUser);
             }
 
