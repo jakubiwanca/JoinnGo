@@ -25,6 +25,7 @@ EXPOSE 5000
 # Set environment to production
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:5000
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 
 # Run the application
 ENTRYPOINT ["dotnet", "JoinnGoApp.dll"]
