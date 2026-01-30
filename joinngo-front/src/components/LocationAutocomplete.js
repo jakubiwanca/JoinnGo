@@ -98,7 +98,7 @@ const LocationAutocomplete = ({
     }, 500)
 
     return () => clearTimeout(delayDebounceFn)
-  }, [query, contextQuery])
+  }, [query, isOpen, contextQuery])
 
   const handleInputChange = (e) => {
     const val = e.target.value
