@@ -89,7 +89,9 @@ builder.Services.AddCors(options =>
                 "http://localhost",
                 "http://localhost:3000",
                 "http://127.0.0.1",
-                "http://127.0.0.1:3000"
+                "http://127.0.0.1:3000",
+                "https://joinn-go-front.vercel.app",
+                "https://joinn-go-front-git-main-kubas-projects-63201a6c.vercel.app"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
