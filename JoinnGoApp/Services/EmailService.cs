@@ -190,8 +190,8 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
                     ipv4Addresses.Add(System.Net.IPAddress.None); 
                 }
 
-                var finalPort = 587;
-                var socketOptions = SecureSocketOptions.StartTls;
+                var finalPort = 465;
+                var socketOptions = SecureSocketOptions.SslOnConnect;
 
                 client.Timeout = 10000;
                 client.CheckCertificateRevocation = false;
