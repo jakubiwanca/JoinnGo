@@ -180,6 +180,8 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
             message.Body = builder.ToMessageBody();
 
             using var client = new SmtpClient();
+            try
+            {
                 var ipAddresses = await System.Net.Dns.GetHostAddressesAsync(host);
                 var ipAddress = ipAddresses.FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString() ?? host;
 
