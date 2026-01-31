@@ -182,10 +182,16 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
             using var client = new SmtpClient();
             try
             {
+                var ipAddresses = await System.Net.Dns.GetHostAddressesAsync(host);
+                var ipAddress = ipAddresses.FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString() ?? host;
+
                 var socketOptions = port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
 
-                client.Timeout = 10000; 
-                await client.ConnectAsync(host, port, socketOptions);
+                client.Timeout = 30000; 
+                
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
+                await client.ConnectAsync(ipAddress, port, socketOptions);
                 
                 await client.AuthenticateAsync(username, password);
 
@@ -194,7 +200,7 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending email to {to}");
+                _logger.LogError(ex, $"Error sending email to {to}. Host: {host}, Port: {port}");
                 throw;
             }
         }
