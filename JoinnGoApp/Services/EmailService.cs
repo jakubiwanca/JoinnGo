@@ -183,16 +183,45 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
             try
             {
                 var ipAddresses = await System.Net.Dns.GetHostAddressesAsync(host);
-                var ipAddress = ipAddresses.FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString() ?? host;
+                var ipv4Addresses = ipAddresses.Where(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToList();
+                
+                if (!ipv4Addresses.Any())
+                {
+                    ipv4Addresses.Add(System.Net.IPAddress.None); 
+                }
 
                 var finalPort = 587;
                 var socketOptions = SecureSocketOptions.StartTls;
 
-                client.Timeout = 30000; 
-                client.CheckCertificateRevocation = false; 
+                client.Timeout = 10000;
+                client.CheckCertificateRevocation = false;
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                await client.ConnectAsync(ipAddress, finalPort, socketOptions);
+                bool connected = false;
+                Exception lastException = null;
+
+                foreach (var ip in ipv4Addresses)
+                {
+                    try
+                    {
+                        var target = ip.Equals(System.Net.IPAddress.None) ? host : ip.ToString();
+                        await client.ConnectAsync(target, finalPort, socketOptions);
+                        connected = true;
+                        _logger.LogInformation($"Successfully connected to {target}:{finalPort}");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        lastException = ex;
+                        _logger.LogWarning($"Failed to connect to {ip}:{finalPort}: {ex.Message}");
+                        continue;
+                    }
+                }
+
+                if (!connected)
+                {
+                    throw lastException ?? new Exception("Failed to connect to any resolved IP address.");
+                }
                 
                 await client.AuthenticateAsync(username, password);
 
@@ -201,7 +230,7 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending email to {to}. Host: {host}, Port: {port} (forced to 587 + IPv4)");
+                _logger.LogError(ex, $"Error sending email to {to}. Host: {host}");
                 throw;
             }
         }
