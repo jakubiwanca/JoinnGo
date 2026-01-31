@@ -18,11 +18,12 @@ namespace JoinnGoApp.Services
         public async Task SendEmailConfirmationAsync(string toEmail, string confirmationToken)
         {
             var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "465");
             var smtpUsername = _configuration["Email:SmtpUsername"];
             var smtpPassword = _configuration["Email:SmtpPassword"];
             var senderEmail = _configuration["Email:SenderEmail"] ?? smtpUsername;
             var senderName = _configuration["Email:SenderName"] ?? "Join'nGo";
+
 
             var frontendUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
             var confirmationLink = $"{frontendUrl}/confirm-email?token={confirmationToken}";
@@ -93,7 +94,7 @@ Jeśli nie zakładałeś konta w Join'nGo, zignoruj ten email.
         public async Task SendPasswordResetAsync(string toEmail, string resetToken)
         {
             var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "465");
             var smtpUsername = _configuration["Email:SmtpUsername"];
             var smtpPassword = _configuration["Email:SmtpPassword"];
             var senderEmail = _configuration["Email:SenderEmail"] ?? smtpUsername;
@@ -181,7 +182,10 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
             using var client = new SmtpClient();
             try
             {
-                await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+                var socketOptions = port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+
+                client.Timeout = 10000; 
+                await client.ConnectAsync(host, port, socketOptions);
                 
                 await client.AuthenticateAsync(username, password);
 
