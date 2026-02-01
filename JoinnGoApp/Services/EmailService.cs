@@ -1,6 +1,5 @@
-using MimeKit;
-using MailKit.Net.Smtp;
-using MailKit.Security;
+using System.Text;
+using System.Text.Json;
 
 namespace JoinnGoApp.Services
 {
@@ -8,23 +7,17 @@ namespace JoinnGoApp.Services
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<EmailService> _logger;
+        private readonly HttpClient _httpClient;
 
-        public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
+        public EmailService(IConfiguration configuration, ILogger<EmailService> logger, IHttpClientFactory httpClientFactory)
         {
             _configuration = configuration;
             _logger = logger;
+            _httpClient = httpClientFactory.CreateClient();
         }
 
         public async Task SendEmailConfirmationAsync(string toEmail, string confirmationToken)
         {
-            var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp-relay.brevo.com";
-            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-            var smtpUsername = _configuration["Email:SmtpUsername"];
-            var smtpPassword = _configuration["Email:SmtpPassword"];
-            var senderEmail = _configuration["Email:SenderEmail"] ?? smtpUsername;
-            var senderName = _configuration["Email:SenderName"] ?? "Join'nGo";
-
-
             var frontendUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
             var confirmationLink = $"{frontendUrl}/confirm-email?token={confirmationToken}";
 
@@ -86,20 +79,13 @@ Jeśli nie zakładałeś konta w Join'nGo, zignoruj ten email.
 © 2026 Join'nGo. Wszystkie prawa zastrzeżone.
             ";
 
-            await SendEmailAsync(toEmail, subject, htmlContent, plainTextContent, smtpHost, smtpPort, smtpUsername, smtpPassword, senderEmail, senderName);
+            await SendEmailAsync(toEmail, subject, htmlContent, plainTextContent);
             _logger.LogInformation($"Email confirmation sent successfully to {toEmail}");
         }
 
 
         public async Task SendPasswordResetAsync(string toEmail, string resetToken)
         {
-            var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp-relay.brevo.com";
-            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-            var smtpUsername = _configuration["Email:SmtpUsername"];
-            var smtpPassword = _configuration["Email:SmtpPassword"];
-            var senderEmail = _configuration["Email:SenderEmail"] ?? smtpUsername;
-            var senderName = _configuration["Email:SenderName"] ?? "Join'nGo";
-
             var frontendUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
             var resetLink = $"{frontendUrl}/reset-password?token={resetToken}";
 
@@ -161,38 +147,54 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
 © 2026 Join'nGo. Wszystkie prawa zastrzeżone.
             ";
 
-            await SendEmailAsync(toEmail, subject, htmlContent, plainTextContent, smtpHost, smtpPort, smtpUsername, smtpPassword, senderEmail, senderName);
+            await SendEmailAsync(toEmail, subject, htmlContent, plainTextContent);
             _logger.LogInformation($"Password reset email sent successfully to {toEmail}");
         }
 
-        private async Task SendEmailAsync(string to, string subject, string htmlBody, string textBody, string host, int port, string username, string password, string fromEmail, string fromName)
+        private async Task SendEmailAsync(string to, string subject, string htmlBody, string textBody)
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(fromName, fromEmail));
-            message.To.Add(MailboxAddress.Parse(to));
-            message.Subject = subject;
+            var apiKey = _configuration["Brevo:ApiKey"];
+            var senderEmail = _configuration["Email:SenderEmail"];
+            var senderName = _configuration["Email:SenderName"] ?? "Join'nGo";
 
-            var builder = new BodyBuilder
+            if (string.IsNullOrEmpty(apiKey))
             {
-                HtmlBody = htmlBody,
-                TextBody = textBody
-            };
-            message.Body = builder.ToMessageBody();
+                _logger.LogError("Brevo API Key is not configured");
+                throw new InvalidOperationException("Brevo API Key is missing");
+            }
 
-            using var client = new SmtpClient();
+            var payload = new
+            {
+                sender = new { name = senderName, email = senderEmail },
+                to = new[] { new { email = to } },
+                subject = subject,
+                htmlContent = htmlBody,
+                textContent = textBody
+            };
+
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("api-key", apiKey);
+            _httpClient.DefaultRequestHeaders.Add("accept", "application/json");
+
             try
             {
+                var response = await _httpClient.PostAsync("https://api.brevo.com/v3/smtp/email", content);
                 
-                await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
-                
-                await client.AuthenticateAsync(username, password);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Brevo API error: {response.StatusCode} - {errorBody}");
+                    throw new HttpRequestException($"Failed to send email via Brevo: {response.StatusCode}");
+                }
 
-                await client.SendAsync(message);
-                await client.DisconnectAsync(true);
+                _logger.LogInformation($"Email sent successfully to {to} via Brevo API");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending email to {to}. Host: {host}, Port: {port}");
+                _logger.LogError(ex, $"Error sending email to {to} via Brevo API");
                 throw;
             }
         }
