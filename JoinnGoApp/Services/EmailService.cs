@@ -17,8 +17,8 @@ namespace JoinnGoApp.Services
 
         public async Task SendEmailConfirmationAsync(string toEmail, string confirmationToken)
         {
-            var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "465");
+            var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp-relay.brevo.com";
+            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
             var smtpUsername = _configuration["Email:SmtpUsername"];
             var smtpPassword = _configuration["Email:SmtpPassword"];
             var senderEmail = _configuration["Email:SenderEmail"] ?? smtpUsername;
@@ -93,8 +93,8 @@ Jeśli nie zakładałeś konta w Join'nGo, zignoruj ten email.
 
         public async Task SendPasswordResetAsync(string toEmail, string resetToken)
         {
-            var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "465");
+            var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp-relay.brevo.com";
+            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
             var smtpUsername = _configuration["Email:SmtpUsername"];
             var smtpPassword = _configuration["Email:SmtpPassword"];
             var senderEmail = _configuration["Email:SenderEmail"] ?? smtpUsername;
@@ -182,46 +182,8 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
             using var client = new SmtpClient();
             try
             {
-                var ipAddresses = await System.Net.Dns.GetHostAddressesAsync(host);
-                var ipv4Addresses = ipAddresses.Where(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToList();
                 
-                if (!ipv4Addresses.Any())
-                {
-                    ipv4Addresses.Add(System.Net.IPAddress.None); 
-                }
-
-                var finalPort = 465;
-                var socketOptions = SecureSocketOptions.SslOnConnect;
-
-                client.Timeout = 10000;
-                client.CheckCertificateRevocation = false;
-                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
-                bool connected = false;
-                Exception lastException = null;
-
-                foreach (var ip in ipv4Addresses)
-                {
-                    try
-                    {
-                        var target = ip.Equals(System.Net.IPAddress.None) ? host : ip.ToString();
-                        await client.ConnectAsync(target, finalPort, socketOptions);
-                        connected = true;
-                        _logger.LogInformation($"Successfully connected to {target}:{finalPort}");
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        lastException = ex;
-                        _logger.LogWarning($"Failed to connect to {ip}:{finalPort}: {ex.Message}");
-                        continue;
-                    }
-                }
-
-                if (!connected)
-                {
-                    throw lastException ?? new Exception("Failed to connect to any resolved IP address.");
-                }
+                await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
                 
                 await client.AuthenticateAsync(username, password);
 
@@ -230,7 +192,7 @@ Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę 
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending email to {to}. Host: {host}");
+                _logger.LogError(ex, $"Error sending email to {to}. Host: {host}, Port: {port}");
                 throw;
             }
         }
