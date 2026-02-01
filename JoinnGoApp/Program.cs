@@ -35,7 +35,7 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
     ["Jwt:Issuer"] = GetEnvVar("JWT_ISSUER", "JoinnGoApp"),
     ["Jwt:Audience"] = GetEnvVar("JWT_AUDIENCE", "JoinnGoAppUsers"),
     ["Jwt:ExpiresInMinutes"] = GetEnvVar("JWT_EXPIRES_MINUTES", "60"),
-    ["Frontend:BaseUrl"] = GetEnvVar("FRONTEND_URL", "http://localhost:3000"),
+    ["Frontend:BaseUrl"] = Environment.GetEnvironmentVariable("Frontend__BaseUrl") ?? GetEnvVar("FRONTEND_URL", "http://localhost:3000"),
 });
 
 builder.Services.AddDbContext<MyDbContext>(options =>
