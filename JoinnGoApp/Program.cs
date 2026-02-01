@@ -28,12 +28,12 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 {
     ["ConnectionStrings:DefaultConnection"] = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
                                               ?? $"Host={GetEnvVar("DB_HOST", "localhost")};Port={GetEnvVar("DB_PORT", "5432")};Database={GetEnvVar("DB_NAME", "JoinnGoDb")};Username={GetEnvVar("DB_USERNAME", "postgres")};Password={GetEnvVar("DB_PASSWORD", "postgres")}",
-    ["Email:SmtpHost"] = GetEnvVar("SMTP_HOST", "smtp.gmail.com"),
-    ["Email:SmtpPort"] = GetEnvVar("SMTP_PORT", "587"),
-    ["Email:SmtpUsername"] = GetEnvVar("SMTP_USERNAME", ""),
-    ["Email:SmtpPassword"] = GetEnvVar("SMTP_PASSWORD", ""),
-    ["Email:SenderEmail"] = GetEnvVar("SENDER_EMAIL", ""),
-    ["Email:SenderName"] = GetEnvVar("SENDER_NAME", "Join'nGo"),
+    ["Email:SmtpHost"] = Environment.GetEnvironmentVariable("Email__SmtpHost") ?? GetEnvVar("SMTP_HOST", "smtp.gmail.com"),
+    ["Email:SmtpPort"] = Environment.GetEnvironmentVariable("Email__SmtpPort") ?? GetEnvVar("SMTP_PORT", "587"),
+    ["Email:SmtpUsername"] = Environment.GetEnvironmentVariable("Email__SmtpUsername") ?? GetEnvVar("SMTP_USERNAME", ""),
+    ["Email:SmtpPassword"] = Environment.GetEnvironmentVariable("Email__SmtpPassword") ?? GetEnvVar("SMTP_PASSWORD", ""),
+    ["Email:SenderEmail"] = Environment.GetEnvironmentVariable("Email__SenderEmail") ?? GetEnvVar("SENDER_EMAIL", ""),
+    ["Email:SenderName"] = Environment.GetEnvironmentVariable("Email__SenderName") ?? GetEnvVar("SENDER_NAME", "Join'nGo"),
     ["Jwt:Key"] = GetEnvVar("JWT_KEY", "default_jwt_key_32_characters_min"),
     ["Jwt:Issuer"] = GetEnvVar("JWT_ISSUER", "JoinnGoApp"),
     ["Jwt:Audience"] = GetEnvVar("JWT_AUDIENCE", "JoinnGoAppUsers"),

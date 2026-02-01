@@ -130,6 +130,15 @@ function ProfilePage({
     e.preventDefault()
     setProfileMessage({ type: '', text: '' })
 
+    if (!usernameForm || usernameForm.trim().length === 0) {
+      setProfileMessage({ type: 'error', text: 'Nazwa użytkownika jest wymagana.' })
+      return
+    }
+    if (usernameForm.trim().length < 3) {
+      setProfileMessage({ type: 'error', text: 'Nazwa użytkownika musi mieć co najmniej 3 znaki.' })
+      return
+    }
+
     try {
       await updateProfile({ username: usernameForm })
 
@@ -309,7 +318,12 @@ function ProfilePage({
 
   const renderEventsTab = () => {
     const pendingEvents = joinedEvents.filter((e) => e.myStatus === 'Interested')
-    const confirmedEvents = joinedEvents.filter((e) => e.myStatus === 'Confirmed')
+    const confirmedEvents = joinedEvents.filter((e) => e.myStatus === 'Confirmed' && !e.isExpired)
+    const expiredJoinedEvents = joinedEvents.filter(
+      (e) => e.myStatus === 'Confirmed' && e.isExpired,
+    )
+    const expiredCreatedEvents = createdEvents.filter((e) => e.isExpired)
+    const allExpiredEvents = [...expiredCreatedEvents, ...expiredJoinedEvents]
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
@@ -324,7 +338,7 @@ function ProfilePage({
           {!collapsedSections.created && renderEventList(createdEvents.filter((e) => !e.isExpired))}
         </section>
 
-        {/* Potwierdzone */}
+        {/* Potwierdzone (nie wygasłe) */}
         <section>
           {renderSectionHeader(
             'Wydarzenia, w których biorę udział',
@@ -335,15 +349,10 @@ function ProfilePage({
           {!collapsedSections.confirmed && renderEventList(confirmedEvents, true)}
         </section>
 
-        {/* Wygasłe */}
+        {/* Wygasłe (created + joined) */}
         <section>
-          {renderSectionHeader(
-            'Wygasłe wydarzenia',
-            createdEvents.filter((e) => e.isExpired).length,
-            '#6b7280',
-            'expired',
-          )}
-          {!collapsedSections.expired && renderEventList(createdEvents.filter((e) => e.isExpired))}
+          {renderSectionHeader('Wygasłe wydarzenia', allExpiredEvents.length, '#6b7280', 'expired')}
+          {!collapsedSections.expired && renderEventList(allExpiredEvents, true)}
         </section>
 
         {/* Oczekujące */}
@@ -402,8 +411,6 @@ function ProfilePage({
               name="username"
               value={usernameForm}
               onChange={(e) => setUsernameForm(e.target.value)}
-              required
-              minLength={3}
               placeholder="Twoja nazwa użytkownika"
               style={{ width: '100%' }}
             />
