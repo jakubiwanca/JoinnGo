@@ -21,6 +21,8 @@ namespace JoinnGoApp.Services
             var frontendUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
             var confirmationLink = $"{frontendUrl}/confirm-email?token={confirmationToken}";
 
+            _logger.LogInformation($"Sending confirmation email to {toEmail} with frontend URL: {frontendUrl}");
+
             var subject = "Potwierdź swój adres email - Join'nGo";
             
             var htmlContent = $@"
