@@ -123,11 +123,15 @@ const AdminEventsTab = ({ onEventDeleted }) => {
                 </td>
                 <td style={{ padding: '12px' }}>
                   {e.isRecurring ? (
-                    <span title="Cykliczne">🔄 Cykliczne</span>
+                    <span title="Cykliczne">Cykliczne</span>
                   ) : (
                     <span title="Standardowe">Jednorazowe</span>
                   )}
-                  {e.isPrivate && <span style={{ marginLeft: '5px' }}>🔒</span>}
+                  {e.isPrivate ? (
+                    <span style={{ marginLeft: '5px' }}>Prywatne</span>
+                  ) : (
+                    <span style={{ marginLeft: '5px' }}>Publiczne</span>
+                  )}
                 </td>
                 <td style={{ padding: '12px' }}>{formatPolishDateTime(e.date)}</td>
                 <td style={{ padding: '12px' }}>

@@ -282,7 +282,7 @@ label {
 }
 
 .event-card.event-private {
-  border-left-color: #881337; /* bordowy - prywatne */
+  border-left-color: #881337; /* bordowy - prywatne, utworzone przez innych */
 }
 
 .event-card.event-public {
@@ -294,7 +294,7 @@ label {
 }
 
 .event-card.event-created {
-  border-left-color: #4f46e5; /* fioletowy - utworzone przeze mnie */
+  border-left-color: #4f46e5; /* fioletowy - prywatne, utworzone przeze mnie */
 }
 
 .event-card.event-pending {
