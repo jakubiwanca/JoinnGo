@@ -226,7 +226,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
   }
 
   if (!isOrganizer) {
-    if (isJoined) {
+    if (isJoined && !event.isExpired) {
       let buttonText = 'Opuść wydarzenie'
       let buttonClass = 'btn-secondary'
 
