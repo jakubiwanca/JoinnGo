@@ -570,6 +570,11 @@ public class EventController : ControllerBase
 
         var now = DateTime.UtcNow;
 
+        var followedIds = await _context.UserLikes
+            .Where(ul => ul.ObserverId == userId)
+            .Select(ul => ul.TargetId)
+            .ToListAsync();
+
         var events = await _context.Events
             .Include(e => e.Creator)
             .Include(e => e.RecurrenceGroup)
@@ -633,7 +638,8 @@ public class EventController : ControllerBase
                     : null,
                 e.RecurrenceGroup.EndDate,
                 e.RecurrenceGroup.MaxOccurrences
-            }
+            },
+            IsCreatorFollowed = followedIds.Contains(e.CreatorId)
         });
 
         return Ok(result);
@@ -647,6 +653,11 @@ public class EventController : ControllerBase
         var userId = int.Parse(userIdClaim.Value);
 
         var now = DateTime.UtcNow;
+
+        var followedIds = await _context.UserLikes
+            .Where(ul => ul.ObserverId == userId)
+            .Select(ul => ul.TargetId)
+            .ToListAsync();
 
         var events = await _context.Events
             .Where(e => e.CreatorId != userId && e.EventParticipants.Any(ep => ep.UserId == userId))
@@ -691,7 +702,8 @@ public class EventController : ControllerBase
                     ? e.Date < now 
                     : _context.Events
                         .Where(ev => ev.RecurrenceGroupId == e.RecurrenceGroupId)
-                        .Max(ev => ev.Date) < now
+                        .Max(ev => ev.Date) < now,
+                IsCreatorFollowed = followedIds.Contains(e.CreatorId)
             })
             .ToListAsync();
 
