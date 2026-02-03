@@ -47,7 +47,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     type: 1,
     interval: 1,
     daysOfWeek: [],
-    endDate: null,
+    endDate: new Date(),
     maxOccurrences: null,
   })
 
@@ -100,7 +100,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
           type: 1,
           interval: 1,
           daysOfWeek: [],
-          endDate: null,
+          endDate: new Date(),
           maxOccurrences: null,
         })
       }
@@ -234,6 +234,12 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
       const payload = { ...formData, date: isoDate }
 
       if (isRecurring) {
+        if (!recurrence.endDate) {
+          setError('Data końcowa jest wymagana dla wydarzeń cyklicznych.')
+          setLoading(false)
+          return
+        }
+
         if (recurrence.endDate) {
           const endD = new Date(recurrence.endDate)
           const startD = new Date(formData.date)

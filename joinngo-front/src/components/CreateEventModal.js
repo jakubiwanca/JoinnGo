@@ -46,7 +46,7 @@ function CreateEventModal({ onClose, onEventCreated }) {
     type: 1,
     interval: 1,
     daysOfWeek: [],
-    endDate: null,
+    endDate: new Date(),
     maxOccurrences: null,
   })
 
@@ -173,6 +173,12 @@ function CreateEventModal({ onClose, onEventCreated }) {
       const payload = { ...formData, date: isoDate }
 
       if (isRecurring) {
+        if (!recurrence.endDate) {
+          setError('Data końcowa jest wymagana dla wydarzeń cyklicznych.')
+          setLoading(false)
+          return
+        }
+
         if (recurrence.endDate) {
           const endD = new Date(recurrence.endDate)
           const startD = new Date(formData.date)

@@ -91,12 +91,12 @@ const EventCard = ({
           {!isMyEvent && (
             <div
               onClick={handleStarClick}
-              title={isFollowed ? 'Obserwujesz tego twórcę' : 'Obserwuj twórcę'}
+              title={isFollowed ? 'Przestań obserwować' : 'Obserwuj'}
               style={{
                 cursor: 'pointer',
                 fontSize: '1.5rem',
                 lineHeight: 1,
-                color: isFollowed ? '#fbbf24' : '#d1d5db',
+                color: isFollowed ? '#fbbf24' : '#6b7280',
                 transition: 'color 0.2s',
                 zIndex: 10,
                 marginTop: '30px',
@@ -105,7 +105,7 @@ const EventCard = ({
                 if (!isFollowed) e.currentTarget.style.color = '#fbbf24'
               }}
               onMouseLeave={(e) => {
-                if (!isFollowed) e.currentTarget.style.color = '#d1d5db'
+                if (!isFollowed) e.currentTarget.style.color = '#6b7280'
               }}
             >
               {isFollowed ? '★' : '☆'}
@@ -119,7 +119,7 @@ const EventCard = ({
           </span>
           <span>📅 {formatPolishDateTime(event.date)}</span>
           <span style={{ fontSize: '0.8rem', marginTop: '2px' }}>
-            Organizator:{' '}
+            👤 Organizator:{' '}
             <span
               onClick={handleOrganizerClick}
               style={{ cursor: 'pointer', fontWeight: '600' }}

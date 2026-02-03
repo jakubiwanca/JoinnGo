@@ -14,16 +14,17 @@ namespace JoinnGoApp.Services
         {
             var occurrences = new List<DateTime>();
             var currentDate = recurrenceGroup.StartDate.Date;
-            var endDate = CalculateEndDate(recurrenceGroup);
-            var maxDate = DateTime.UtcNow.AddMonths(MaxMonthsAhead).Date;
-
-            var effectiveEndDate = endDate.HasValue && endDate.Value < maxDate 
-                ? endDate.Value 
-                : maxDate;
+            
+            if (!recurrenceGroup.EndDate.HasValue)
+            {
+                throw new InvalidOperationException("EndDate is required for recurring events");
+            }
+            
+            var endDate = recurrenceGroup.EndDate.Value.Date;
 
             int count = 0;
 
-            while (currentDate <= effectiveEndDate)
+            while (currentDate <= endDate)
             {
                 if (recurrenceGroup.MaxOccurrences.HasValue && count >= recurrenceGroup.MaxOccurrences.Value)
                 {

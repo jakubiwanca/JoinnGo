@@ -225,6 +225,12 @@ export function RecurrenceConfig({
   filterRecurrenceEndDate,
   radioName = 'endType',
 }) {
+  React.useEffect(() => {
+    if (recurrence.endDate === null) {
+      setRecurrence({ ...recurrence, endDate: new Date(), maxOccurrences: null })
+    }
+  }, [])
+
   return (
     <div
       style={{
@@ -288,50 +294,26 @@ export function RecurrenceConfig({
       </div>
 
       <div className="form-group">
-        <label>Zakończenie:</label>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
-            <input
-              type="radio"
-              name={radioName}
-              checked={recurrence.endDate === null}
-              onChange={() => setRecurrence({ ...recurrence, endDate: null, maxOccurrences: null })}
-              style={{ marginRight: '5px' }}
-            />
-            Nigdy
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
-            <input
-              type="radio"
-              name={radioName}
-              checked={recurrence.endDate !== null}
-              onChange={() =>
-                setRecurrence({ ...recurrence, endDate: new Date(), maxOccurrences: null })
-              }
-              style={{ marginRight: '5px' }}
-            />
-            Do daty
-          </label>
-        </div>
+        <label>
+          Data zakończenia: <span style={{ color: 'red' }}>*</span>
+        </label>
+        <DatePicker
+          selected={recurrence.endDate}
+          onChange={(date) => setRecurrence({ ...recurrence, endDate: date })}
+          dateFormat="dd.MM.yyyy"
+          locale="pl"
+          placeholderText="Wybierz datę zakończenia"
+          className="date-picker-input"
+          wrapperClassName="date-picker-wrapper"
+          popperProps={{ strategy: 'fixed' }}
+          minDate={new Date()}
+          filterDate={filterRecurrenceEndDate}
+          required
+        />
+        <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
+          Data końcowa jest wymagana dla wydarzeń cyklicznych
+        </small>
       </div>
-
-      {recurrence.endDate !== null && (
-        <div className="form-group">
-          <label>Data zakończenia:</label>
-          <DatePicker
-            selected={recurrence.endDate}
-            onChange={(date) => setRecurrence({ ...recurrence, endDate: date })}
-            dateFormat="dd.MM.yyyy"
-            locale="pl"
-            placeholderText="Wybierz datę zakończenia"
-            className="date-picker-input"
-            wrapperClassName="date-picker-wrapper"
-            popperProps={{ strategy: 'fixed' }}
-            minDate={new Date()}
-            filterDate={filterRecurrenceEndDate}
-          />
-        </div>
-      )}
     </div>
   )
 }

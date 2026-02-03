@@ -61,10 +61,9 @@ public class EventController : ControllerBase
                 MaxParticipants = dto.MaxParticipants
             };
 
-            // Validation for recurrence
-            if (!recurrenceGroup.EndDate.HasValue && !recurrenceGroup.MaxOccurrences.HasValue)
+            if (!recurrenceGroup.EndDate.HasValue)
             {
-                return BadRequest("Musisz podać datę końcową lub liczbę powtórzeń dla wydarzenia cyklicznego.");
+                return BadRequest("Data końcowa jest wymagana dla wydarzeń cyklicznych.");
             }
 
             if (recurrenceGroup.Type == RecurrenceType.Weekly)
@@ -269,10 +268,9 @@ public class EventController : ControllerBase
                 MaxParticipants = eventItem.MaxParticipants
             };
 
-            // Validation for recurrence
-            if (!recurrenceGroup.EndDate.HasValue && !recurrenceGroup.MaxOccurrences.HasValue)
+            if (!recurrenceGroup.EndDate.HasValue)
             {
-                return BadRequest("Musisz podać datę końcową lub liczbę powtórzeń dla wydarzenia cyklicznego.");
+                return BadRequest("Data końcowa jest wymagana dla wydarzeń cyklicznych.");
             }
 
             if (recurrenceGroup.Type == RecurrenceType.Weekly)
