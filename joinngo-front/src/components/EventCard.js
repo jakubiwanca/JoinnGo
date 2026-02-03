@@ -38,8 +38,8 @@ const EventCard = ({
     try {
       await toggleFollow(event.creatorId)
       setTimeout(() => {
-        window.location.reload()
-      }, 300)
+        window.location.reload(true)
+      }, 500)
     } catch (err) {
       console.error('Failed to toggle follow', err)
       setIsFollowed(!newState)

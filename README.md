@@ -86,7 +86,7 @@ Projekt korzysta z bazy danych **PostgreSQL**. Najłatwiej uruchomić ją przez 
 
     - Aplikacja otworzy się w przeglądarce pod adresem: `http://localhost:3000`.
 
-    ## Konto Administratora
+## 4. Konto Administratora
 
 Przy pierwszym uruchomieniu aplikacja automatycznie tworzy domyślne konto administratora (jeśli nie istnieje):
 
@@ -94,6 +94,21 @@ Przy pierwszym uruchomieniu aplikacja automatycznie tworzy domyślne konto admin
 - **Hasło:** `admin123`
 
 Zaleca się zmianę hasła po pierwszym zalogowaniu.
+
+---
+
+## 5. Funkcje Aplikacji
+
+### Wydarzenia Cykliczne
+
+- Automatyczna generacja instancji na **2 tygodnie naprzód**
+- Background service odświeża wydarzenia **co 24h**
+- Brak potrzeby ręcznej konfiguracji
+
+### Obserwowanie Twórców
+
+- Kliknij gwiazdkę ⭐ przy wydarzeniu aby obserwować organizatora
+- Wydarzenia od obserwowanych twórców wyświetlają się wyżej na liście
 
 ---
 

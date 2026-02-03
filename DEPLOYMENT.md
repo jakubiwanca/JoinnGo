@@ -33,15 +33,25 @@ Edytuj plik `JoinnGoApp/.env.production` i uzupełnij:
 
 ```bash
 # Database - zmień hasło
+DB_HOST=db  # 'db' w Docker, 'localhost' dla lokalnego uruchomienia
+DB_PORT=5432  # Port wewnątrz Dockera
+DB_NAME=JoinnGoDb
+DB_USERNAME=postgres
 DB_PASSWORD=TWOJE_SILNE_HASLO
 
-# Email - podaj swoje dane SMTP
-SMTP_USERNAME=twoj_email@gmail.com
-SMTP_PASSWORD=twoje_haslo_aplikacji
-SENDER_EMAIL=twoj_email@gmail.com
+# Email - Brevo API
+Brevo__ApiKey=TWOJ_KLUCZ_BREVO_API  # Zarejestruj się na sendinblue.com
+Email__SenderEmail=twoj_email@zweryfikowany_w_brevo.com
+Email__SenderName=JoinnGo
+
+# Frontend (dla linków w emailach)
+Frontend__BaseUrl=https://twoja-domena.com  # lub http://localhost dla lokalnego testu
 
 # JWT - wygeneruj silny klucz (min 32 znaki)
 JWT_KEY=WYGENERUJ_LOSOWY_KLUCZ_MIN_32_ZNAKI
+JWT_ISSUER=JoinnGoApp
+JWT_AUDIENCE=JoinnGoAppUsers
+JWT_EXPIRES_MINUTES=60
 ```
 
 **Jak wygenerować JWT_KEY:**
@@ -76,6 +86,9 @@ To może potrwać 5-10 minut przy pierwszym buildzie.
 ```bash
 docker-compose up -d
 ```
+
+**Uwaga:** Backend automatycznie aplikuje migracje przy starcie (DbInitializer).  
+Tabele w bazie zostaną utworzone automatycznie - nie musisz ręcznie uruchamiać `dotnet ef database update`.
 
 ### 3.3 Sprawdź status kontenerów
 
@@ -133,7 +146,39 @@ Po pierwszym uruchomieniu aplikacja utworzy dwóch użytkowników:
     - Rola: User
     - _Uwaga: Po pierwszym zalogowaniu należy uzupełnić nazwę użytkownika w profilu._
 
-## Krok 5: Zatrzymanie aplikacji
+---
+
+## Krok 5: Automatyczne Usługi (Background Services)
+
+### RecurrenceGenerationService
+
+Aplikacja automatycznie uruchamia background service który:
+
+- Działa **co 24 godziny** (pierwszy run 1 minutę po starcie aplikacji)
+- Generuje nowe instancje wydarzeń cyklicznych
+- Utrzymuje zawsze wydarzenia na **2 tygodnie naprzód**
+- **Nie wymaga żadnej konfiguracji** ani ręcznej interwencji
+
+**Weryfikacja czy service działa:**
+
+```bash
+# Sprawdź logi czy service wystartował
+docker logs JoinnGoApp | grep "RecurrenceGenerationService"
+
+# Powinieneś zobaczyć:
+# RecurrenceGenerationService started
+# Starting automatic recurrence instance generation
+```
+
+**Zalety tego rozwiązania:**
+
+- Baza danych zawsze mała (max 14-20 instancji na wydarzenie)
+- Brak zapychania UI setkami przyszłych wydarzeń
+- Automatyczne usuwanie starych wydarzeń (naturalne "gubienie się")
+
+---
+
+## Krok 6: Zatrzymanie aplikacji
 
 ```bash
 # Zatrzymaj wszystkie kontenery
