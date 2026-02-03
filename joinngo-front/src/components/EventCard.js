@@ -229,7 +229,7 @@ const EventCard = ({
                 </button>
               ) : isRejected ? (
                 !isJoinedList ? null : null
-              ) : (
+              ) : !event.isExpired ? (
                 <button
                   className="btn-secondary"
                   style={{ padding: '6px 12px', fontSize: '0.9rem' }}
@@ -240,7 +240,7 @@ const EventCard = ({
                 >
                   {isConfirmed ? 'Opuść' : 'Anuluj'}
                 </button>
-              ))}
+              ) : null)}
           </div>
         </div>
       </div>

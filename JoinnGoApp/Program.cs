@@ -42,6 +42,7 @@ builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<JoinnGoApp.Services.RecurrenceService>();
+builder.Services.AddHostedService<JoinnGoApp.Services.RecurrenceGenerationService>();
 builder.Services.AddTransient<JoinnGoApp.Services.IEmailService, JoinnGoApp.Services.EmailService>();
 builder.Services.AddHttpClient();
 

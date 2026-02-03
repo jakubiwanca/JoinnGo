@@ -8,7 +8,7 @@ namespace JoinnGoApp.Services
 {
     public class RecurrenceService
     {
-        private const int MaxMonthsAhead = 3;
+        private const int WEEKS_LOOKAHEAD = 2;
 
         public List<DateTime> GenerateOccurrences(RecurrenceGroup recurrenceGroup)
         {
@@ -20,11 +20,13 @@ namespace JoinnGoApp.Services
                 throw new InvalidOperationException("EndDate is required for recurring events");
             }
             
-            var endDate = recurrenceGroup.EndDate.Value.Date;
+            var userEndDate = recurrenceGroup.EndDate.Value.Date;
+            var lookaheadLimit = DateTime.UtcNow.AddDays(WEEKS_LOOKAHEAD * 7).Date;
+            var effectiveEndDate = userEndDate < lookaheadLimit ? userEndDate : lookaheadLimit;
 
             int count = 0;
 
-            while (currentDate <= endDate)
+            while (currentDate <= effectiveEndDate)
             {
                 if (recurrenceGroup.MaxOccurrences.HasValue && count >= recurrenceGroup.MaxOccurrences.Value)
                 {
