@@ -70,7 +70,7 @@ namespace JoinnGoApp.Services
                     return false;
                 }
 
-                // DayOfWeek: Sunday = 0, Monday = 1, ..., Saturday = 6
+                // DayOfWeek: niedziela = 0, poniedziałek = 1, ..., sobota = 6
                 var dayOfWeek = (int)date.DayOfWeek;
                 return daysArray.Contains(dayOfWeek);
             }

@@ -142,7 +142,7 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
           <p>Ładowanie...</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* PENDING / OCZEKUJĄCE */}
+            {/* OCZEKUJĄCE */}
             {isOwner && pendingParticipants.length > 0 && (
               <div>
                 <h4 style={{ margin: '0 0 10px 0', color: '#f59e0b', fontSize: '1rem' }}>
@@ -181,7 +181,7 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
                           style={{
                             padding: '5px 10px',
                             fontSize: '0.8em',
-                            background: '#10b981', // green
+                            background: '#10b981',
                             border: 'none',
                           }}
                           onClick={() => handleAccept(p.userId)}

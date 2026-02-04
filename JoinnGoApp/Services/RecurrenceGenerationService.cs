@@ -91,7 +91,7 @@ namespace JoinnGoApp.Services
 
                     if (newOccurrences.Count == 0)
                     {
-                        continue; // No new instances needed
+                        continue;
                     }
 
                     var templateTime = templateEvent.Date.TimeOfDay;

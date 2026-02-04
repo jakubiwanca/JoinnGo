@@ -5,7 +5,6 @@ const OnboardingModal = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Don't show modal if we are already on profile page
   if (location.pathname === '/profile') {
     return null
   }

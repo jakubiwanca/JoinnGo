@@ -68,7 +68,7 @@ public class EventController : ControllerBase
 
             if (recurrenceGroup.Type == RecurrenceType.Weekly)
             {
-                // dto.Recurrence.DaysOfWeek is the source, checking that
+                // dto.Recurrence.DaysOfWeek sprawdzenie czy jest puste
                 if (dto.Recurrence.DaysOfWeek == null || dto.Recurrence.DaysOfWeek.Length == 0)
                 {
                     return BadRequest("Dla powtarzania co tydzień musisz wybrać przynajmniej jeden dzień tygodnia.");
@@ -276,7 +276,7 @@ public class EventController : ControllerBase
 
             if (recurrenceGroup.Type == RecurrenceType.Weekly)
             {
-                // dto.Recurrence.DaysOfWeek is the source, checking that
+                // dto.Recurrence.DaysOfWeek czy jest puste
                 if (dto.Recurrence.DaysOfWeek == null || dto.Recurrence.DaysOfWeek.Length == 0)
                 {
                     return BadRequest("Dla powtarzania co tydzień musisz wybrać przynajmniej jeden dzień tygodnia.");

@@ -12,7 +12,7 @@ function ForgotPasswordModal({ onClose }) {
     setError('')
 
     if (!email) {
-      setError('Musisz wypełnić to pole.')
+      setError('Pole nie może być puste.')
       return
     }
 
