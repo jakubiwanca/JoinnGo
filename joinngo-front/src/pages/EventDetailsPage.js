@@ -500,6 +500,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
             currentUserId={currentUserId}
             role={role}
             isExpired={event.isExpired}
+            eventCreatorId={event.creatorId}
           />
         )}
       </div>

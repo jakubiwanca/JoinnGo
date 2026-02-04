@@ -13,6 +13,7 @@ const Comments = ({
   currentUserId,
   role,
   isExpired,
+  eventCreatorId,
 }) => {
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -129,35 +130,37 @@ const Comments = ({
                     {formatPolishDateTime(comment.createdAt)}
                   </small>
                 </div>
-                {(currentUserId === comment.userId || role === 'Admin') && !editingCommentId && (
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                      onClick={() => startEdit(comment)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#4f46e5',
-                        fontSize: '0.9rem',
-                        display: currentUserId === comment.userId ? 'inline-block' : 'none',
-                      }}
-                    >
-                      Edytuj
-                    </button>
-                    <button
-                      onClick={() => handleDelete(comment.id)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#ef4444',
-                        fontSize: '0.9rem',
-                      }}
-                    >
-                      Usuń
-                    </button>
-                  </div>
-                )}
+                {(currentUserId === comment.userId ||
+                  role === 'Admin' ||
+                  currentUserId === eventCreatorId) &&
+                  !editingCommentId && (
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        onClick={() => startEdit(comment)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#4f46e5',
+                          fontSize: '0.9rem',
+                        }}
+                      >
+                        Edytuj
+                      </button>
+                      <button
+                        onClick={() => handleDelete(comment.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#ef4444',
+                          fontSize: '0.9rem',
+                        }}
+                      >
+                        Usuń
+                      </button>
+                    </div>
+                  )}
               </div>
 
               {editingCommentId === comment.id ? (
