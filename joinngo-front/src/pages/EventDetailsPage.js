@@ -131,7 +131,7 @@ const EventDetailsPage = ({ currentUserId, role }) => {
   }
 
   const handleDelete = () => {
-    const isRecurring = event?.isRecurring || event?.recurrenceGroupId
+    const isRecurring = event?.isRecurring || event?.recurrenceGroupId || event?.recurrence
 
     const title = isRecurring ? 'Usuń wydarzenie cykliczne' : 'Usuń wydarzenie'
     const message = isRecurring

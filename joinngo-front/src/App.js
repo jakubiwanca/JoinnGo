@@ -101,8 +101,12 @@ function App() {
     } catch (e) {
       console.error('Błąd wylogowania', e)
     } finally {
+      localStorage.clear()
+      sessionStorage.clear()
+
       setUser(null)
-      window.location.href = '/login'
+
+      window.location.replace('/login')
     }
   }
 
