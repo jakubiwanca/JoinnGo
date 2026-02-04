@@ -509,7 +509,7 @@ function ProfilePage({
             justifyContent: 'space-between',
           }}
         >
-          <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>Mój Profil 👤</h2>
+          <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>👤 Mój Profil</h2>
           <button
             className="btn-secondary"
             onClick={() => navigate(`/profile/${currentUserId}`)}
@@ -522,8 +522,8 @@ function ProfilePage({
             }}
             title="Zobacz jak inni widzą Twój profil"
           >
-            <span>Twój profil publiczny</span>
             <span style={{ fontSize: '1.1rem' }}>👁️</span>
+            <span>Twój profil publiczny</span>
           </button>
         </div>
         {/* Tabs Navigation */}

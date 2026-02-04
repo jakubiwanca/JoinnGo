@@ -1049,12 +1049,29 @@ public class EventController : ControllerBase
         if (userIdClaim == null) return Unauthorized();
         var userId = int.Parse(userIdClaim.Value);
 
-        var comment = await _context.Comments.FindAsync(commentId);
+        var comment = await _context.Comments
+            .Include(c => c.Event)
+            .FirstOrDefaultAsync(c => c.Id == commentId);
         if (comment == null) return NotFound("Komentarz nie istnieje.");
 
-        if (comment.UserId != userId)
+        bool isAdmin = User.IsInRole("Admin");
+        bool isEventCreator = comment.Event?.CreatorId == userId;
+        bool isCommentOwner = comment.UserId == userId;
+
+        if (!isCommentOwner && !isAdmin && !isEventCreator)
         {
             return Forbid("Nie możesz edytować cudzych komentarzy.");
+        }
+
+        if (isCommentOwner && !isAdmin && !isEventCreator)
+        {
+            var participation = await _context.EventParticipants
+                .FirstOrDefaultAsync(ep => ep.EventId == comment.EventId && ep.UserId == userId);
+            
+            if (participation?.Status != ParticipantStatus.Confirmed)
+            {
+                return Forbid("Nie możesz edytować komentarzy - nie jesteś już uczestnikiem tego wydarzenia.");
+            }
         }
 
         comment.Content = dto.Content;
@@ -1070,12 +1087,29 @@ public class EventController : ControllerBase
         if (userIdClaim == null) return Unauthorized();
         var userId = int.Parse(userIdClaim.Value);
 
-        var comment = await _context.Comments.FindAsync(commentId);
+        var comment = await _context.Comments
+            .Include(c => c.Event)
+            .FirstOrDefaultAsync(c => c.Id == commentId);
         if (comment == null) return NotFound("Komentarz nie istnieje.");
 
-        if (comment.UserId != userId && !User.IsInRole("Admin"))
+        bool isAdmin = User.IsInRole("Admin");
+        bool isCreator = comment.Event?.CreatorId == userId;
+        bool isCommentOwner = comment.UserId == userId;
+
+        if (!isCommentOwner && !isAdmin)
         {
             return Forbid("Nie możesz usunąć cudzych komentarzy.");
+        }
+
+        if (isCommentOwner && !isAdmin && !isCreator)
+        {
+            var participation = await _context.EventParticipants
+                .FirstOrDefaultAsync(ep => ep.EventId == comment.EventId && ep.UserId == userId);
+            
+            if (participation?.Status != ParticipantStatus.Confirmed)
+            {
+                return Forbid("Nie możesz usunąć komentarzy - nie jesteś już uczestnikiem tego wydarzenia.");
+            }
         }
 
         _context.Comments.Remove(comment);
