@@ -2,6 +2,17 @@
 
 Aplikacja do zarządzania i dołączania do wydarzeń.
 
+## Pobranie projektu
+
+Aby rozpocząć pracę z projektem, sklonuj repozytorium:
+
+```bash
+git clone https://github.com/jakubiwanca/JoinnGo.git
+cd JoinnGo
+```
+
+---
+
 ## Wymagania wstępne (Prerequisites)
 
 Aby uruchomić projekt, upewnij się, że masz zainstalowane:
@@ -39,7 +50,67 @@ Projekt korzysta z bazy danych **PostgreSQL**. Najłatwiej uruchomić ją przez 
 
 ---
 
-## 2. Uruchomienie Backendu (.NET)
+## 2. Konfiguracja zmiennych środowiskowych
+
+Przed uruchomieniem backendu musisz skonfigurować zmienne środowiskowe:
+
+1. W folderze głównym projektu utwórz plik `.env`:
+
+   ```bash
+   touch .env
+   ```
+
+2. Dodaj następującą zawartość (edytuj wartości według potrzeb):
+
+   ```env
+   # Database
+   DB_HOST=localhost
+   DB_PORT=5433
+   DB_NAME=JoinnGoDb
+   DB_USERNAME=postgres
+   DB_PASSWORD=postgres
+
+   # Email - Brevo SMTP API (zarejestruj się na brevo.com)
+   Brevo__ApiKey=TWOJ_KLUCZ_BREVO_API
+   Email__SenderEmail=twoj_email@zweryfikowany_w_brevo.com
+   Email__SenderName=JoinnGo
+
+   # Frontend URL (dla linków w emailach weryfikacyjnych)
+   Frontend__BaseUrl=http://localhost:3000
+
+   # JWT - wygeneruj losowy klucz (min 32 znaki)
+   JWT_KEY=TWOJ_LOSOWY_KLUCZ_MIN_32_ZNAKI
+   JWT_ISSUER=JoinnGoApp
+   JWT_AUDIENCE=JoinnGoAppUsers
+   JWT_EXPIRES_MINUTES=60
+   ```
+
+   **Jak wygenerować JWT_KEY:**
+
+   ```bash
+   # Linux/Mac:
+   openssl rand -base64 32
+
+   # Windows PowerShell:
+   [System.Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+   ```
+
+3. Dla frontendu, utwórz plik `joinngo-front/.env`:
+
+   ```bash
+   cd joinngo-front
+   touch .env
+   ```
+
+   Dodaj:
+
+   ```env
+   REACT_APP_API_URL=http://localhost:5000
+   ```
+
+---
+
+## 3. Uruchomienie Backendu (.NET)
 
 1.  Przejdź do katalogu backendu:
     ```bash
@@ -68,7 +139,7 @@ Projekt korzysta z bazy danych **PostgreSQL**. Najłatwiej uruchomić ją przez 
 
 ---
 
-## 3. Uruchomienie Frontendu (React)
+## 4. Uruchomienie Frontendu (React)
 
 1.  Otwórz nowe okno terminala i przejdź do katalogu frontendu:
     ```bash
@@ -86,7 +157,7 @@ Projekt korzysta z bazy danych **PostgreSQL**. Najłatwiej uruchomić ją przez 
 
     - Aplikacja otworzy się w przeglądarce pod adresem: `http://localhost:3000`.
 
-## 4. Konto Administratora
+## 5. Konto Administratora
 
 Przy pierwszym uruchomieniu aplikacja automatycznie tworzy domyślne konto administratora (jeśli nie istnieje):
 
@@ -97,7 +168,7 @@ Zaleca się zmianę hasła po pierwszym zalogowaniu.
 
 ---
 
-## 5. Funkcje Aplikacji
+## 6. Funkcjonalności
 
 ### Wydarzenia Cykliczne
 
@@ -116,5 +187,20 @@ Zaleca się zmianę hasła po pierwszym zalogowaniu.
 
 - **Błąd połączenia z bazą:** Upewnij się, że kontener Dockera działa (`docker ps`) lub że Twoja lokalna baza Postgres jest aktywna i dane w `appsettings.json` są poprawne.
 - **Porty zajęte:** Jeśli port 5433, 5000 lub 3000 jest zajęty, musisz zwolnić go lub zmienić konfigurację w plikach `launchSettings.json` (backend) lub `package.json` (frontend).
+
+---
+
+## Wdrożenie produkcyjne
+
+Aby wdrożyć aplikację na serwer produkcyjny (VPS, Cloud), zapoznaj się z szczegółową instrukcją:
+
+**📄 [DEPLOYMENT.md](DEPLOYMENT.md)** - Pełna instrukcja wdrożenia z Docker Compose
+
+Dokumentacja zawiera:
+
+- Konfigurację zmiennych środowiskowych produkcyjnych
+- Uruchomienie z Docker Compose
+- Backup bazy danych
+- Troubleshooting
 
 ---

@@ -7,7 +7,7 @@
 
 ## Krok 1: Przygotowanie środowiska
 
-### 1.1 Sklonuj repozytorium (jeśli jeszcze nie masz)
+### 1.1 Sklonuj repozytorium
 
 ```bash
 git clone https://github.com/jakubiwanca/JoinnGo.git
@@ -23,31 +23,27 @@ git pull
 
 ## Krok 2: Konfiguracja zmiennych środowiskowych
 
-### 2.1 Backend - skopiuj i edytuj plik środowiskowy
+### 2.1 Backend - utwórz plik .env
+
+W katalogu głównym projektu utwórz plik `.env` i uzupełnij:
 
 ```bash
-cp JoinnGoApp/.env.production.template JoinnGoApp/.env.production
-```
-
-Edytuj plik `JoinnGoApp/.env.production` i uzupełnij:
-
-```bash
-# Database - zmień hasło
-DB_HOST=db  # 'db' w Docker, 'localhost' dla lokalnego uruchomienia
-DB_PORT=5432  # Port wewnątrz Dockera
+# Database
+DB_HOST=localhost
+DB_PORT=5433
 DB_NAME=JoinnGoDb
 DB_USERNAME=postgres
 DB_PASSWORD=TWOJE_SILNE_HASLO
 
 # Email - Brevo API
-Brevo__ApiKey=TWOJ_KLUCZ_BREVO_API  # Zarejestruj się na sendinblue.com
+Brevo__ApiKey=TWOJ_KLUCZ_BREVO_API  # Zarejestruj się na brevo.com
 Email__SenderEmail=twoj_email@zweryfikowany_w_brevo.com
 Email__SenderName=JoinnGo
 
 # Frontend (dla linków w emailach)
-Frontend__BaseUrl=https://twoja-domena.com  # lub http://localhost dla lokalnego testu
+Frontend__BaseUrl=https://twoja-domena.com
 
-# JWT - wygeneruj silny klucz (min 32 znaki)
+# JWT
 JWT_KEY=WYGENERUJ_LOSOWY_KLUCZ_MIN_32_ZNAKI
 JWT_ISSUER=JoinnGoApp
 JWT_AUDIENCE=JoinnGoAppUsers
@@ -60,16 +56,19 @@ JWT_EXPIRES_MINUTES=60
 # Linux/Mac
 openssl rand -base64 32
 
-# Lub użyj online generatora
+# Windows PowerShell
+[System.Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
 ```
 
-### 2.2 Frontend (opcjonalnie)
+### 2.2 Frontend - utwórz plik .env.production
 
-Jeśli chcesz zmienić URL backendu, edytuj:
+W katalogu `joinngo-front` utwórz plik `.env.production`:
 
 ```bash
-nano joinngo-front/.env.production
+REACT_APP_API_URL=https://twoja-domena-backendu.com
 ```
+
+**Uwaga:** Dla lokalnego developmentu Frontend używa `REACT_APP_API_URL=http://localhost:5000` (można ustawić w pliku `joinngo-front/.env`).
 
 ## Krok 3: Uruchomienie aplikacji
 
@@ -101,7 +100,6 @@ Powinieneś zobaczyć:
 - ✅ JoinnGoDb (postgres)
 - ✅ JoinnGoApp (backend)
 - ✅ JoinnGoFront (frontend)
-- ✅ pgadmin (opcjonalnie)
 
 ## Krok 4: Weryfikacja
 
@@ -122,7 +120,6 @@ docker-compose logs -f frontend
 
 1. **Frontend**: Otwórz przeglądarkę → `http://localhost`
 2. **Backend API**: `http://localhost:5000/swagger`
-3. **pgAdmin**: `http://localhost:8080`
 
 ### 4.3 Test funkcjonalności
 
@@ -144,7 +141,7 @@ Po pierwszym uruchomieniu aplikacja utworzy dwóch użytkowników:
     - Email: `jan.kowalski@example.com`
     - Hasło: `user123`
     - Rola: User
-    - _Uwaga: Po pierwszym zalogowaniu należy uzupełnić nazwę użytkownika w profilu._
+    - _Uwaga: Po pierwszym zalogowaniu należy uzupełnić nazwę użytkownika w profilu w przypadku konta jan.kowalski@example.com._
 
 ---
 
@@ -170,19 +167,11 @@ docker logs JoinnGoApp | grep "RecurrenceGenerationService"
 # Starting automatic recurrence instance generation
 ```
 
-**Zalety tego rozwiązania:**
-
-- Baza danych zawsze mała (max 14-20 instancji na wydarzenie)
-- Brak zapychania UI setkami przyszłych wydarzeń
-- Automatyczne usuwanie starych wydarzeń (naturalne "gubienie się")
-
----
-
 ## Krok 6: Zatrzymanie aplikacji
 
 ```bash
 # Zatrzymaj wszystkie kontenery
-docker-compose down
+docker-compose stop
 
 # Zatrzymaj i usuń wolumeny
 docker-compose down -v

@@ -358,8 +358,8 @@ describe('RecurrenceConfig', () => {
     expect(screen.getByText('Co ile miesięcy:')).toBeInTheDocument()
   })
 
-  // Sprawdzenie opcji zakończenia cyklu (Nigdy / Do daty)
-  it('renders end date options', () => {
+  // Sprawdzenie pola wymaganej daty zakończenia cyklu
+  it('renders required end date field', () => {
     render(
       <RecurrenceConfig
         recurrence={defaultRecurrence}
@@ -369,9 +369,8 @@ describe('RecurrenceConfig', () => {
       />,
     )
 
-    expect(screen.getByText('Zakończenie:')).toBeInTheDocument()
-    expect(screen.getByText('Nigdy')).toBeInTheDocument()
-    expect(screen.getByText('Do daty')).toBeInTheDocument()
+    expect(screen.getByText(/Data zakończenia:/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Wybierz datę zakończenia')).toBeInTheDocument()
   })
 
   // Weryfikacja aktualizacji stanu przy zmianie częstotliwości
@@ -410,8 +409,8 @@ describe('RecurrenceConfig', () => {
     expect(setRecurrence).toHaveBeenCalledWith({ ...defaultRecurrence, interval: 2 })
   })
 
-  // Sprawdzenie, czy opcja "Nigdy" jest zaznaczona przy braku daty końcowej
-  it('shows "Nigdy" radio as checked when endDate is null', () => {
+  // Sprawdzenie, czy pole daty zakończenia jest renderowane z komunikatem o wymaganiu
+  it('shows end date field with required message', () => {
     render(
       <RecurrenceConfig
         recurrence={{ ...defaultRecurrence, endDate: null }}
@@ -421,7 +420,8 @@ describe('RecurrenceConfig', () => {
       />,
     )
 
-    const nigdyRadio = screen.getByLabelText('Nigdy')
-    expect(nigdyRadio).toBeChecked()
+    expect(
+      screen.getByText('Data końcowa jest wymagana dla wydarzeń cyklicznych'),
+    ).toBeInTheDocument()
   })
 })
