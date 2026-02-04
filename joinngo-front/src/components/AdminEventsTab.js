@@ -48,13 +48,14 @@ const AdminEventsTab = ({ onEventDeleted }) => {
     if (isRecurring) {
       showConfirm(
         'Usuń wydarzenie cykliczne',
-        'To wydarzenie jest cykliczne. Czy chcesz usunąć całą serię wydarzeń?',
+        'Czy na pewno chcesz usunąć to wydarzenie cykliczne wraz ze wszystkimi jego instancjami? Ta akcja jest nieodwracalna.',
         async () => {
           hideConfirm()
           try {
             await deleteEvent(event.id, true)
             setEvents((prev) => prev.filter((e) => e.id !== event.id))
             if (onEventDeleted) onEventDeleted()
+            showConfirm('Sukces', 'Seria wydarzeń została usunięta.', hideConfirm, false, false)
           } catch (err) {
             console.error(err)
             showConfirm('Błąd', 'Nie udało się usunąć serii.', hideConfirm, false, false)
@@ -65,13 +66,14 @@ const AdminEventsTab = ({ onEventDeleted }) => {
     } else {
       showConfirm(
         'Usuń wydarzenie',
-        'Czy na pewno chcesz usunąć to wydarzenie?',
+        'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja jest nieodwracalna.',
         async () => {
           hideConfirm()
           try {
             await deleteEvent(event.id, false)
             setEvents((prev) => prev.filter((e) => e.id !== event.id))
             if (onEventDeleted) onEventDeleted()
+            showConfirm('Sukces', 'Wydarzenie zostało usunięte.', hideConfirm, false, false)
           } catch (err) {
             console.error(err)
             showConfirm('Błąd', 'Nie udało się usunąć wydarzenia.', hideConfirm, false, false)

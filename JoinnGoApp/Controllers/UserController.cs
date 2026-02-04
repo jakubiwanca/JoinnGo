@@ -138,7 +138,7 @@ public class UserController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            return BadRequest("Nieprawidłowy token.");
+            return BadRequest(new { message = "Nieprawidłowy token.", status = "invalid_token" });
         }
 
         var user = await _context.Users
@@ -146,25 +146,25 @@ public class UserController : ControllerBase
 
         if (user == null)
         {
-            return BadRequest("Token nieprawidłowy lub wygasł.");
+            return BadRequest(new { message = "Token nieprawidłowy lub wygasł.", status = "invalid_token" });
         }
 
         if (user.EmailConfirmed)
         {
-            return Ok("Email potwierdzony. Możesz się zalogować.");
+            return Ok(new { message = "Ten email został już wcześniej zweryfikowany.", status = "already_confirmed" });
         }
 
         if (user.EmailConfirmationTokenExpiry == null || 
             user.EmailConfirmationTokenExpiry < DateTime.UtcNow)
         {
-            return BadRequest("Token wygasł. Poproszę o ponowne potwierdzenie.");
+            return BadRequest(new { message = "Token wygasł. Poproszę o ponowne potwierdzenie.", status = "expired_token" });
         }
 
         user.EmailConfirmed = true;
 
         await _context.SaveChangesAsync();
 
-        return Ok("Email potwierdzony. Możesz się zalogować.");
+        return Ok(new { message = "Email potwierdzony pomyślnie.", status = "confirmed" });
     }
 
     [HttpPost("forgot-password")]

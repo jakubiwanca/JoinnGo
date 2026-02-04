@@ -129,6 +129,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
         hideConfirm()
         try {
           await deleteEvent(eventId, isRecurring)
+          showConfirm('Sukces', 'Wydarzenie zostało usunięte.', hideConfirm, false, false)
           fetchProfileAndEvents()
         } catch (err) {
           showConfirm(

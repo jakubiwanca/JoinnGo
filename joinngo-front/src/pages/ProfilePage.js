@@ -333,6 +333,7 @@ function ProfilePage({
         hideConfirm()
         try {
           await deleteEvent(eventId, isRecurring)
+          showConfirm('Sukces', 'Wydarzenie zostało usunięte.', hideConfirm, false, false)
           fetchData()
         } catch (err) {
           showConfirm(
