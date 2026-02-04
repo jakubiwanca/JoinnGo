@@ -251,11 +251,7 @@ function ProfilePage({
 
     try {
       setPasswordLoading(true)
-      await changePassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-        confirmPassword: passwordForm.confirmPassword,
-      })
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword)
       setPasswordSuccess('Hasło zostało pomyślnie zmienione.')
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (err) {
