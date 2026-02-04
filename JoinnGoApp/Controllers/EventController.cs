@@ -198,6 +198,17 @@ public class EventController : ControllerBase
             return Forbid("Nie masz uprawnień do edycji tego wydarzenia.");
         }
 
+        if (dto.MaxParticipants > 0)
+        {
+            var confirmedCount = await _context.EventParticipants
+                .CountAsync(ep => ep.EventId == id && ep.Status == ParticipantStatus.Confirmed);
+            
+            if (dto.MaxParticipants < confirmedCount)
+            {
+                return BadRequest($"Nie można ustawić limitu {dto.MaxParticipants} uczestników - aktualnie jest już {confirmedCount} potwierdzonych uczestników.");
+            }
+        }
+
         eventItem.Title = dto.Title;
         eventItem.Description = dto.Description;
         eventItem.Date = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc);
@@ -209,21 +220,14 @@ public class EventController : ControllerBase
         eventItem.Category = dto.Category;
         eventItem.MaxParticipants = dto.MaxParticipants;
 
-        // Handle recurrence logic (Update, Create, or Remove)
-        
-        // 1. If event was already recurring, remove old recurrence data (reset to single)
         if (eventItem.RecurrenceGroupId != null)
         {
             var oldGroupId = eventItem.RecurrenceGroupId;
             
-            // Unlink this event
             eventItem.RecurrenceGroupId = null;
 
-            // Find other events in the group
             var otherEvents = _context.Events.Where(e => e.RecurrenceGroupId == oldGroupId && e.Id != id);
             _context.Events.RemoveRange(otherEvents);
-
-            // Remove the group itself
             var oldGroup = await _context.RecurrenceGroups.FindAsync(oldGroupId);
             if (oldGroup != null)
             {
@@ -231,7 +235,6 @@ public class EventController : ControllerBase
             }
         }
 
-        // 2. If new recurrence is requested, create it (treat as new recurrence starting from this event)
         if (dto.Recurrence != null && dto.Recurrence.Type > 0)
         {
             var recurrenceGroup = new RecurrenceGroup
@@ -250,10 +253,8 @@ public class EventController : ControllerBase
             _context.RecurrenceGroups.Add(recurrenceGroup);
             await _context.SaveChangesAsync();
 
-            // Link current event to group
             eventItem.RecurrenceGroupId = recurrenceGroup.Id;
 
-            // Generate additional instances
             var templateEvent = new Event
             {
                 Title = eventItem.Title,
@@ -288,7 +289,6 @@ public class EventController : ControllerBase
                 userId
             );
 
-            // Remove the first instance if it matches the current event date
             var firstInstance = eventInstances.FirstOrDefault(e => e.Date.Date == eventItem.Date.Date);
             if (firstInstance != null)
             {
@@ -391,8 +391,6 @@ public class EventController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok("Wydarzenie (lub seria) zostało usunięte.");
     }
-
-
 
     [HttpGet("{eventId}/participants")]
     public async Task<IActionResult> GetParticipants(int eventId)

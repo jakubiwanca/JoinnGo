@@ -14,11 +14,15 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
     message: '',
     onConfirm: null,
     danger: false,
+    showCancel: true,
   })
 
-  const showConfirm = React.useCallback((title, message, onConfirm, danger = false) => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, danger })
-  }, [])
+  const showConfirm = React.useCallback(
+    (title, message, onConfirm, danger = false, showCancel = true) => {
+      setConfirmModal({ isOpen: true, title, message, onConfirm, danger, showCancel })
+    },
+    [],
+  )
 
   const hideConfirm = React.useCallback(() => {
     setConfirmModal((prev) => ({ ...prev, isOpen: false, onConfirm: null }))
@@ -30,10 +34,16 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
       setParticipants(response.data)
     } catch (err) {
       console.error('Błąd pobierania uczestników:', err)
-      showConfirm('Błąd', 'Nie udało się pobrać listy uczestników.', () => {
-        hideConfirm()
-        onClose()
-      })
+      showConfirm(
+        'Błąd',
+        'Nie udało się pobrać listy uczestników.',
+        () => {
+          hideConfirm()
+          onClose()
+        },
+        false,
+        false,
+      )
     } finally {
       setLoading(false)
     }
@@ -59,7 +69,7 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
       if (onStatusChange) onStatusChange()
     } catch (err) {
       console.error(err)
-      showConfirm('Błąd', 'Błąd podczas akceptacji.', hideConfirm)
+      showConfirm('Błąd', 'Błąd podczas akceptacji.', hideConfirm, false, false)
     }
   }
 
@@ -79,7 +89,7 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
       if (onStatusChange) onStatusChange()
     } catch (err) {
       console.error(err)
-      showConfirm('Błąd', 'Błąd podczas odrzucania.', hideConfirm)
+      showConfirm('Błąd', 'Błąd podczas odrzucania.', hideConfirm, false, false)
     }
   }
 
@@ -99,6 +109,8 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
             'Błąd',
             err.response?.data || 'Błąd podczas usuwania uczestnika.',
             hideConfirm,
+            false,
+            false,
           )
         }
       },
@@ -265,6 +277,7 @@ function ParticipantsModal({ eventId, creatorId, isOwner, onClose, onStatusChang
         onConfirm={confirmModal.onConfirm}
         onCancel={hideConfirm}
         danger={confirmModal.danger}
+        showCancel={confirmModal.showCancel}
       />
     </div>
   )

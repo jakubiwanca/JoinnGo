@@ -57,7 +57,7 @@ const AdminEventsTab = ({ onEventDeleted }) => {
             if (onEventDeleted) onEventDeleted()
           } catch (err) {
             console.error(err)
-            showConfirm('Błąd', 'Nie udało się usunąć serii.', hideConfirm)
+            showConfirm('Błąd', 'Nie udało się usunąć serii.', hideConfirm, false, false)
           }
         },
         true,
@@ -74,7 +74,7 @@ const AdminEventsTab = ({ onEventDeleted }) => {
             if (onEventDeleted) onEventDeleted()
           } catch (err) {
             console.error(err)
-            showConfirm('Błąd', 'Nie udało się usunąć wydarzenia.', hideConfirm)
+            showConfirm('Błąd', 'Nie udało się usunąć wydarzenia.', hideConfirm, false, false)
           }
         },
         true,

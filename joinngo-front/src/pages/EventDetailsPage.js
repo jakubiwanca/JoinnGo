@@ -90,7 +90,13 @@ const EventDetailsPage = ({ currentUserId, role }) => {
       showConfirm(successTitle, successMsg, hideConfirm, false, false)
       fetchEvent()
     } catch (err) {
-      showConfirm('Błąd', err.response?.data || 'Błąd podczas dołączania', hideConfirm)
+      showConfirm(
+        'Błąd',
+        err.response?.data || 'Błąd podczas dołączania',
+        hideConfirm,
+        false,
+        false,
+      )
     } finally {
       setActionLoading(false)
     }
@@ -123,7 +129,13 @@ const EventDetailsPage = ({ currentUserId, role }) => {
         showConfirm('Sukces', successMsg, hideConfirm, false, false)
         fetchEvent()
       } catch (err) {
-        showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
+        showConfirm(
+          'Błąd',
+          err.response?.data || 'Błąd podczas opuszczania',
+          hideConfirm,
+          false,
+          false,
+        )
       } finally {
         setActionLoading(false)
       }
@@ -151,7 +163,13 @@ const EventDetailsPage = ({ currentUserId, role }) => {
             navigate('/home')
           })
         } catch (err) {
-          showConfirm('Błąd', err.response?.data || 'Błąd podczas usuwania', hideConfirm)
+          showConfirm(
+            'Błąd',
+            err.response?.data || 'Błąd podczas usuwania',
+            hideConfirm,
+            false,
+            false,
+          )
         } finally {
           setActionLoading(false)
         }

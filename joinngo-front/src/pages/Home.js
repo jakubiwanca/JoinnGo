@@ -178,7 +178,7 @@ function Home({ role, currentUserId, refreshTrigger }) {
       showConfirm('Sukces', data, hideConfirm, false, false)
       fetchEvents()
     } catch (err) {
-      showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm)
+      showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm, false, false)
     }
   }
 
@@ -208,6 +208,8 @@ function Home({ role, currentUserId, refreshTrigger }) {
             'Błąd',
             'Nie udało się usunąć: ' + (err.response?.data || err.message),
             hideConfirm,
+            false,
+            false,
           )
         }
       },
@@ -243,7 +245,13 @@ function Home({ role, currentUserId, refreshTrigger }) {
         showConfirm('Sukces', successMsg, hideConfirm, false, false)
         fetchEvents()
       } catch (err) {
-        showConfirm('Błąd', err.response?.data || 'Błąd podczas opuszczania', hideConfirm)
+        showConfirm(
+          'Błąd',
+          err.response?.data || 'Błąd podczas opuszczania',
+          hideConfirm,
+          false,
+          false,
+        )
       }
     })
   }

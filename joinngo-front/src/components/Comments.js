@@ -73,7 +73,7 @@ const Comments = ({
       onCommentUpdated({ id: commentId, content: editContent })
       cancelEdit()
     } catch (err) {
-      showConfirm('Błąd', 'Nie udało się zaktualizować komentarza.', hideConfirm)
+      showConfirm('Błąd', 'Nie udało się zaktualizować komentarza.', hideConfirm, false, false)
     }
   }
 
@@ -87,7 +87,7 @@ const Comments = ({
           await apiClient.delete(`event/comments/${commentId}`)
           onCommentDeleted(commentId)
         } catch (err) {
-          showConfirm('Błąd', 'Nie udało się usunąć komentarza.', hideConfirm)
+          showConfirm('Błąd', 'Nie udało się usunąć komentarza.', hideConfirm, false, false)
         }
       },
       true,

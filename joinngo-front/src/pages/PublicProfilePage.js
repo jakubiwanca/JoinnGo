@@ -53,7 +53,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
           hideConfirm,
         )
       } else {
-        showConfirm('Błąd', `Błąd ładowania profilu: ${err.message}`, hideConfirm)
+        showConfirm('Błąd', `Błąd ładowania profilu: ${err.message}`, hideConfirm, false, false)
       }
     } finally {
       setLoading(false)
@@ -92,7 +92,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
       showConfirm('Sukces', response || 'Dołączono do wydarzenia!', hideConfirm, false, false)
       fetchProfileAndEvents()
     } catch (err) {
-      showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm)
+      showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm, false, false)
     }
   }
 
@@ -104,7 +104,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
         showConfirm('Sukces', 'Opuszczono wydarzenie.', hideConfirm, false, false)
         fetchProfileAndEvents()
       } catch (err) {
-        showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm)
+        showConfirm('Błąd', err.response?.data || 'Błąd', hideConfirm, false, false)
       }
     })
   }
