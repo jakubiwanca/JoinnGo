@@ -252,8 +252,18 @@ function ProfilePage({
     try {
       setPasswordLoading(true)
       await changePassword(passwordForm.currentPassword, passwordForm.newPassword)
-      setPasswordSuccess('Hasło zostało pomyślnie zmienione.')
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+
+      showConfirm(
+        'Sukces',
+        'Hasło zostało pomyślnie zmienione.',
+        () => {
+          hideConfirm()
+          setPasswordSuccess('')
+          setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        },
+        false,
+        false,
+      )
     } catch (err) {
       console.error(err)
       let errorMsg = err.response?.data || 'Błąd zmiany hasła'
