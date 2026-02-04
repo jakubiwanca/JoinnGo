@@ -183,14 +183,26 @@ function Home({ role, currentUserId, refreshTrigger }) {
   }
 
   const handleDelete = (eventId) => {
+    const event = events.find((e) => e.id === eventId)
+    const isRecurring = event?.isRecurring || event?.recurrenceGroupId
+
+    const title = isRecurring ? 'Usuń wydarzenie cykliczne' : 'Usuń wydarzenie'
+    const message = isRecurring
+      ? 'Czy na pewno chcesz usunąć to wydarzenie cykliczne wraz ze wszystkimi jego instancjami? Ta akcja jest nieodwracalna.'
+      : 'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja jest nieodwracalna.'
+
     showConfirm(
-      'Usuń wydarzenie',
-      'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja jest nieodwracalna.',
+      title,
+      message,
       async () => {
         hideConfirm()
         try {
-          await deleteEvent(eventId)
-          setEvents((prev) => prev.filter((e) => e.id !== eventId))
+          await deleteEvent(eventId, isRecurring)
+          if (isRecurring && event?.recurrenceGroupId) {
+            setEvents((prev) => prev.filter((e) => e.recurrenceGroupId !== event.recurrenceGroupId))
+          } else {
+            setEvents((prev) => prev.filter((e) => e.id !== eventId))
+          }
         } catch (err) {
           showConfirm(
             'Błąd',

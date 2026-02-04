@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPublicProfile, toggleFollow, getMyFollowers } from '../api/users'
-import { getEventsByUser, joinEvent, leaveEvent } from '../api/events'
+import { getEventsByUser, joinEvent, leaveEvent, deleteEvent } from '../api/events'
 import EventCard from '../components/EventCard'
 import EditEventModal from '../components/EditEventModal'
 import { useConfirm } from '../hooks/useConfirm'
@@ -111,6 +111,35 @@ const PublicProfilePage = ({ currentUserId, role }) => {
 
   const handleEditClick = (event) => {
     setEditingEvent(event)
+  }
+
+  const handleDelete = (eventId) => {
+    const event = events.find((e) => e.id === eventId)
+    const isRecurring = event?.isRecurring || event?.recurrenceGroupId
+
+    const title = isRecurring ? 'Usuń wydarzenie cykliczne' : 'Usuń wydarzenie'
+    const message = isRecurring
+      ? 'Czy na pewno chcesz usunąć to wydarzenie cykliczne wraz ze wszystkimi jego instancjami? Ta akcja jest nieodwracalna.'
+      : 'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja jest nieodwracalna.'
+
+    showConfirm(
+      title,
+      message,
+      async () => {
+        hideConfirm()
+        try {
+          await deleteEvent(eventId, isRecurring)
+          fetchProfileAndEvents()
+        } catch (err) {
+          showConfirm(
+            'Błąd',
+            'Nie udało się usunąć: ' + (err.response?.data || err.message),
+            hideConfirm,
+          )
+        }
+      },
+      true,
+    )
   }
 
   const handleEditSuccess = () => {
@@ -229,6 +258,7 @@ const PublicProfilePage = ({ currentUserId, role }) => {
               role={role}
               isOwner={isMe}
               onEdit={isMe ? handleEditClick : undefined}
+              onDelete={handleDelete}
               onJoin={handleJoin}
               onLeave={handleLeave}
               onCardClick={(id) => navigate(`/event/${id}`)}

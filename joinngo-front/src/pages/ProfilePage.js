@@ -234,13 +234,21 @@ function ProfilePage({
   }
 
   const handleDelete = (eventId) => {
+    const event = createdEvents.find((e) => e.id === eventId)
+    const isRecurring = event?.isRecurring || event?.recurrenceGroupId
+
+    const title = isRecurring ? 'Usuń wydarzenie cykliczne' : 'Usuń wydarzenie'
+    const message = isRecurring
+      ? 'Czy na pewno chcesz usunąć to wydarzenie cykliczne wraz ze wszystkimi jego instancjami? Ta akcja jest nieodwracalna.'
+      : 'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja jest nieodwracalna.'
+
     showConfirm(
-      'Usuń wydarzenie',
-      'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja jest nieodwracalna.',
+      title,
+      message,
       async () => {
         hideConfirm()
         try {
-          await deleteEvent(eventId)
+          await deleteEvent(eventId, isRecurring)
           fetchData()
         } catch (err) {
           showConfirm(

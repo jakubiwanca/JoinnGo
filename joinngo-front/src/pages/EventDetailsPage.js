@@ -131,14 +131,21 @@ const EventDetailsPage = ({ currentUserId, role }) => {
   }
 
   const handleDelete = () => {
+    const isRecurring = event?.isRecurring || event?.recurrenceGroupId
+
+    const title = isRecurring ? 'Usuń wydarzenie cykliczne' : 'Usuń wydarzenie'
+    const message = isRecurring
+      ? 'Czy na pewno chcesz usunąć to wydarzenie cykliczne wraz ze wszystkimi jego instancjami?'
+      : 'Czy na pewno chcesz trwale usunąć to wydarzenie?'
+
     showConfirm(
-      'Usuń wydarzenie',
-      'Czy na pewno chcesz trwale usunąć to wydarzenie?',
+      title,
+      message,
       async () => {
         hideConfirm()
         setActionLoading(true)
         try {
-          await deleteEvent(id)
+          await deleteEvent(id, isRecurring)
           showConfirm('Sukces', 'Wydarzenie zostało usunięte.', () => {
             hideConfirm()
             navigate('/home')
