@@ -36,6 +36,9 @@ function ProfilePage({
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' })
   const [usernameError, setUsernameError] = useState('')
   const usernameRef = React.useRef(null)
+  const currentPasswordRef = React.useRef(null)
+  const newPasswordRef = React.useRef(null)
+  const confirmPasswordRef = React.useRef(null)
   const [redirecting, setRedirecting] = useState(false)
 
   const [passwordForm, setPasswordForm] = useState({
@@ -45,6 +48,7 @@ function ProfilePage({
   })
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [passwordFieldErrors, setPasswordFieldErrors] = useState({})
   const [passwordLoading, setPasswordLoading] = useState(false)
 
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
@@ -196,44 +200,87 @@ function ProfilePage({
     setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value })
     setPasswordError('')
     setPasswordSuccess('')
+    setPasswordFieldErrors((prev) => ({ ...prev, [e.target.name]: '' }))
   }
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault()
     setPasswordError('')
     setPasswordSuccess('')
+    setPasswordFieldErrors({})
 
-    if (
-      !passwordForm.currentPassword ||
-      !passwordForm.newPassword ||
-      !passwordForm.confirmPassword
-    ) {
-      setPasswordError('Wszystkie pola są wymagane')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      return
+    let hasErrors = false
+    const newErrors = {}
+    let firstErrorRef = null
+
+    if (!passwordForm.currentPassword) {
+      newErrors.currentPassword = 'To pole jest wymagane'
+      hasErrors = true
+      if (!firstErrorRef) firstErrorRef = currentPasswordRef
+    }
+    if (!passwordForm.newPassword) {
+      newErrors.newPassword = 'To pole jest wymagane'
+      hasErrors = true
+      if (!firstErrorRef) firstErrorRef = newPasswordRef
+    }
+    if (!passwordForm.confirmPassword) {
+      newErrors.confirmPassword = 'To pole jest wymagane'
+      hasErrors = true
+      if (!firstErrorRef) firstErrorRef = confirmPasswordRef
     }
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('Nowe hasła nie są zgodne')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      return
+    if (!hasErrors && passwordForm.newPassword !== passwordForm.confirmPassword) {
+      newErrors.confirmPassword = 'Nowe hasła nie są zgodne'
+      hasErrors = true
+      if (!firstErrorRef) firstErrorRef = confirmPasswordRef
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      setPasswordError('Nowe hasło musi mieć co najmniej 6 znaków')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (!hasErrors && passwordForm.newPassword.length < 6) {
+      newErrors.newPassword = 'Nowe hasło musi mieć co najmniej 6 znaków'
+      hasErrors = true
+      if (!firstErrorRef) firstErrorRef = newPasswordRef
+    }
+
+    if (hasErrors) {
+      setPasswordFieldErrors(newErrors)
+      if (firstErrorRef && firstErrorRef.current) {
+        firstErrorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
       return
     }
 
     try {
       setPasswordLoading(true)
-      await changePassword(passwordForm.currentPassword, passwordForm.newPassword)
-      setPasswordSuccess('Hasło zostało pomyślnie zmienione!')
+      await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        confirmPassword: passwordForm.confirmPassword,
+      })
+      setPasswordSuccess('Hasło zostało pomyślnie zmienione.')
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (err) {
-      console.error('Błąd zmiany hasła', err)
-      setPasswordError(err.response?.data?.message || 'Błąd zmiany hasła. Sprawdź aktualne hasło.')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      console.error(err)
+      const errorMsg = err.response?.data || 'Błąd zmiany hasła'
+
+      if (typeof errorMsg === 'string') {
+        const lowerMsg = errorMsg.toLowerCase()
+        if (lowerMsg.includes('aktualne') || lowerMsg.includes('current')) {
+          setPasswordFieldErrors({ currentPassword: errorMsg })
+          if (currentPasswordRef.current)
+            currentPasswordRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          return
+        }
+        if (lowerMsg.includes('nowe') || lowerMsg.includes('new password')) {
+          setPasswordFieldErrors({ newPassword: errorMsg })
+          if (newPasswordRef.current)
+            newPasswordRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          return
+        }
+      }
+
+      setPasswordError(errorMsg)
+      if (currentPasswordRef.current)
+        currentPasswordRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } finally {
       setPasswordLoading(false)
     }
@@ -443,7 +490,7 @@ function ProfilePage({
               value={usernameForm}
               onChange={(e) => setUsernameForm(e.target.value)}
               placeholder="Twoja nazwa użytkownika"
-              style={{ width: '100%', borderColor: usernameError ? 'red' : undefined }}
+              style={{ width: '100%' }}
             />
             {usernameError && (
               <p style={{ color: 'red', fontSize: '0.85rem', marginTop: '5px' }}>{usernameError}</p>
@@ -473,7 +520,7 @@ function ProfilePage({
       >
         <h3 style={{ marginBottom: '20px', color: '#1f2937', marginTop: 0 }}>Zmiana Hasła</h3>
         <form onSubmit={handlePasswordSubmit} className="password-form-tile">
-          <div className="form-group">
+          <div className="form-group" ref={currentPasswordRef}>
             <PasswordInput
               name="currentPassword"
               placeholder="Aktualne hasło"
@@ -482,9 +529,14 @@ function ProfilePage({
               required
               style={{ width: '100%' }}
             />
+            {passwordFieldErrors.currentPassword && (
+              <p style={{ color: 'red', fontSize: '0.85rem', marginTop: '5px' }}>
+                {passwordFieldErrors.currentPassword}
+              </p>
+            )}
           </div>
 
-          <div className="form-group">
+          <div className="form-group" ref={newPasswordRef}>
             <PasswordInput
               name="newPassword"
               placeholder="Nowe hasło"
@@ -493,9 +545,14 @@ function ProfilePage({
               required
               style={{ width: '100%' }}
             />
+            {passwordFieldErrors.newPassword && (
+              <p style={{ color: 'red', fontSize: '0.85rem', marginTop: '5px' }}>
+                {passwordFieldErrors.newPassword}
+              </p>
+            )}
           </div>
 
-          <div className="form-group">
+          <div className="form-group" ref={confirmPasswordRef}>
             <PasswordInput
               name="confirmPassword"
               placeholder="Potwierdź nowe hasło"
@@ -504,6 +561,11 @@ function ProfilePage({
               required
               style={{ width: '100%' }}
             />
+            {passwordFieldErrors.confirmPassword && (
+              <p style={{ color: 'red', fontSize: '0.85rem', marginTop: '5px' }}>
+                {passwordFieldErrors.confirmPassword}
+              </p>
+            )}
           </div>
 
           <button

@@ -247,7 +247,7 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
       formData.maxParticipants === null ||
       isNaN(formData.maxParticipants)
     ) {
-      errors.maxParticipants = 'Musisz podać limit uczestników (0 dla braku limitu).'
+      errors.maxParticipants = 'Proszę podać limit uczestników.'
     }
     if (!formData.description || formData.description.trim() === '') {
       errors.description = 'Proszę wpisać opis wydarzenia.'
