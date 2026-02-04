@@ -34,6 +34,8 @@ function ProfilePage({
 
   const [usernameForm, setUsernameForm] = useState(currentUserUsername || '')
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' })
+  const [usernameError, setUsernameError] = useState('')
+  const usernameRef = React.useRef(null)
   const [redirecting, setRedirecting] = useState(false)
 
   const [passwordForm, setPasswordForm] = useState({
@@ -129,13 +131,18 @@ function ProfilePage({
   const handleProfileSubmit = async (e) => {
     e.preventDefault()
     setProfileMessage({ type: '', text: '' })
+    setUsernameError('')
 
     if (!usernameForm || usernameForm.trim().length === 0) {
-      setProfileMessage({ type: 'error', text: 'Nazwa użytkownika jest wymagana.' })
+      setUsernameError('Nazwa użytkownika jest wymagana.')
+      if (usernameRef.current)
+        usernameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (usernameForm.trim().length < 3) {
-      setProfileMessage({ type: 'error', text: 'Nazwa użytkownika musi mieć co najmniej 3 znaki.' })
+      setUsernameError('Nazwa użytkownika musi mieć co najmniej 3 znaki.')
+      if (usernameRef.current)
+        usernameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
 
@@ -165,7 +172,23 @@ function ProfilePage({
       )
     } catch (err) {
       console.error(err)
-      setProfileMessage({ type: 'error', text: err.response?.data || 'Błąd aktualizacji profilu' })
+      const errorMsg = err.response?.data || 'Błąd aktualizacji profilu'
+
+      if (
+        typeof errorMsg === 'string' &&
+        (errorMsg.toLowerCase().includes('nazw') ||
+          errorMsg.toLowerCase().includes('name') ||
+          errorMsg.toLowerCase().includes('username'))
+      ) {
+        setUsernameError(errorMsg)
+        setProfileMessage({ type: '', text: '' })
+        if (usernameRef.current) {
+          usernameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      } else {
+        setProfileMessage({ type: 'error', text: errorMsg })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
     }
   }
 
@@ -413,15 +436,18 @@ function ProfilePage({
       >
         <h3 style={{ marginBottom: '20px', color: '#1f2937', marginTop: 0 }}>Nazwa użytkownika</h3>
         <form onSubmit={handleProfileSubmit}>
-          <div className="form-group">
+          <div className="form-group" ref={usernameRef}>
             <input
               type="text"
               name="username"
               value={usernameForm}
               onChange={(e) => setUsernameForm(e.target.value)}
               placeholder="Twoja nazwa użytkownika"
-              style={{ width: '100%' }}
+              style={{ width: '100%', borderColor: usernameError ? 'red' : undefined }}
             />
+            {usernameError && (
+              <p style={{ color: 'red', fontSize: '0.85rem', marginTop: '5px' }}>{usernameError}</p>
+            )}
           </div>
           <button
             type="submit"

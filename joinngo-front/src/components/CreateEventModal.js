@@ -27,6 +27,8 @@ setupLeafletIcon()
 
 function CreateEventModal({ onClose, onEventCreated }) {
   const modalTopRef = React.useRef(null)
+  const maxParticipantsRef = React.useRef(null)
+  const recurrenceRef = React.useRef(null)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -58,6 +60,39 @@ function CreateEventModal({ onClose, onEventCreated }) {
   const [fieldErrors, setFieldErrors] = useState({})
 
   const lastAutoSelectedDayRef = React.useRef(null)
+
+  const mapBackendErrorToField = (errorMsg) => {
+    if (!errorMsg || typeof errorMsg !== 'string') return null
+
+    const errorMappings = [
+      {
+        keywords: ['uczestnik', 'limit', 'maxparticipants'],
+        field: 'maxParticipants',
+        ref: maxParticipantsRef,
+      },
+      {
+        keywords: [
+          'cykliczn',
+          'powtarzan',
+          'recurrence',
+          'data końcowa',
+          'zakończenia',
+          'tygodni',
+          'miesięcy',
+        ],
+        field: 'recurrence',
+        ref: recurrenceRef,
+      },
+    ]
+
+    const lowerMsg = errorMsg.toLowerCase()
+    for (const mapping of errorMappings) {
+      if (mapping.keywords.some((keyword) => lowerMsg.includes(keyword))) {
+        return mapping
+      }
+    }
+    return null
+  }
 
   useEffect(() => {
     if (formData.date && isRecurring && recurrence.type === 1) {
@@ -246,11 +281,25 @@ function CreateEventModal({ onClose, onEventCreated }) {
       )
     } catch (err) {
       console.error('Szczegóły błędu:', err.response?.data || err.message)
-      const backendError =
+      const errorMsg =
         typeof err.response?.data === 'string'
           ? err.response.data
           : 'Nie udało się utworzyć wydarzenia. Sprawdź dane.'
-      setError(backendError)
+
+      const fieldMapping = mapBackendErrorToField(errorMsg)
+
+      if (fieldMapping) {
+        setFieldErrors((prev) => ({ ...prev, [fieldMapping.field]: errorMsg }))
+        setError('')
+        if (fieldMapping.ref?.current) {
+          fieldMapping.ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      } else {
+        setError(errorMsg)
+        if (modalTopRef.current) {
+          modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }
     } finally {
       setLoading(false)
     }
@@ -332,20 +381,40 @@ function CreateEventModal({ onClose, onEventCreated }) {
             setFormData={setFormData}
           />
           <PrivateCheckbox checked={formData.isPrivate} onChange={handleChange} />
-          <MaxParticipantsField value={formData.maxParticipants} onChange={handleChange} />
+          <div ref={maxParticipantsRef}>
+            <MaxParticipantsField value={formData.maxParticipants} onChange={handleChange} />
+            {fieldErrors.maxParticipants && (
+              <p
+                className="field-error"
+                style={{ color: 'red', fontSize: '0.85rem', marginTop: '4px' }}
+              >
+                {fieldErrors.maxParticipants}
+              </p>
+            )}
+          </div>
           <RecurringCheckbox
             checked={isRecurring}
             onChange={(e) => setIsRecurring(e.target.checked)}
           />
 
           {isRecurring && (
-            <RecurrenceConfig
-              recurrence={recurrence}
-              setRecurrence={setRecurrence}
-              formDate={formData.date}
-              filterRecurrenceEndDate={filterRecurrenceEndDate}
-              radioName="endType"
-            />
+            <div ref={recurrenceRef}>
+              <RecurrenceConfig
+                recurrence={recurrence}
+                setRecurrence={setRecurrence}
+                formDate={formData.date}
+                filterRecurrenceEndDate={filterRecurrenceEndDate}
+                radioName="endType"
+              />
+              {fieldErrors.recurrence && (
+                <p
+                  className="field-error"
+                  style={{ color: 'red', fontSize: '0.85rem', marginTop: '4px' }}
+                >
+                  {fieldErrors.recurrence}
+                </p>
+              )}
+            </div>
           )}
 
           <div

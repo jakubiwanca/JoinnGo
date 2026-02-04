@@ -28,6 +28,8 @@ setupLeafletIcon()
 
 function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
   const modalTopRef = React.useRef(null)
+  const maxParticipantsRef = React.useRef(null)
+  const recurrenceRef = React.useRef(null)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -60,6 +62,39 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
 
   const lastAutoSelectedDayRef = React.useRef(null)
   const { confirmModal, showConfirm, hideConfirm } = useConfirm()
+
+  const mapBackendErrorToField = (errorMsg) => {
+    if (!errorMsg || typeof errorMsg !== 'string') return null
+
+    const errorMappings = [
+      {
+        keywords: ['uczestnik', 'limit', 'maxparticipants'],
+        field: 'maxParticipants',
+        ref: maxParticipantsRef,
+      },
+      {
+        keywords: [
+          'cykliczn',
+          'powtarzan',
+          'recurrence',
+          'data końcowa',
+          'zakończenia',
+          'tygodni',
+          'miesięcy',
+        ],
+        field: 'recurrence',
+        ref: recurrenceRef,
+      },
+    ]
+
+    const lowerMsg = errorMsg.toLowerCase()
+    for (const mapping of errorMappings) {
+      if (mapping.keywords.some((keyword) => lowerMsg.includes(keyword))) {
+        return mapping
+      }
+    }
+    return null
+  }
 
   useEffect(() => {
     if (eventToEdit) {
@@ -307,9 +342,23 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
       )
     } catch (err) {
       console.error('Błąd edycji:', err)
-      setError(
-        typeof err.response?.data === 'string' ? err.response.data : 'Nie udało się zapisać zmian.',
-      )
+      const errorMsg =
+        typeof err.response?.data === 'string' ? err.response.data : 'Nie udało się zapisać zmian.'
+
+      const fieldMapping = mapBackendErrorToField(errorMsg)
+
+      if (fieldMapping) {
+        setFieldErrors((prev) => ({ ...prev, [fieldMapping.field]: errorMsg }))
+        setError('')
+        if (fieldMapping.ref?.current) {
+          fieldMapping.ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      } else {
+        setError(errorMsg)
+        if (modalTopRef.current) {
+          modalTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }
     } finally {
       setLoading(false)
     }
@@ -379,20 +428,40 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
               setFormData={setFormData}
             />
             <PrivateCheckbox checked={formData.isPrivate} onChange={handleChange} />
-            <MaxParticipantsField value={formData.maxParticipants} onChange={handleChange} />
+            <div ref={maxParticipantsRef}>
+              <MaxParticipantsField value={formData.maxParticipants} onChange={handleChange} />
+              {fieldErrors.maxParticipants && (
+                <p
+                  className="field-error"
+                  style={{ color: 'red', fontSize: '0.85rem', marginTop: '4px' }}
+                >
+                  {fieldErrors.maxParticipants}
+                </p>
+              )}
+            </div>
             <RecurringCheckbox
               checked={isRecurring}
               onChange={(e) => setIsRecurring(e.target.checked)}
             />
 
             {isRecurring && (
-              <RecurrenceConfig
-                recurrence={recurrence}
-                setRecurrence={setRecurrence}
-                formDate={formData.date}
-                filterRecurrenceEndDate={filterRecurrenceEndDate}
-                radioName="editEndType"
-              />
+              <div ref={recurrenceRef}>
+                <RecurrenceConfig
+                  recurrence={recurrence}
+                  setRecurrence={setRecurrence}
+                  formDate={formData.date}
+                  filterRecurrenceEndDate={filterRecurrenceEndDate}
+                  radioName="editEndType"
+                />
+                {fieldErrors.recurrence && (
+                  <p
+                    className="field-error"
+                    style={{ color: 'red', fontSize: '0.85rem', marginTop: '4px' }}
+                  >
+                    {fieldErrors.recurrence}
+                  </p>
+                )}
+              </div>
             )}
 
             <div
