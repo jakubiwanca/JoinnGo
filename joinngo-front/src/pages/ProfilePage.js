@@ -260,25 +260,33 @@ function ProfilePage({
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (err) {
       console.error(err)
-      const errorMsg = err.response?.data || 'Błąd zmiany hasła'
+      let errorMsg = err.response?.data || 'Błąd zmiany hasła'
 
-      if (typeof errorMsg === 'string') {
-        const lowerMsg = errorMsg.toLowerCase()
-        if (lowerMsg.includes('aktualne') || lowerMsg.includes('current')) {
-          setPasswordFieldErrors({ currentPassword: errorMsg })
-          if (currentPasswordRef.current)
-            currentPasswordRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          return
-        }
-        if (lowerMsg.includes('nowe') || lowerMsg.includes('new password')) {
-          setPasswordFieldErrors({ newPassword: errorMsg })
-          if (newPasswordRef.current)
-            newPasswordRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          return
-        }
+      if (typeof errorMsg === 'object' && errorMsg !== null) {
+        errorMsg = errorMsg.message || JSON.stringify(errorMsg)
       }
 
-      setPasswordError(errorMsg)
+      const lowerMsg = String(errorMsg).toLowerCase()
+
+      if (
+        lowerMsg.includes('aktualne') ||
+        lowerMsg.includes('obecne') ||
+        lowerMsg.includes('current')
+      ) {
+        setPasswordFieldErrors({ currentPassword: errorMsg })
+        if (currentPasswordRef.current)
+          currentPasswordRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+      }
+
+      if (lowerMsg.includes('nowe') || lowerMsg.includes('new password')) {
+        setPasswordFieldErrors({ newPassword: errorMsg })
+        if (newPasswordRef.current)
+          newPasswordRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+      }
+
+      setPasswordError(String(errorMsg))
       if (currentPasswordRef.current)
         currentPasswordRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } finally {
@@ -526,7 +534,6 @@ function ProfilePage({
               placeholder="Aktualne hasło"
               value={passwordForm.currentPassword}
               onChange={handlePasswordChange}
-              required
               style={{ width: '100%' }}
             />
             {passwordFieldErrors.currentPassword && (
@@ -542,7 +549,6 @@ function ProfilePage({
               placeholder="Nowe hasło"
               value={passwordForm.newPassword}
               onChange={handlePasswordChange}
-              required
               style={{ width: '100%' }}
             />
             {passwordFieldErrors.newPassword && (
@@ -558,7 +564,6 @@ function ProfilePage({
               placeholder="Potwierdź nowe hasło"
               value={passwordForm.confirmPassword}
               onChange={handlePasswordChange}
-              required
               style={{ width: '100%' }}
             />
             {passwordFieldErrors.confirmPassword && (
