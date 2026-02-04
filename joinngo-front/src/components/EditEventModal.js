@@ -212,7 +212,9 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     const { name, value, type, checked } = e.target
     let newValue = value
     if (type === 'checkbox') newValue = checked
-    if (name === 'category' || name === 'maxParticipants') newValue = parseInt(value, 10)
+    if (name === 'category' || name === 'maxParticipants') {
+      newValue = value === '' ? '' : parseInt(value, 10)
+    }
 
     setFormData((prev) => ({ ...prev, [name]: newValue }))
   }
@@ -239,6 +241,13 @@ function EditEventModal({ eventToEdit, onClose, onEventUpdated }) {
     }
     if (formData.category === '' || formData.category === null || formData.category === 0) {
       errors.category = 'Proszę wybrać kategorię.'
+    }
+    if (
+      formData.maxParticipants === '' ||
+      formData.maxParticipants === null ||
+      isNaN(formData.maxParticipants)
+    ) {
+      errors.maxParticipants = 'Musisz podać limit uczestników (0 dla braku limitu).'
     }
     if (!formData.description || formData.description.trim() === '') {
       errors.description = 'Proszę wpisać opis wydarzenia.'
