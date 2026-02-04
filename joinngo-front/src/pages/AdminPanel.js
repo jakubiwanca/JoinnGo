@@ -47,6 +47,7 @@ function AdminPanel({ currentUserId, onLogout }) {
         try {
           await deleteUser(id)
           setUsers((prev) => prev.filter((u) => String(u.id) !== String(id)))
+          showConfirm('Sukces', 'Użytkownik został pomyślnie usunięty.', hideConfirm, false, false)
         } catch (err) {
           console.error('deleteUser error:', err)
           showConfirm(
